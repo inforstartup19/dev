@@ -36,7 +36,7 @@ def _rls(table):
     grant = "SELECT, INSERT, UPDATE" if table == "project_experiments" else "SELECT, INSERT"
     op.execute(
         sa.text(
-            f"""DO $ BEGIN
+            f"""DO $$ BEGIN
                 IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'incfs_api') THEN
                     GRANT {grant}
                     ON {table} TO incfs_api;
