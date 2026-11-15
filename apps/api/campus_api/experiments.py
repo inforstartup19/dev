@@ -28,7 +28,9 @@ router = APIRouter(
 )
 Question = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
 LongText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=3000)]
-Observation = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=5000)]
+Observation = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=5000)
+]
 Outcome = Literal["supportive", "unsupported", "inconclusive"]
 
 
