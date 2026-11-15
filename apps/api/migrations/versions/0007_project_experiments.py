@@ -18,24 +18,26 @@ def _rls(table):
     op.execute(sa.text(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY"))
     op.execute(sa.text(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY"))
     op.execute(
-        sa.text(f"CREATE POLICY {table}_select ON {table} FOR SELECT "
-                f"USING (owner_id = {actor})")
+        sa.text(f"CREATE POLICY {table}_select ON {table} FOR SELECT USING (owner_id = {actor})")
     )
     op.execute(
-        sa.text(f"CREATE POLICY {table}_insert ON {table} FOR INSERT "
-                f"WITH CHECK (owner_id = {actor})")
+        sa.text(
+            f"CREATE POLICY {table}_insert ON {table} FOR INSERT WITH CHECK (owner_id = {actor})"
+        )
     )
     # No UPDATE/DELETE policies for the immutable result and evidence records.
     if table == "project_experiments":
         op.execute(
-            sa.text(f"CREATE POLICY {table}_update ON {table} FOR UPDATE "
-                    f"USING (owner_id = {actor}) WITH CHECK (owner_id = {actor})")
+            sa.text(
+                f"CREATE POLICY {table}_update ON {table} FOR UPDATE "
+                f"USING (owner_id = {actor}) WITH CHECK (owner_id = {actor})"
+            )
         )
     op.execute(
         sa.text(
             f"""DO $$ BEGIN
                 IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'incfs_api') THEN
-                    GRANT SELECT, INSERT{', UPDATE' if table == 'project_experiments' else ''}
+                    GRANT SELECT, INSERT{\", UPDATE\" if table == \"project_experiments\" else \"\"}
                     ON {table} TO incfs_api;
                 END IF;
             END $$"""
@@ -63,9 +65,7 @@ def upgrade():
         sa.CheckConstraint("length(trim(question)) > 0", name="ck_experiment_question"),
         sa.UniqueConstraint("id", "owner_id", name="uq_experiment_id_owner"),
     )
-    op.create_index(
-        "ix_experiments_owner_draft", "project_experiments", ["owner_id", "draft_id"]
-    )
+    op.create_index("ix_experiments_owner_draft", "project_experiments", ["owner_id", "draft_id"])
     op.create_table(
         "experiment_results",
         sa.Column("id", sa.String(36), primary_key=True),
