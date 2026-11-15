@@ -235,9 +235,7 @@ def test_progressive_draft_activation_and_reformulation_preserves_history(api):
     activated = api.request("POST", f"{root}/{experiment_id}/activate", "alice")
     assert activated.status_code == 200, activated.text
     assert activated.json()["status"] == "active"
-    assert api.request(
-        "POST", f"{root}/{experiment_id}", "alice", json={}
-    ).status_code == 409
+    assert api.request("POST", f"{root}/{experiment_id}", "alice", json={}).status_code == 409
     result = api.request(
         "POST",
         result_path,
@@ -260,9 +258,9 @@ def test_progressive_draft_activation_and_reformulation_preserves_history(api):
     assert new_revision.json()["reformulates_id"] == experiment_id
     assert len(api.request("GET", result_path, "alice").json()) == 1
     assert (
-        api.request("POST", root, "bob", json={"reformulates_id": experiment_id}).status_code
+        api.request("POST", root, "bob", json={"reformulates_id": experiment_id}).status_code == 404
+    )
+    assert (
+        api.request("POST", root, "alice", json={"reformulates_id": str(uuid4())}).status_code
         == 404
     )
-    assert api.request(
-        "POST", root, "alice", json={"reformulates_id": str(uuid4())}
-    ).status_code == 404
