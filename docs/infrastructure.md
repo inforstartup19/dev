@@ -1,5 +1,8 @@
 # Azure i Terraform
 
+> **Decisió posterior (15/11/2026):** no hi ha PostgreSQL a Azure i no se'n desplegarà ara. Es desenvolupa a Git `dev` i s'ajorna el desplegament controlat per entorns **Azure DEV → PREPROD → PROD**. Aquesta pàgina descriu el Terraform existent, no autoritza cap `apply`. Vegeu [l'estratègia d'entorns](architecture/environments-release-strategy.md).
+
+
 ## Què es crea
 
 `infra/terraform/bootstrap` crea un grup de recursos, un Storage Account Standard LRS i els contenidors privats `tfstate` (bootstrap i identitat) i `tfstate-dev` (desenvolupament). L’estat utilitza autenticació Entra ID, sense claus compartides; té versionat, retenció de 30 dies i protecció Terraform contra destrucció de l’emmagatzematge i el contenidor. El backend Azure proporciona bloqueig de l’estat mitjançant leases.
