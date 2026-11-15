@@ -18,10 +18,7 @@ router = APIRouter(
 Area = Literal["software", "data", "infrastructure", "innovation"]
 LabKind = Literal["web_ide", "sql_sandbox", "jupyter", "linux_lab", "project_workspace"]
 
-SOURCE = (
-    "https://www.fib.upc.edu/ca/graus/grau-en-enginyeria-informatica/"
-    "pla-destudis/assignatures"
-)
+SOURCE = "https://www.fib.upc.edu/ca/graus/grau-en-enginyeria-informatica/pla-destudis/assignatures"
 
 
 class ModuleTemplate(BaseModel):
