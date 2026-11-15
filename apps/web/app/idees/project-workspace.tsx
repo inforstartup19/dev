@@ -43,6 +43,7 @@ type Resource = {
   created_at: string;
 };
 type Lifecycle = { state: "active" | "paused" | "closed"; version: number };
+type SuggestionFeedback = { code: string; choice: "dismiss" | "restore" };
 type Guidance = {
   lifecycle: "undecided" | "active" | "paused" | "closed";
   operational_effects: string[];
@@ -81,6 +82,7 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
   const [guidance, setGuidance] = useState<Guidance | null>(null);
   const [lifecycle, setLifecycle] = useState<Lifecycle | null>(null);
   const [dismissed, setDismissed] = useState<string[]>([]);
+  const [rememberSuggestions, setRememberSuggestions] = useState(false);
   const [fields, setFields] = useState<ExperimentInput>(blank);
   const [observations, setObservations] = useState("");
   const [outcome, setOutcome] = useState<Result["outcome"]>("inconclusive");
@@ -105,18 +107,20 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
 
   const refresh = useCallback(async () => {
     const root = base(draftId);
-    const [tests, choicesList, resourceList, guidanceResult, lifecycleResult] = await Promise.all([
+    const [tests, choicesList, resourceList, guidanceResult, lifecycleResult, feedbackResult] = await Promise.all([
       privateJson<Experiment[]>(`${root}/experiments`),
       privateJson<Decision[]>(`${root}/decisions`),
       privateJson<Resource[]>(`${root}/resource-intents`),
       privateJson<Guidance>(`${root}/assistant/guidance`),
       privateJson<Lifecycle>(`${root}/lifecycle`),
+      privateJson<SuggestionFeedback[]>(`${root}/assistant/feedback`),
     ]);
     setExperiments(tests);
     setDecisions(choicesList);
     setResources(resourceList);
     setGuidance(guidanceResult);
     setLifecycle(lifecycleResult);
+    setDismissed(feedbackResult.filter((item) => item.choice === "dismiss").map((item) => item.code));
     return tests;
   }, [draftId]);
 
@@ -227,6 +231,29 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
       setRationale("");
       setShowDecisions(true);
     }, "Decisió humana registrada, sense cap canvi automàtic de visibilitat.");
+  }
+
+  async function dismissSuggestion(code: string) {
+    setDismissed((items) => [...new Set([...items, code])]);
+    if (!rememberSuggestions) return;
+    try {
+      await privateJson(`${base(draftId)}/assistant/feedback`, {
+        code, choice: "dismiss", consent: true,
+      });
+    } catch (err) { report(err); }
+  }
+
+  async function restoreSuggestions() {
+    if (rememberSuggestions) {
+      try {
+        await Promise.all(dismissed.map((code) =>
+          privateJson(`${base(draftId)}/assistant/feedback`, {
+            code, choice: "restore", consent: true,
+          })
+        ));
+      } catch (err) { report(err); return; }
+    }
+    setDismissed([]);
   }
 
   async function saveResource(event: FormEvent<HTMLFormElement>) {
@@ -365,6 +392,14 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
         }[guidance.lifecycle]}</p>
         <ul>{guidance.operational_effects.map((effect) => <li key={effect}>{effect}</li>)}</ul>
         <h3>Propostes opcionals</h3>
+        <label>
+          <input type="checkbox" checked={rememberSuggestions}
+            onChange={(e) => setRememberSuggestions(e.target.checked)} />
+          Recordar de manera privada els suggeriments descartats (consentiment opcional)
+        </label>
+        {dismissed.length > 0 && <button type="button" onClick={restoreSuggestions}>
+          Recuperar suggeriments descartats
+        </button>}
         {guidance.suggestions.filter((suggestion) => !dismissed.includes(suggestion.code)).length === 0 &&
           <p>No hi ha propostes pendents de mostrar.</p>}
         {guidance.suggestions.filter((suggestion) => !dismissed.includes(suggestion.code)).map((suggestion) =>
@@ -379,7 +414,7 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
                     suggestion.action === "prepare_funding" ? "funding" : "resources");
                   setShowResources(true);
                 }}>Preparar necessitat</button>}
-              <button type="button" onClick={() => setDismissed((items) => [...items, suggestion.code])}>
+              <button type="button" onClick={() => dismissSuggestion(suggestion.code)}>
                 Descartar suggeriment
               </button>
             </div>
