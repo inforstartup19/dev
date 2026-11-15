@@ -181,7 +181,10 @@ def edit_experiment(
     experiment = owned_experiment(db, draft_id, experiment_id, actor)
     if experiment.status != "draft":
         raise HTTPException(409, "Executed experiment revisions are immutable")
-    if payload.reformulates_id is not None and str(payload.reformulates_id) != experiment.reformulates_id:
+    if (
+        payload.reformulates_id is not None
+        and str(payload.reformulates_id) != experiment.reformulates_id
+    ):
         raise HTTPException(422, "Reformulation source cannot be changed")
     for field in ("question", "method", "success_criterion"):
         setattr(experiment, field, getattr(payload, field))
@@ -196,7 +199,9 @@ def activate_experiment(draft_id: UUID, experiment_id: UUID, db: DB, actor: Acto
     experiment = owned_experiment(db, draft_id, experiment_id, actor)
     if experiment.status != "draft":
         raise HTTPException(409, "Only draft experiments can be activated")
-    if not all((experiment.question.strip(), experiment.method.strip(), experiment.success_criterion.strip())):
+    if not all(
+        (experiment.question.strip(), experiment.method.strip(), experiment.success_criterion.strip())
+    ):
         raise HTTPException(422, "Question, method and success criterion are required to activate")
     experiment.status = "active"
     db.commit()
