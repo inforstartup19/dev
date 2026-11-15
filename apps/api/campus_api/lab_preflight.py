@@ -12,9 +12,7 @@ router = APIRouter(
     tags=["campus lab planning"],
     dependencies=[Depends(require_private_context)],
 )
-Template = Literal[
-    "web_ide", "sql_sandbox", "jupyter", "linux_lab", "avd_windows", "gpu_lab"
-]
+Template = Literal["web_ide", "sql_sandbox", "jupyter", "linux_lab", "avd_windows", "gpu_lab"]
 
 
 class LabPreflightIn(BaseModel):
