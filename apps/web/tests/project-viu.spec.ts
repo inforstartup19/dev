@@ -182,6 +182,10 @@ test("BF sharing publishes only a need to another account and revokes it without
     expect((await outsider.request.get(root + "/shared-needs")).status()).toBe(404);
     expect((await outsider.request.get(`${origin}/api/private/shared-needs/${needId}`)).status()).toBe(404);
 
+    const viewer = await (await outsider.request.get(`${origin}/api/campus/me`)).json();
+    await panel.getByLabel("Identificador del destinatari autoritzat").fill(viewer.id);
+    await panel.getByRole("button", { name: "Afegir destinatari a aquesta necessitat" }).click();
+    await expect(panel.getByText(/Destinatari autoritzat per a aquesta necessitat/)).toBeVisible();
     await panel.getByLabel("Motiu de publicació").fill("Només el text revisat");
     await panel.getByRole("checkbox", { name: /Confirmo l'audiència/ }).check();
     await panel.getByRole("button", { name: "Publicar només aquesta necessitat" }).click();
@@ -189,7 +193,7 @@ test("BF sharing publishes only a need to another account and revokes it without
     const visible = await (await outsider.request.get(`${origin}/api/private/shared-needs`)).json();
     expect(visible).toHaveLength(1);
     expect(visible[0]).toMatchObject({
-      id: needId, title: "Taller de confecció 1-of-1",
+      audience: "selected", id: needId, title: "Taller de confecció 1-of-1",
       description: "Busquem un taller per validar una peça original.",
       state: "published",
     });
