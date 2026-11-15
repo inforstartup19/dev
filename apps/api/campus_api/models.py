@@ -672,3 +672,107 @@ class AgreementConfirmation(Base):
         UniqueConstraint("agreement_id", "version", "actor_id", name="uq_agreement_confirmation"),
         CheckConstraint("version >= 1"),
     )
+
+
+class ProofContribution(Base):
+    """A private contribution claim, not a professional qualification."""
+
+    __tablename__ = "proof_contributions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    agreement_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    requester_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    declared_by: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    agreement_version: Mapped[int] = mapped_column(nullable=False)
+    agreement_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    summary: Mapped[str] = mapped_column(String(1200), nullable=False)
+    version: Mapped[int] = mapped_column(default=1)
+    state: Mapped[str] = mapped_column(String(12), default="active")
+    withdrawn_by: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
+    withdrawal_reason: Mapped[str] = mapped_column(String(500), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["agreement_id", "owner_id", "requester_id"],
+            [
+                "collaboration_agreements.id",
+                "collaboration_agreements.owner_id",
+                "collaboration_agreements.requester_id",
+            ],
+        ),
+        UniqueConstraint("id", "owner_id", "requester_id", name="uq_proof_participants"),
+        CheckConstraint("kind IN ('work','knowledge','resource','other')"),
+        CheckConstraint("state IN ('active','withdrawn')"),
+        CheckConstraint("length(trim(summary)) > 0"),
+        CheckConstraint("agreement_version >= 1 AND version >= 1"),
+        Index("ix_proof_owner_agreement", "owner_id", "agreement_id"),
+        Index("ix_proof_requester_agreement", "requester_id", "agreement_id"),
+    )
+
+
+class ProofEvidence(Base):
+    """Private, append-only metadata declaration; no external content ingestion."""
+
+    __tablename__ = "proof_evidence"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    contribution_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    requester_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    declared_by: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    proof_version: Mapped[int] = mapped_column(nullable=False)
+    origin: Mapped[str] = mapped_column(String(16), nullable=False)
+    source_reference: Mapped[str] = mapped_column(String(500), nullable=False)
+    source_version: Mapped[str] = mapped_column(String(100), nullable=False)
+    provenance: Mapped[str] = mapped_column(String(1000), nullable=False)
+    rights_note: Mapped[str] = mapped_column(String(500), nullable=False)
+    review_state: Mapped[str] = mapped_column(String(12), default="declared")
+    audience: Mapped[str] = mapped_column(String(12), default="private")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["contribution_id", "owner_id", "requester_id"],
+            [
+                "proof_contributions.id",
+                "proof_contributions.owner_id",
+                "proof_contributions.requester_id",
+            ],
+        ),
+        CheckConstraint("origin IN ('self','experiment','external')"),
+        CheckConstraint("review_state = 'declared'"),
+        CheckConstraint("audience = 'private'"),
+        CheckConstraint("proof_version > 1"),
+        Index("ix_proof_evidence_version", "contribution_id", "proof_version"),
+    )
+
+
+class ProofAttestation(Base):
+    """Actor-bound attestation of a specific contribution version."""
+
+    __tablename__ = "proof_attestations"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    contribution_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    requester_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    actor_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    proof_version: Mapped[int] = mapped_column(nullable=False)
+    decision: Mapped[str] = mapped_column(String(12), nullable=False)
+    note: Mapped[str] = mapped_column(String(500), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["contribution_id", "owner_id", "requester_id"],
+            [
+                "proof_contributions.id",
+                "proof_contributions.owner_id",
+                "proof_contributions.requester_id",
+            ],
+        ),
+        UniqueConstraint(
+            "contribution_id", "proof_version", "actor_id",
+            name="uq_proof_attestation_actor_version",
+        ),
+        CheckConstraint("decision IN ('confirm','dispute')"),
+        CheckConstraint("proof_version >= 1"),
+        Index("ix_proof_attestations_version", "contribution_id", "proof_version"),
+    )
