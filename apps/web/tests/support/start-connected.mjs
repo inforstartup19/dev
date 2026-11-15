@@ -263,6 +263,28 @@ try {
     { cwd: apiRoot, env: common, stdio: "inherit" },
   );
   children.push(api);
+  // Playwright waits for the web login page. Without this barrier, Next.js can
+  // accept the first authenticated Campus request before the API has started,
+  // leaving the initial profile request failed and the first-space button disabled.
+  const deadline = Date.now() + 30000;
+  let apiReady = false;
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch("http://127.0.0.1:8100/readyz", {
+        signal: AbortSignal.timeout(1500),
+      });
+      if (response.ok) {
+        apiReady = true;
+        break;
+      }
+    } catch {
+      // The API may still be binding its socket; retry within the deadline.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  if (!apiReady)
+    throw new Error("Connected E2E API did not become ready within 30 seconds");
+  console.info("connected-e2e: api-ready");
   const web = spawn("npm", ["run", "start", "--", "--port", "3400"], {
     cwd: root,
     stdio: "inherit",
