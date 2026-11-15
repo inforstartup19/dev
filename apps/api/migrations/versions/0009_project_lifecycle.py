@@ -58,8 +58,50 @@ def upgrade():
         "project_lifecycle_events",
         ["owner_id", "draft_id"],
     )
+    op.create_table(
+        "project_suggestion_feedback",
+        sa.Column("id", sa.String(36), primary_key=True),
+        sa.Column("draft_id", sa.String(36), nullable=False),
+        sa.Column("owner_id", sa.String(36), nullable=False),
+        sa.Column("code", sa.String(64), nullable=False),
+        sa.Column("choice", sa.String(12), nullable=False),
+        sa.Column("consent_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.ForeignKeyConstraint(
+            ["draft_id", "owner_id"], ["idea_drafts.id", "idea_drafts.owner_id"]
+        ),
+        sa.CheckConstraint("choice IN ('dismiss', 'restore')"),
+    )
+    op.create_index(
+        "ix_feedback_owner_draft",
+        "project_suggestion_feedback",
+        ["owner_id", "draft_id"],
+    )
     if op.get_bind().dialect.name == "postgresql":
         actor = "NULLIF(current_setting('app.actor_id', true), '')"
+        op.execute(sa.text("ALTER TABLE project_suggestion_feedback ENABLE ROW LEVEL SECURITY"))
+        op.execute(sa.text("ALTER TABLE project_suggestion_feedback FORCE ROW LEVEL SECURITY"))
+        op.execute(
+            sa.text(
+                "CREATE POLICY feedback_select ON project_suggestion_feedback "
+                f"FOR SELECT USING (owner_id = {actor})"
+            )
+        )
+        op.execute(
+            sa.text(
+                "CREATE POLICY feedback_insert ON project_suggestion_feedback "
+                f"FOR INSERT WITH CHECK (owner_id = {actor})"
+            )
+        )
+        op.execute(
+            sa.text(
+                """DO $ BEGIN
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'incfs_api') THEN
+                    GRANT SELECT, INSERT ON project_suggestion_feedback TO incfs_api;
+                END IF;
+                END $"""
+            )
+        )
         op.execute(sa.text("ALTER TABLE project_lifecycle_events ENABLE ROW LEVEL SECURITY"))
         op.execute(sa.text("ALTER TABLE project_lifecycle_events FORCE ROW LEVEL SECURITY"))
         op.execute(
@@ -86,6 +128,8 @@ def upgrade():
 
 
 def downgrade():
+    op.drop_index("ix_feedback_owner_draft", table_name="project_suggestion_feedback")
+    op.drop_table("project_suggestion_feedback")
     op.drop_index("ix_lifecycle_events_owner_draft", table_name="project_lifecycle_events")
     op.drop_table("project_lifecycle_events")
     with op.batch_alter_table("idea_drafts") as batch:
