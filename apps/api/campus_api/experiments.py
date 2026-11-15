@@ -92,7 +92,6 @@ def owned_draft(db, draft_id, actor):
     return item
 
 
-
 def require_active(db, draft_id, actor):
     """Serialize project writes with operational transitions on PostgreSQL."""
     draft = db.scalar(
@@ -105,6 +104,7 @@ def require_active(db, draft_id, actor):
     if draft.lifecycle_state != "active":
         raise HTTPException(409, "Project is paused or closed; resume/reopen explicitly")
     return draft
+
 
 def owned_experiment(db, draft_id, experiment_id, actor):
     item = db.scalar(
