@@ -348,6 +348,7 @@ class ProjectDecision(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
     draft_id: Mapped[str] = mapped_column(String(36))
     experiment_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    result_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     owner_id: Mapped[str] = mapped_column(String(36))
     choice: Mapped[str] = mapped_column(String(24))
     rationale: Mapped[str] = mapped_column(String(3000))
@@ -357,6 +358,10 @@ class ProjectDecision(Base):
         ForeignKeyConstraint(
             ["experiment_id", "owner_id"],
             ["project_experiments.id", "project_experiments.owner_id"],
+        ),
+        ForeignKeyConstraint(
+            ["result_id", "owner_id"],
+            ["experiment_results.id", "experiment_results.owner_id"],
         ),
         CheckConstraint(
             "choice IN ('continue', 'reformulate', 'request_help', 'pause', 'close')",
