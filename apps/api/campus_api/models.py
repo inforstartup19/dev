@@ -583,3 +583,93 @@ class ConnectEvent(Base):
         UniqueConstraint("request_id", "version", name="uq_connect_event_version"),
         Index("ix_connect_events_request", "request_id", "version"),
     )
+
+
+class CollaborationAgreement(Base):
+    """Bilateral negotiation; does not grant project access or legal signature."""
+
+    __tablename__ = "collaboration_agreements"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    request_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    requester_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    current_version: Mapped[int] = mapped_column(default=1)
+    status: Mapped[str] = mapped_column(String(12), default="active")
+    cancelled_by: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
+    cancelled_reason: Mapped[str] = mapped_column(String(500), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["request_id", "owner_id", "requester_id"],
+            [
+                "connect_requests.id", "connect_requests.owner_id",
+                "connect_requests.requester_id",
+            ],
+        ),
+        UniqueConstraint("request_id", name="uq_agreement_request"),
+        UniqueConstraint(
+            "id", "owner_id", "requester_id", name="uq_agreement_participants"
+        ),
+        CheckConstraint("current_version >= 1"),
+        CheckConstraint("status IN ('active', 'cancelled')"),
+        Index("ix_agreements_owner", "owner_id", "status"),
+        Index("ix_agreements_requester", "requester_id", "status"),
+    )
+
+
+class AgreementRevision(Base):
+    """Append-only version of voluntarily declared terms."""
+
+    __tablename__ = "agreement_revisions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    agreement_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    requester_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    version: Mapped[int] = mapped_column(nullable=False)
+    actor_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    terms: Mapped[dict] = mapped_column(JSON, nullable=False)
+    terms_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["agreement_id", "owner_id", "requester_id"],
+            [
+                "collaboration_agreements.id", "collaboration_agreements.owner_id",
+                "collaboration_agreements.requester_id",
+            ],
+        ),
+        UniqueConstraint("agreement_id", "version", name="uq_agreement_revision"),
+        CheckConstraint("version >= 1"),
+    )
+
+
+class AgreementConfirmation(Base):
+    """One actor, one immutable hash, one agreed revision."""
+
+    __tablename__ = "agreement_confirmations"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    agreement_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    requester_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    version: Mapped[int] = mapped_column(nullable=False)
+    actor_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    terms_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["agreement_id", "owner_id", "requester_id"],
+            [
+                "collaboration_agreements.id", "collaboration_agreements.owner_id",
+                "collaboration_agreements.requester_id",
+            ],
+        ),
+        ForeignKeyConstraint(
+            ["agreement_id", "version"],
+            ["agreement_revisions.agreement_id", "agreement_revisions.version"],
+        ),
+        UniqueConstraint(
+            "agreement_id", "version", "actor_id", name="uq_agreement_confirmation"
+        ),
+        CheckConstraint("version >= 1"),
+    )
