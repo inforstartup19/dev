@@ -211,7 +211,9 @@ def test_expired_contact_cannot_be_accepted_but_can_be_declined(api):
 
     _, _, _, need = published_bf(api)
     interest = api.request(
-        "POST", f"/shared-needs/{need}/connect-requests", "bob",
+        "POST",
+        f"/shared-needs/{need}/connect-requests",
+        "bob",
         json={"note": "Vull participar amb consentiment"},
     )
     assert interest.status_code == 201, interest.text
@@ -226,12 +228,16 @@ def test_expired_contact_cannot_be_accepted_but_can_be_declined(api):
     assert detail.status_code == 200
     assert detail.json()["acceptance_expired"] is True
     denied = api.request(
-        "POST", f"/connect-requests/{rid}/transitions", "alice",
+        "POST",
+        f"/connect-requests/{rid}/transitions",
+        "alice",
         json={"expected_version": 0, "decision": "accepted", "confirm": True},
     )
     assert denied.status_code == 410, denied.text
     declined = api.request(
-        "POST", f"/connect-requests/{rid}/transitions", "alice",
+        "POST",
+        f"/connect-requests/{rid}/transitions",
+        "alice",
         json={"expected_version": 0, "decision": "declined", "confirm": True},
     )
     assert declined.status_code == 200, declined.text
