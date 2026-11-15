@@ -1,6 +1,6 @@
 # Gate #27 — auditoria de revisions Alembic abans d'integrar a `dev`
 
-**Estat: pendent de l'inventari read-only de les bases de dades existents.** Aquest document registra les comprovacions necessàries, però no afirma que s'hagin executat sobre Azure, PostgreSQL real ni cap entorn de producció.
+**Estat revisat (15/11/2026): l'usuari ha confirmat que no hi ha PostgreSQL a Azure. L'auditoria SQL de la base Azure DEV no és aplicable actualment i queda ajornada fins al primer desplegament controlat.** Aquest document registra les comprovacions necessàries, però no afirma que s'hagin executat sobre Azure, PostgreSQL real ni cap entorn de producció.
 
 ## 1. Cadena de codi que ha passat CI (en branques apilades)
 
@@ -66,17 +66,19 @@ Comprovar també si existeixen altres esquemes, bases o repositoris de dades ass
 | `0006` / `0007` | Verificar que correspon a les revisions i al DDL esperats; no assumir-ne equivalència pel número |
 | Sense accés read-only o estat desconegut | **NO GO** per a migracions en entorns reals |
 
-## 4. Condicions del merge de #17 → #47 → #48
+## 4. Condicions per integrar el codi Git a `dev` (sense desplegament)
 
-- [ ] Confirmar entorns que contenen PostgreSQL i responsables d'operació.
-- [ ] Registrar lectura read-only de `alembic_version`, taules i RLS per entorn, sense dades sensibles.
-- [ ] Resoldre qualsevol `0005` ambigu amb un pla de migració explícit, revisat i provat en una còpia aïllada.
+- [x] Confirmació del propietari: **no hi ha PostgreSQL a Azure**; no hi ha instància Azure DEV on consultar `alembic_version`.
+- [x] Auditoria SQL d'Azure ajornada fins a la provisió controlada d'una base nova (estratègia DEV → PREPROD → PROD).
+- [ ] Confirmar que no s'ha utilitzat **cap altra base persistent preexistent** com a destí d'aquest codi; si n'hi ha, auditar-la abans de migrar-la.
 - [x] Proves de codi de la cadena apilada correctes en GitHub Actions (HEAD #48 `64420a1`).
 - [ ] Revisió final del diff i permisos, incloses restriccions de l'API i casuística de revocació.
 - [ ] Validar l'últim SHA de cada PR després d'actualitzacions de base i repetir CI si canvia.
 - [ ] Aprovar el merge individualment en ordre (PR #17, després #47, després #48), revisant cada vegada la base i l'abast de cada PR.
 - [ ] Provar el recorregut de la web Next.js a l'entorn previst. **CI apilada verda no vol dir UI de Projecte Viu completa.**
 
-**Sense aquests passos no s'ha d'executar cap `upgrade`, `stamp` o `apply` contra un entorn amb dades existents.** La lectura de l'estat real de la base requereix accés autoritzat a l'entorn; el connector GitHub no aporta aquest estat.
+**Integrar codi a Git `dev` no és desplegar ni migrar Azure.** Es pot validar i fusionar el codi apilat amb gates de CI, revisió i seguretat, sense inventar una base Azure. Cap `upgrade`, `stamp` o `apply` s'executarà fins a l'aprovació del desplegament real. La lectura de l'estat real de la base requereix accés autoritzat a l'entorn; el connector GitHub no aporta aquest estat.
+
+Estratègia de desplegament futur: [DEV → PREPROD → PROD](../architecture/environments-release-strategy.md).
 
 Referències: [Issue #27](https://github.com/inforstartup19/dev/issues/27), [PR #17](https://github.com/inforstartup19/dev/pull/17), [PR #47](https://github.com/inforstartup19/dev/pull/47), [PR #48](https://github.com/inforstartup19/dev/pull/48).
