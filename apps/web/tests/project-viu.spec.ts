@@ -35,7 +35,7 @@ test("BF Projecte Viu persists evidence and decisions without exposing another a
     await owner.getByLabel("Criteri de contrast").fill("Registrar objeccions.");
     await owner.getByRole("button", { name: "Desar prova privada" }).click();
     await expect(owner.getByText("Prova desada de manera privada al backend.")).toBeVisible();
-    await owner.getByLabel("Observacions").fill("Resposta de prova inconcloent.");
+    await owner.getByLabel("Observacions", { exact: true }).fill("Resposta de prova inconcloent.");
     await owner.getByLabel("Referència d'evidència (opcional)").fill("BF-UX-EVIDENCE-001");
     await owner.getByRole("button", { name: "Registrar resultat" }).click();
     await expect(owner.getByText(/BF-UX-EVIDENCE-001/)).toBeVisible();
@@ -87,10 +87,6 @@ test("BF lifecycle pauses execution, preserves evidence and can resume with owne
     )).json();
     const id = records.find((r: { name: string }) => r.name === "BF — Lifecycle Pilot").id;
     const root = `http://localhost:3400/api/private/idea-drafts/${id}`;
-    for (const suffix of ["/lifecycle", "/lifecycle/events", "/assistant/guidance", "/assistant/feedback"]) {
-      const probe = await owner.request.get(root + suffix);
-      console.log("BF E2E probe", suffix, probe.status(), (await probe.text()).slice(0, 450));
-    }
     await expect(owner.getByTestId("lifecycle-state")).toContainText("Actiu");
 
     const panel = owner.getByTestId("project-lifecycle");
