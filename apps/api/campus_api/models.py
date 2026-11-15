@@ -302,7 +302,8 @@ class ExperimentResult(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
     __table_args__ = (
         ForeignKeyConstraint(
-            ["experiment_id", "owner_id"], ["project_experiments.id", "project_experiments.owner_id"]
+            ["experiment_id", "owner_id"],
+            ["project_experiments.id", "project_experiments.owner_id"],
         ),
         CheckConstraint(
             "outcome IN ('supportive', 'unsupported', 'inconclusive')",
