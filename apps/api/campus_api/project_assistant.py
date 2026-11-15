@@ -4,21 +4,25 @@ Only owner-scoped, persisted records feed deterministic recommendations.
 No LLM, untrusted external retrieval, visibility changes or resource activation.
 """
 
+from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 
 from campus_api.auth import DB, Actor, require_private_context
 from campus_api.experiments import owned_draft
+from campus_api.schemas import Input, Output
 from campus_api.models import (
     ExperimentResult,
     ProjectDecision,
     ProjectExperiment,
     ProjectLifecycleEvent,
     ProjectResourceIntent,
+    ProjectSuggestionFeedback,
+    now,
 )
 
 router = APIRouter(
@@ -190,3 +194,68 @@ def guidance(draft_id: UUID, db: DB, actor: Actor):
         ],
         suggestions=suggestions,
     )
+
+
+ALLOWED_FEEDBACK = {
+    "review-active-experiment",
+    "reformulate-inconclusive",
+    "person-after-help",
+    "resource-planning",
+    "optional-funding",
+    "review-lifecycle",
+}
+
+
+class SuggestionFeedbackIn(Input):
+    code: str
+    choice: Literal["dismiss", "restore"]
+    consent: bool
+
+
+class SuggestionFeedbackOut(Output):
+    id: str
+    code: str
+    choice: Literal["dismiss", "restore"]
+    consent_at: datetime
+    created_at: datetime
+
+
+@router.get("/assistant/feedback", response_model=list[SuggestionFeedbackOut])
+def list_suggestion_feedback(draft_id: UUID, db: DB, actor: Actor):
+    owned_draft(db, draft_id, actor)
+    records = db.scalars(
+        select(ProjectSuggestionFeedback)
+        .where(
+            ProjectSuggestionFeedback.draft_id == str(draft_id),
+            ProjectSuggestionFeedback.owner_id == actor.id,
+        )
+        .order_by(
+            ProjectSuggestionFeedback.created_at.desc(),
+            ProjectSuggestionFeedback.id.desc(),
+        )
+    ).all()
+    latest = {}
+    for record in records:
+        if record.code not in latest:
+            latest[record.code] = record
+    return list(latest.values())
+
+
+@router.post(
+    "/assistant/feedback", response_model=SuggestionFeedbackOut, status_code=201
+)
+def save_suggestion_feedback(draft_id: UUID, payload: SuggestionFeedbackIn, db: DB, actor: Actor):
+    owned_draft(db, draft_id, actor)
+    if not payload.consent or payload.code not in ALLOWED_FEEDBACK:
+        raise HTTPException(422, "Explicit consent and known suggestion code required")
+    feedback = ProjectSuggestionFeedback(
+        draft_id=str(draft_id),
+        owner_id=actor.id,
+        code=payload.code,
+        choice=payload.choice,
+        consent_at=now(),
+    )
+    db.add(feedback)
+    db.commit()
+    db.refresh(feedback)
+    return feedback
