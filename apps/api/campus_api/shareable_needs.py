@@ -166,8 +166,7 @@ def public_need(need_id: UUID, db: DB, actor: Actor):
     item = db.scalar(
         select(ShareableNeed).where(
             ShareableNeed.id == str(need_id),
-            ShareableNeed.state == "published",
-            ShareableNeed.audience == "authenticated",
+            approved_viewer(actor),
         )
     )
     if item is None:
