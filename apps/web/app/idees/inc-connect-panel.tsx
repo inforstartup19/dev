@@ -8,6 +8,7 @@ type Need = { id: string; title: string; description: string; audience: "selecte
 type Contact = {
   id: string; need_id: string; role: "owner" | "requester";
   note: string; version: number;
+  acceptance_expired: boolean; accept_expires_at: string;
   status: "pending" | "accepted" | "declined" | "withdrawn";
 };
 type Terms = {
@@ -220,8 +221,11 @@ export function IncConnectPanel() {
               <strong>{item.role === "owner" ? "Interès rebut" : "Interès enviat"}</strong>
               <p>{item.note}</p>
               <small>{contactState[item.status]} · v{item.version}</small>
+              {item.status === "pending" && item.acceptance_expired &&
+                <small>La petició ha superat els 7 dies: no es pot acceptar, però es pot rebutjar o retirar.</small>}
               {item.status === "pending" && item.role === "owner" && <>
-                <button type="button" disabled={busy} onClick={() => decide(item, "accepted")}>Acceptar interès</button>
+                <button type="button" disabled={busy || item.acceptance_expired}
+                  onClick={() => decide(item, "accepted")}>Acceptar interès</button>
                 <button type="button" disabled={busy} onClick={() => decide(item, "declined")}>Rebutjar interès</button>
               </>}
               {item.status === "pending" && item.role === "requester" &&
