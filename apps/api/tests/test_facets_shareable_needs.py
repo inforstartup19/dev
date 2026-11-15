@@ -72,7 +72,7 @@ def test_bf_explicit_projection_and_revocation(api):
         "expected_version": 0, "confirm": False, "reason": "Sense confirmació",
     }).status_code == 422
     published = api.request("POST", publish_path, "alice", json={
-        "expected_version": 0, "confirm": True,
+        "expected_version": 0, "confirm": True, "audience": "authenticated",
         "reason": "Compartir només la necessitat autoritzada",
     })
     assert published.status_code == 200, published.text
@@ -169,7 +169,8 @@ def test_postgres_direct_query_does_not_bypass_need_rls(protected_api):
         assert db.execute(text("SELECT id FROM shareable_needs")).all() == []
         assert db.execute(text("SELECT id FROM idea_drafts")).all() == []
     published = api.request("POST", f"{base}/{need_id}/publish", "alice", json={
-        "expected_version": 0, "confirm": True, "reason": "Validació explícita",
+        "expected_version": 0, "confirm": True, "audience": "authenticated",
+        "reason": "Validació explícita",
     })
     assert published.status_code == 200, published.text
     with Session(limited) as db:
@@ -187,3 +188,56 @@ def test_postgres_direct_query_does_not_bypass_need_rls(protected_api):
     with Session(limited) as db:
         bind_actor(db, bob)
         assert db.execute(text("SELECT id FROM shareable_needs")).all() == []
+
+
+def test_selected_audience_b_visible_c_denied_and_revoked(api):
+    alice = api.request("GET", "/me", "alice").json()["id"]
+    bob = api.request("GET", "/me", "bob").json()["id"]
+    api.request("GET", "/me", "charlie")
+    assert alice != bob
+    bf = api.request("POST", "/idea-drafts", "alice", json={
+        "question": "BF: taller privat?", "intention": "Cost intern secret",
+    })
+    assert bf.status_code == 201
+    root = f"/idea-drafts/{bf.json()['id']}/shared-needs"
+    item = api.request("POST", root, "alice", json={
+        "title": "Peça exclusiva", "description": "Busquem un taller de confecció",
+    }).json()
+    nid = item["id"]
+    path = f"{root}/{nid}"
+    before = api.request("POST", path + "/publish", "alice", json={
+        "expected_version": 0, "confirm": True, "reason": "Sense cap destinatari",
+        "audience": "selected",
+    })
+    assert before.status_code == 422
+    grant = api.request("POST", path + "/viewers", "alice", json={
+        "viewer_id": bob, "confirm": True,
+    })
+    assert grant.status_code == 201, grant.text
+    assert api.request("GET", path + "/viewers", "alice").json() == [{"viewer_id": bob}]
+    assert api.request("GET", path + "/viewers", "bob").status_code == 404
+    assert api.request("POST", path + "/viewers", "charlie", json={
+        "viewer_id": bob, "confirm": True,
+    }).status_code == 404
+    published = api.request("POST", path + "/publish", "alice", json={
+        "expected_version": 0, "confirm": True,
+        "reason": "Autorització específica", "audience": "selected",
+    })
+    assert published.status_code == 200, published.text
+    assert published.json()["audience"] == "selected"
+    assert [n["id"] for n in api.request("GET", "/shared-needs", "bob").json()] == [nid]
+    assert api.request("GET", f"/shared-needs/{nid}", "bob").status_code == 200
+    assert api.request("GET", "/shared-needs", "charlie").json() == []
+    assert api.request("GET", f"/shared-needs/{nid}", "charlie").status_code == 404
+    assert api.request("GET", f"/idea-drafts/{bf.json()['id']}", "bob").status_code == 404
+    assert api.request("GET", f"/idea-drafts/{bf.json()['id']}", "charlie").status_code == 404
+    assert api.request("POST", path + "/viewers", "alice", json={
+        "viewer_id": bob, "confirm": True,
+    }).status_code == 409
+    revoked = api.request("POST", path + "/revoke", "alice", json={
+        "expected_version": 1, "confirm": True, "reason": "Acabada",
+    })
+    assert revoked.status_code == 200, revoked.text
+    assert api.request("GET", "/shared-needs", "bob").json() == []
+
+
