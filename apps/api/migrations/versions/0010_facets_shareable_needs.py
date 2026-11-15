@@ -92,7 +92,8 @@ def upgrade():
             op.execute(sa.text(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY"))
         op.execute(
             sa.text(
-                f"CREATE POLICY facets_select ON identity_facets FOR SELECT USING (user_id = {actor})"
+                f"CREATE POLICY facets_select ON identity_facets "
+                f"FOR SELECT USING (user_id = {actor})"
             )
         )
         op.execute(
@@ -136,7 +137,8 @@ def upgrade():
         )
         op.execute(
             sa.text(
-                f"CREATE POLICY needs_update ON shareable_needs FOR UPDATE USING (owner_id = {actor}) "
+                f"CREATE POLICY needs_update ON shareable_needs "
+                f"FOR UPDATE USING (owner_id = {actor}) "
                 f"WITH CHECK (owner_id = {actor})"
             )
         )
