@@ -290,7 +290,9 @@ def test_expired_agreement_cannot_be_revised_or_confirmed(api):
 
     request_id, _, _, _, _, _ = accepted_bf_contact(api)
     response = api.request(
-        "POST", "/agreements", "alice",
+        "POST",
+        "/agreements",
+        "alice",
         json={"request_id": request_id, "terms": TERMS},
     )
     assert response.status_code == 201, response.text
@@ -305,20 +307,27 @@ def test_expired_agreement_cannot_be_revised_or_confirmed(api):
     assert detail.status_code == 200
     assert detail.json()["acceptance_expired"] is True
     confirmation = api.request(
-        "POST", f"/agreements/{aid}/confirmations", "bob",
+        "POST",
+        f"/agreements/{aid}/confirmations",
+        "bob",
         json={
-            "expected_version": 1, "expected_hash": item["terms_sha256"],
+            "expected_version": 1,
+            "expected_hash": item["terms_sha256"],
             "confirm": True,
         },
     )
     assert confirmation.status_code == 410
     revision = api.request(
-        "POST", f"/agreements/{aid}/revisions", "alice",
+        "POST",
+        f"/agreements/{aid}/revisions",
+        "alice",
         json={"expected_version": 1, "terms": TERMS},
     )
     assert revision.status_code == 410
     cancelled = api.request(
-        "POST", f"/agreements/{aid}/cancel", "alice",
+        "POST",
+        f"/agreements/{aid}/cancel",
+        "alice",
         json={"expected_version": 1, "confirm": True, "reason": "Negociació caducada"},
     )
     assert cancelled.status_code == 200, cancelled.text
