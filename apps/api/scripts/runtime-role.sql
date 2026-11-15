@@ -16,7 +16,8 @@ GRANT SELECT, INSERT, UPDATE ON project_experiments TO incfs_api;
 GRANT SELECT, INSERT ON experiment_results, experiment_evidence TO incfs_api;
 GRANT SELECT, INSERT ON project_decisions, project_resource_intents TO incfs_api;
 GRANT SELECT, INSERT, UPDATE ON identity_facets, shareable_needs TO incfs_api;
-GRANT SELECT, INSERT ON need_publication_events, project_lifecycle_events,
+GRANT SELECT, INSERT ON need_publication_events, need_viewer_grants,
+  project_lifecycle_events,
   project_suggestion_feedback TO incfs_api;
 GRANT incfs_documents_api TO incfs_api WITH INHERIT TRUE;
 COMMIT;
