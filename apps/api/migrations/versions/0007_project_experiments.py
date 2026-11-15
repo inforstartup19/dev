@@ -44,7 +44,8 @@ def _rls(table):
 
 
 def upgrade():
-    op.create_unique_constraint("uq_idea_drafts_id_owner", "idea_drafts", ["id", "owner_id"])
+    with op.batch_alter_table("idea_drafts") as batch:
+        batch.create_unique_constraint("uq_idea_drafts_id_owner", ["id", "owner_id"])
     op.create_table(
         "project_experiments",
         sa.Column("id", sa.String(36), primary_key=True),
@@ -112,4 +113,5 @@ def downgrade():
     op.drop_table("experiment_results")
     op.drop_index("ix_experiments_owner_draft", table_name="project_experiments")
     op.drop_table("project_experiments")
-    op.drop_constraint("uq_idea_drafts_id_owner", "idea_drafts", type_="unique")
+    with op.batch_alter_table("idea_drafts") as batch:
+        batch.drop_constraint("uq_idea_drafts_id_owner", type_="unique")
