@@ -25,9 +25,7 @@ def upgrade():
             "ck_idea_drafts_lifecycle",
             "lifecycle_state IN ('active', 'paused', 'closed')",
         )
-        batch.create_check_constraint(
-            "ck_idea_drafts_lifecycle_version", "lifecycle_version >= 0"
-        )
+        batch.create_check_constraint("ck_idea_drafts_lifecycle_version", "lifecycle_version >= 0")
     op.create_table(
         "project_lifecycle_events",
         sa.Column("id", sa.String(36), primary_key=True),
