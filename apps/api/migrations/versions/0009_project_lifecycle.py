@@ -104,11 +104,11 @@ def upgrade():
         )
         op.execute(
             sa.text(
-                """DO $ BEGIN
+                """DO $$ BEGIN
                 IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'incfs_api') THEN
                     GRANT SELECT, INSERT ON project_suggestion_feedback TO incfs_api;
                 END IF;
-                END $"""
+                END $$"""
             )
         )
         op.execute(sa.text("ALTER TABLE project_lifecycle_events ENABLE ROW LEVEL SECURITY"))
