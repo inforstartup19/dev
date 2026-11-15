@@ -200,7 +200,11 @@ def activate_experiment(draft_id: UUID, experiment_id: UUID, db: DB, actor: Acto
     if experiment.status != "draft":
         raise HTTPException(409, "Only draft experiments can be activated")
     if not all(
-        (experiment.question.strip(), experiment.method.strip(), experiment.success_criterion.strip())
+        (
+            experiment.question.strip(),
+            experiment.method.strip(),
+            experiment.success_criterion.strip(),
+        )
     ):
         raise HTTPException(422, "Question, method and success criterion are required to activate")
     experiment.status = "active"
