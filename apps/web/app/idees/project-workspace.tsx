@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { PrivateError, privateJson } from "../../lib/private-api";
 import styles from "./project-workspace.module.css";
 import { ProjectLifecycle } from "./project-lifecycle";
+import { ProjectNeeds } from "./project-needs";
 
 type Experiment = {
   id: string;
@@ -383,6 +384,7 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
         </div>
       </div>}
       {!loading && <ProjectLifecycle draftId={draftId} onChanged={refresh} />}
+      {!loading && <ProjectNeeds draftId={draftId} active={writable} />}
       {!loading && guidance && <section className={styles.panel} aria-label="Inc AI Project Assistant" data-testid="project-guidance">
         <h3>Inc AI · Assistent de projecte</h3>
         <p>Orientacions explicables a partir de proves i decisions privades desades. No executa accions.</p>

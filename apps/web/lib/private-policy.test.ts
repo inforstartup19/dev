@@ -63,3 +63,28 @@ test("lifecycle and Inc AI proxy routes remain tightly allowlisted", () => {
   assert.equal(privateRoute("POST", ["idea-drafts", id, "assistant", "guidance"]), null);
   assert.equal(privateRoute("DELETE", ["idea-drafts", id, "lifecycle"]), null);
 });
+
+test("facets and shareable needs remain explicitly allowlisted", () => {
+  for (const method of ["GET", "POST"])
+    assert.equal(privateRoute(method, ["me", "facets"]), "json");
+  assert.equal(privateRoute("GET", ["shared-needs"]), "json");
+  assert.equal(privateRoute("GET", ["shared-needs", id]), "json");
+  assert.equal(privateRoute("POST", ["shared-needs"]), null);
+  for (const method of ["GET", "POST"])
+    assert.equal(privateRoute(method, ["idea-drafts", id, "shared-needs"]), "json");
+  assert.equal(privateRoute("GET", ["idea-drafts", id, "shared-needs", id, "viewers"]), "json");
+  assert.equal(privateRoute("POST", ["idea-drafts", id, "shared-needs", id, "viewers"]), "json");
+  assert.equal(privateRoute("GET", ["idea-drafts", id, "shared-needs", id, "events"]), "json");
+  for (const action of ["publish", "revoke"]) {
+    assert.equal(privateRoute("POST", ["idea-drafts", id, "shared-needs", id, action]), "json");
+    assert.equal(privateRoute("GET", ["idea-drafts", id, "shared-needs", id, action]), null);
+  }
+  for (const path of [
+    ["idea-drafts", id, "shared-needs", id, "edit"],
+    ["idea-drafts", id, "shared-needs", id, "owner"],
+    ["me", "facets", "admin"],
+  ]) {
+    assert.equal(privateRoute("GET", path), null);
+    assert.equal(privateRoute("POST", path), null);
+  }
+});

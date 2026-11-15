@@ -26,6 +26,28 @@ export function privateRoute(
       (joined === "idea-drafts" || new RegExp("^idea-drafts/" + id + "$").test(joined)))
     return "json";
 
+  // #19–#20: no generic forwarding; only identity and independent need projections.
+  if ((method === "GET" || method === "POST") && joined === "me/facets")
+    return "json";
+  if (method === "GET" && (joined === "shared-needs" ||
+      new RegExp("^shared-needs/" + id + "$").test(joined)))
+    return "json";
+  if ((method === "GET" || method === "POST") &&
+      new RegExp("^idea-drafts/" + id + "/shared-needs$").test(joined))
+    return "json";
+  if (method === "GET" &&
+      new RegExp("^idea-drafts/" + id + "/shared-needs/" + id + "/viewers$").test(joined))
+    return "json";
+  if (method === "POST" &&
+      new RegExp("^idea-drafts/" + id + "/shared-needs/" + id + "/viewers$").test(joined))
+    return "json";
+  if (method === "GET" &&
+      new RegExp("^idea-drafts/" + id + "/shared-needs/" + id + "/events$").test(joined))
+    return "json";
+  if (method === "POST" &&
+      new RegExp("^idea-drafts/" + id + "/shared-needs/" + id + "/(?:publish|revoke)$").test(joined))
+    return "json";
+
   // #52: explicit allowlist, never arbitrary private proxy forwarding.
   if (
     method === "GET" &&

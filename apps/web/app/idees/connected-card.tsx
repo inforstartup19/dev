@@ -6,6 +6,7 @@ import { PrivateError, privateJson } from "../../lib/private-api";
 import { pendingIdeaFields, validateIdea, type IdeaInput } from "../../lib/idea-drafts";
 import styles from "./short-card.module.css";
 import { ProjectWorkspace } from "./project-workspace";
+import { IdentityFacets } from "./identity-facets";
 
 type ServerDraft = {
   id: string;
@@ -161,6 +162,7 @@ export function ConnectedIdeaDrafts() {
           </div>
         </form>
       </section>
+      {!loadFailed && !loading && <IdentityFacets />}
       {selectedId && !loadFailed && <ProjectWorkspace key={selectedId} draftId={selectedId} />}
     </main>
   );
