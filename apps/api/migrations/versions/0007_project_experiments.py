@@ -67,7 +67,9 @@ def upgrade():
             ["reformulates_id", "owner_id"],
             ["project_experiments.id", "project_experiments.owner_id"],
         ),
-        sa.CheckConstraint("status IN ('draft', 'active', 'completed')", name="ck_experiment_status"),
+        sa.CheckConstraint(
+            "status IN ('draft', 'active', 'completed')", name="ck_experiment_status"
+        ),
         sa.CheckConstraint(
             "status = 'draft' OR (length(trim(question)) > 0 "
             "AND length(trim(method)) > 0 AND length(trim(success_criterion)) > 0)",
