@@ -41,7 +41,7 @@ test("BF Projecte Viu persists evidence and decisions without exposing another a
     await expect(owner.getByText(/BF-UX-EVIDENCE-001/)).toBeVisible();
 
     await owner.getByRole("button", { name: "Decidir com continuar" }).click();
-    await owner.getByLabel("Decisió", { exact: true }).selectOption("reformulate");
+    await owner.locator("#project-decision-choice").selectOption("reformulate");
     await owner.getByLabel("Motiu i proper pas").fill("Ampliar la mostra sintètica.");
     await owner.getByRole("button", { name: "Registrar decisió humana" }).click();
     await expect(owner.getByText("Ampliar la mostra sintètica.")).toBeVisible();
