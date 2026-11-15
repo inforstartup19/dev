@@ -161,11 +161,15 @@ def upgrade():
         ).scalar()
         if role_exists:
             op.execute(
-                sa.text("GRANT SELECT, INSERT, UPDATE ON identity_facets, shareable_needs TO incfs_api")
+                sa.text(
+                    "GRANT SELECT, INSERT, UPDATE ON identity_facets, "
+                    "shareable_needs TO incfs_api"
+                )
             )
             op.execute(
                 sa.text(
-                    "GRANT SELECT, INSERT ON need_publication_events, need_viewer_grants TO incfs_api"
+                    "GRANT SELECT, INSERT ON need_publication_events, "
+                    "need_viewer_grants TO incfs_api"
                 )
             )
 
