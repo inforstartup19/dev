@@ -1,7 +1,6 @@
 """BF A/B/C boundary: published need != project access, with revocation and audit."""
 from uuid import uuid4
 
-import pytest
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
