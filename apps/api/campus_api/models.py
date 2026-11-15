@@ -478,7 +478,7 @@ class ShareableNeed(Base):
     __table_args__ = (
         ForeignKeyConstraint(["draft_id", "owner_id"], ["idea_drafts.id", "idea_drafts.owner_id"]),
         CheckConstraint("state IN ('draft','published','revoked')"),
-        CheckConstraint("audience IN ('private','authenticated')"),
+        CheckConstraint("audience IN ('private','authenticated','selected')"),
         CheckConstraint("version >= 0"),
         CheckConstraint("length(trim(title)) > 0"),
         CheckConstraint("length(trim(description)) > 0"),
@@ -506,4 +506,21 @@ class NeedPublicationEvent(Base):
         ),
         UniqueConstraint("need_id", "version"),
         Index("ix_need_events_owner", "owner_id", "need_id"),
+    )
+
+
+class NeedViewerGrant(Base):
+    """An explicit per-recipient grant, never a project membership."""
+    __tablename__ = "need_viewer_grants"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    need_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    viewer_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["need_id", "owner_id"], ["shareable_needs.id", "shareable_needs.owner_id"]
+        ),
+        UniqueConstraint("need_id", "viewer_id", name="uq_need_viewer"),
+        Index("ix_need_viewers_viewer", "viewer_id", "need_id"),
     )
