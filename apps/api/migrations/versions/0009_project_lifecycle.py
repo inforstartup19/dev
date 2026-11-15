@@ -142,9 +142,7 @@ def downgrade():
     op.drop_index("ix_lifecycle_events_owner_draft", table_name="project_lifecycle_events")
     op.drop_table("project_lifecycle_events")
     if op.get_bind().dialect.name == "postgresql":
-        op.drop_constraint(
-            "ck_idea_drafts_lifecycle_version", "idea_drafts", type_="check"
-        )
+        op.drop_constraint("ck_idea_drafts_lifecycle_version", "idea_drafts", type_="check")
         op.drop_constraint("ck_idea_drafts_lifecycle", "idea_drafts", type_="check")
     op.drop_column("idea_drafts", "lifecycle_version")
     op.drop_column("idea_drafts", "lifecycle_state")
