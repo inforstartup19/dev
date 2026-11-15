@@ -417,9 +417,7 @@ class ProjectLifecycleEvent(Base):
     reviewed: Mapped[list[str]] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
     __table_args__ = (
-        ForeignKeyConstraint(
-            ["draft_id", "owner_id"], ["idea_drafts.id", "idea_drafts.owner_id"]
-        ),
+        ForeignKeyConstraint(["draft_id", "owner_id"], ["idea_drafts.id", "idea_drafts.owner_id"]),
         CheckConstraint("action IN ('pause', 'close', 'resume', 'reopen')"),
         CheckConstraint("previous_state IN ('active', 'paused', 'closed')"),
         CheckConstraint("next_state IN ('active', 'paused', 'closed')"),
