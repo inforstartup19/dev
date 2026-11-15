@@ -48,6 +48,26 @@ export function privateRoute(
       new RegExp("^idea-drafts/" + id + "/shared-needs/" + id + "/(?:publish|revoke)$").test(joined))
     return "json";
 
+  // #21–#22: exact authorization-sensitive Connect and Agreement routes.
+  if (method === "GET" && joined === "connect-requests") return "json";
+  if (method === "GET" &&
+      new RegExp("^connect-requests/" + id + "(?:/events)?$").test(joined))
+    return "json";
+  if (method === "POST" &&
+      new RegExp("^shared-needs/" + id + "/connect-requests$").test(joined))
+    return "json";
+  if (method === "POST" &&
+      new RegExp("^connect-requests/" + id + "/transitions$").test(joined))
+    return "json";
+  if ((method === "GET" || method === "POST") && joined === "agreements")
+    return "json";
+  if (method === "GET" &&
+      new RegExp("^agreements/" + id + "(?:/revisions)?$").test(joined))
+    return "json";
+  if (method === "POST" &&
+      new RegExp("^agreements/" + id + "/(?:revisions|confirmations|cancel)$").test(joined))
+    return "json";
+
   // #52: explicit allowlist, never arbitrary private proxy forwarding.
   if (
     method === "GET" &&
