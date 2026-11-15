@@ -99,7 +99,10 @@ def test_experiments_deny_unauthenticated_and_other_users(api):
         json={"outcome": "supportive", "observations": "Intent aliè"},
     ).status_code == 404
     evidence_path = f"{results_path}/{recorded['id']}/evidence"
-    assert api.request("POST", evidence_path, "bob", json={"reference": "prohibit"}).status_code == 404
+    assert (
+        api.request("POST", evidence_path, "bob", json={"reference": "prohibit"}).status_code
+        == 404
+    )
     other_draft = new_draft(api, "bob")
     wrong_parent = f"/idea-drafts/{other_draft}/experiments/{experiment}/results"
     assert api.request("GET", wrong_parent, "bob").status_code == 404
@@ -168,7 +171,6 @@ def test_postgres_experiment_rls_rejects_cross_owner_even_with_grants(api):
     bob = api.request("GET", "/me", "bob").json()["id"]
     engine = api.app.state.engine
     with engine.begin() as conn:
-        names = ("project_experiments", "experiment_results", "experiment_evidence")
         rows = conn.execute(
             text(
                 "SELECT relname, relrowsecurity, relforcerowsecurity "
