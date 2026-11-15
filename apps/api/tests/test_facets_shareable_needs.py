@@ -470,5 +470,3 @@ def test_selected_audience_b_visible_c_denied_and_revoked(api):
     )
     assert revoked.status_code == 200, revoked.text
     assert api.request("GET", "/shared-needs", "bob").json() == []
-
-
