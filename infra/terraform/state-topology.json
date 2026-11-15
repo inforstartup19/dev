@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "planning_only": true,
+  "scopes": [
+    {
+      "name": "platform-dev",
+      "environment": "dev",
+      "state_key": "dev/terraform.tfstate",
+      "configured_in_code": true,
+      "deployment_authorized": false,
+      "owner": "platform"
+    },
+    {
+      "name": "campus-control-plane",
+      "environment": "dev",
+      "state_key": "campus/control-plane/dev/terraform.tfstate",
+      "configured_in_code": false,
+      "deployment_authorized": false,
+      "owner": "campus-platform"
+    },
+    {
+      "name": "campus-labs",
+      "environment": "dev",
+      "state_key": "campus/labs/dev/terraform.tfstate",
+      "configured_in_code": false,
+      "deployment_authorized": false,
+      "owner": "campus-platform"
+    }
+  ]
+}
