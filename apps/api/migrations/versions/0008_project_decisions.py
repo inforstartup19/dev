@@ -42,6 +42,7 @@ def upgrade():
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("draft_id", sa.String(36), nullable=False),
         sa.Column("experiment_id", sa.String(36), nullable=True),
+        sa.Column("result_id", sa.String(36), nullable=True),
         sa.Column("owner_id", sa.String(36), nullable=False),
         sa.Column("choice", sa.String(24), nullable=False),
         sa.Column("rationale", sa.String(3000), nullable=False),
@@ -52,6 +53,10 @@ def upgrade():
         sa.ForeignKeyConstraint(
             ["experiment_id", "owner_id"],
             ["project_experiments.id", "project_experiments.owner_id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["result_id", "owner_id"],
+            ["experiment_results.id", "experiment_results.owner_id"],
         ),
         sa.CheckConstraint(
             "choice IN ('continue', 'reformulate', 'request_help', 'pause', 'close')",
