@@ -6,7 +6,7 @@ Identitat administrada assignada per l’usuari `id-incforstartup-github-dev`, a
 
 - Emissor: `https://token.actions.githubusercontent.com`.
 - Audiència: `api://AzureADTokenExchange`.
-- Subjecte exacte: `repo:IncFortartUp19@354242787/dev@1450737434:environment:dev`.
+- Subjecte exacte: `repo:inforstartup19@354242787/dev@1450737434:environment:dev`.
 - Contributor només al grup de recursos `rg-incforstartup-dev`.
 - Storage Blob Data Contributor només al contenidor `tfstate-dev`.
 
@@ -57,8 +57,8 @@ A GitHub → Actions → **Verify Azure connection** → Run workflow, seleccion
 Alternativament:
 
 ```bash
-gh workflow run azure-connection.yml --repo IncFortartUp19/dev --ref main
-gh run list --repo IncFortartUp19/dev --workflow azure-connection.yml
+gh workflow run azure-connection.yml --repo inforstartup19/dev --ref main
+gh run list --repo inforstartup19/dev --workflow azure-connection.yml
 ```
 
 El workflow obté un token OIDC, inicia sessió a Azure, comprova l’ID de subscripció i consulta el grup dev. No executa Terraform apply ni crea recursos. Aquesta prova confirma login i lectura del grup; l’accés de dades al backend es comprovarà amb el primer pla Terraform autenticat.
@@ -71,6 +71,20 @@ Codi i workflow preparats. La vinculació només estarà activa després de crea
 
 ## Correspondència exacta del subjecte OIDC
 
-El primer intent real del workflow ha mostrat el subjecte `repo:IncFortartUp19@354242787/dev@1450737434:environment:dev`. La credencial federada ha de coincidir exactament amb aquest valor, incloent-hi els IDs, l’emissor i l’audiència. La configuració anterior sense IDs provocava `AADSTS700213`.
+El primer intent real del workflow ha mostrat el subjecte `repo:inforstartup19@354242787/dev@1450737434:environment:dev`. La credencial federada ha de coincidir exactament amb aquest valor, incloent-hi els IDs, l’emissor i l’audiència. La configuració anterior sense IDs provocava `AADSTS700213`.
 
 Per actualitzar una vinculació ja creada, fes `git pull --ff-only` i executa `terraform plan -out=github-subject.tfplan` des de `infra/terraform/github-identity`, amb el backend existent inicialitzat. Revisa que només s’actualitzi el subjecte de la credencial; aplica aquest pla i torna a executar el workflow. No cal `az logout`, crear secrets ni substituir la identitat administrada.
+
+
+## Auditoria Alembic DEV — bloqueig OIDC del 15 de novembre de 2026
+
+El workflow de lectura [IncForStartUp DEV Alembic inventory](https://github.com/inforstartup19/dev/actions/runs/43708319091) ha arrencat, però la connexió Azure ha retornat **AADSTS700213**: la credencial federada d'Azure encara no coincideix amb el subjecte emès ara per GitHub.
+
+- **Subjecte presentat pel token GitHub:** `repo:inforstartup19@354242787/dev@1450737434:environment:dev`.
+- **Subjecte que figurava al Terraform anterior:** `repo:IncFortartUp19@354242787/dev@1450737434:environment:dev`.
+- La identitat d'usuari de GitHub té el mateix identificador numèric; el propietari del repositori ha canviat de nom. Emissor i audiència mantenen els valors documentats.
+- El fitxer `infra/terraform/github-identity/main.tf` s'ha actualitzat a Git, però **cap credencial federada d'Azure s'ha actualitzat encara**. Un canvi de Terraform al repositori no aplica infraestructura.
+
+**Acció d'un operador Azure autoritzat, abans de repetir l'auditoria:** comprovar el backend i la subscripció correctes, executar un `terraform plan` des de `infra/terraform/github-identity`, confirmar que únicament es modifica el subjecte de la credencial federada `github-dev`, i aplicar només després de revisar el pla. No eliminar la identitat ni substituir el rol Contributor. Si el pla proposa altres canvis, aturar i investigar abans d'aplicar.
+
+Un cop la credencial federada coincideixi a Azure, repetir el workflow d'inventari **només lectura**. Encara no llegirà `alembic_version` si PostgreSQL està en xarxa privada: per això caldrà una connexió SQL de lectura autoritzada des de la xarxa adequada. El gate #27 continua en **NO GO** per a migracions en entorns existents.
