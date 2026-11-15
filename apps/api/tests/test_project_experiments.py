@@ -193,3 +193,73 @@ def test_postgres_experiment_rls_rejects_cross_owner_even_with_grants(api):
         ).status_code
         == 404
     )
+
+
+def test_progressive_draft_activation_and_reformulation_preserves_history(api):
+    draft_id = new_draft(api)
+    root = f"/idea-drafts/{draft_id}/experiments"
+    created = api.request("POST", root, "alice", json={})
+    assert created.status_code == 201, created.text
+    draft_experiment = created.json()
+    assert draft_experiment["status"] == "draft"
+    assert draft_experiment["question"] == ""
+    experiment_id = draft_experiment["id"]
+    result_path = f"{root}/{experiment_id}/results"
+    premature = api.request(
+        "POST",
+        result_path,
+        "alice",
+        json={"outcome": "inconclusive", "observations": "encara no executada"},
+    )
+    assert premature.status_code == 409
+    partial = api.request(
+        "POST",
+        f"{root}/{experiment_id}",
+        "alice",
+        json={"question": "Què volem comprovar?"},
+    )
+    assert partial.status_code == 200, partial.text
+    assert partial.json()["status"] == "draft"
+    assert api.request("POST", f"{root}/{experiment_id}/activate", "alice").status_code == 422
+    complete = api.request(
+        "POST",
+        f"{root}/{experiment_id}",
+        "alice",
+        json={
+            "question": "Què volem comprovar?",
+            "method": "Prova limitada fictícia",
+            "success_criterion": "Registrar comprensió",
+        },
+    )
+    assert complete.status_code == 200, complete.text
+    activated = api.request("POST", f"{root}/{experiment_id}/activate", "alice")
+    assert activated.status_code == 200, activated.text
+    assert activated.json()["status"] == "active"
+    assert api.request(
+        "POST", f"{root}/{experiment_id}", "alice", json={}
+    ).status_code == 409
+    result = api.request(
+        "POST",
+        result_path,
+        "alice",
+        json={"outcome": "inconclusive", "observations": "Resultat no concloent."},
+    )
+    assert result.status_code == 201, result.text
+    new_revision = api.request(
+        "POST",
+        root,
+        "alice",
+        json={
+            "reformulates_id": experiment_id,
+            "question": "Com reduïm la incertesa?",
+            "method": "Segona prova fictícia",
+            "success_criterion": "Obtenir més observacions",
+        },
+    )
+    assert new_revision.status_code == 201, new_revision.text
+    assert new_revision.json()["reformulates_id"] == experiment_id
+    assert len(api.request("GET", result_path, "alice").json()) == 1
+    assert api.request("POST", root, "bob", json={"reformulates_id": experiment_id}).status_code == 404
+    assert api.request(
+        "POST", root, "alice", json={"reformulates_id": str(uuid4())}
+    ).status_code == 404
