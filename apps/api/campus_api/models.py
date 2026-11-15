@@ -501,7 +501,9 @@ class NeedPublicationEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
     __table_args__ = (
         CheckConstraint("action IN ('publish','revoke')"),
-        ForeignKeyConstraint(["need_id", "owner_id"], ["shareable_needs.id", "shareable_needs.owner_id"]),
+        ForeignKeyConstraint(
+            ["need_id", "owner_id"], ["shareable_needs.id", "shareable_needs.owner_id"]
+        ),
         UniqueConstraint("need_id", "version"),
         Index("ix_need_events_owner", "owner_id", "need_id"),
     )
