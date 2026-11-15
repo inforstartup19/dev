@@ -3,13 +3,6 @@ from uuid import uuid4
 import pytest
 from sqlalchemy import text
 
-from campus_api.db import bind_actor
-from campus_api.models import (
-    ExperimentEvidence,
-    ExperimentResult,
-    ProjectExperiment,
-)
-
 
 def new_draft(api, actor="alice"):
     result = api.request(
