@@ -9,7 +9,7 @@ from pydantic import StringConstraints
 from sqlalchemy import select
 
 from campus_api.auth import DB, Actor, require_private_context
-from campus_api.experiments import owned_draft, owned_experiment
+from campus_api.experiments import owned_draft, owned_experiment, require_active
 from campus_api.models import ExperimentResult, ProjectDecision, ProjectResourceIntent
 from campus_api.schemas import Input, Output
 
@@ -119,7 +119,7 @@ def list_resource_intents(draft_id: UUID, db: DB, actor: Actor):
 
 @router.post("/resource-intents", response_model=ResourceIntentOut, status_code=201)
 def add_resource_intent(draft_id: UUID, payload: ResourceIntentIn, db: DB, actor: Actor):
-    owned_draft(db, draft_id, actor)
+    require_active(db, draft_id, actor)
     item = ProjectResourceIntent(draft_id=str(draft_id), owner_id=actor.id, **payload.model_dump())
     db.add(item)
     db.commit()

@@ -34,6 +34,8 @@ class IdeaDraftOut(Output):
     next_test: str
     name: str
     visibility: str
+    lifecycle_state: str
+    lifecycle_version: int
     updated_at: datetime
 
 
@@ -73,7 +75,9 @@ def get_draft(draft_id: UUID, db: DB, actor: Actor):
 
 @router.post("/{draft_id}", response_model=IdeaDraftOut)
 def update_draft(draft_id: UUID, payload: IdeaDraftIn, db: DB, actor: Actor):
-    item = owned(db, draft_id, actor)
+    from campus_api.experiments import require_active
+
+    item = require_active(db, draft_id, actor)
     for field, value in payload.model_dump().items():
         setattr(item, field, value)
     item.updated_at = now()

@@ -18,6 +18,7 @@ from campus_api.idea_drafts import router as idea_drafts_router
 from campus_api.knowledge import router as knowledge_router
 from campus_api.project_assistant import router as project_assistant_router
 from campus_api.project_decisions import router as decisions_router
+from campus_api.project_lifecycle import router as lifecycle_router
 from campus_api.routes import router
 from campus_api.vaults import router as vault_router
 
@@ -99,6 +100,7 @@ def create_app(settings: Settings | None = None):
     app.include_router(idea_drafts_router)
     app.include_router(experiments_router)
     app.include_router(decisions_router)
+    app.include_router(lifecycle_router)
     app.include_router(project_assistant_router)
     app.include_router(knowledge_router)
     app.include_router(document_router)

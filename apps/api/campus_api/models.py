@@ -243,9 +243,16 @@ class IdeaDraft(Base):
     next_test: Mapped[str] = mapped_column(String(3000), default="")
     name: Mapped[str] = mapped_column(String(120), default="")
     visibility: Mapped[str] = mapped_column(String(12), default="private")
+    lifecycle_state: Mapped[str] = mapped_column(String(12), default="active")
+    lifecycle_version: Mapped[int] = mapped_column(default=0)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
     __table_args__ = (
         CheckConstraint("visibility = 'private'", name="ck_idea_drafts_private"),
+        CheckConstraint(
+            "lifecycle_state IN ('active', 'paused', 'closed')",
+            name="ck_idea_drafts_lifecycle",
+        ),
+        CheckConstraint("lifecycle_version >= 0", name="ck_idea_drafts_lifecycle_version"),
         CheckConstraint("length(trim(question)) > 0", name="ck_idea_drafts_question"),
         Index("ix_idea_drafts_owner_updated", "owner_id", "updated_at"),
         UniqueConstraint("id", "owner_id", name="uq_idea_drafts_id_owner"),
@@ -387,4 +394,53 @@ class ProjectResourceIntent(Base):
         ),
         CheckConstraint("length(trim(description)) > 0", name="ck_resource_description"),
         Index("ix_resource_intents_owner_draft", "owner_id", "draft_id"),
+    )
+
+
+class ProjectLifecycleEvent(Base):
+    """Immutable, owner-scoped operational transition and review attestation."""
+
+    __tablename__ = "project_lifecycle_events"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    draft_id: Mapped[str] = mapped_column(String(36))
+    owner_id: Mapped[str] = mapped_column(String(36))
+    actor_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    idempotency_key: Mapped[str] = mapped_column(String(36))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    version: Mapped[int]
+    action: Mapped[str] = mapped_column(String(12))
+    previous_state: Mapped[str] = mapped_column(String(12))
+    next_state: Mapped[str] = mapped_column(String(12))
+    reason: Mapped[str] = mapped_column(String(3000))
+    resume_conditions: Mapped[str] = mapped_column(String(3000), default="")
+    review_note: Mapped[str] = mapped_column(String(3000))
+    reviewed: Mapped[list[str]] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(["draft_id", "owner_id"], ["idea_drafts.id", "idea_drafts.owner_id"]),
+        CheckConstraint("action IN ('pause', 'close', 'resume', 'reopen')"),
+        CheckConstraint("previous_state IN ('active', 'paused', 'closed')"),
+        CheckConstraint("next_state IN ('active', 'paused', 'closed')"),
+        CheckConstraint("version > 0"),
+        UniqueConstraint("owner_id", "draft_id", "idempotency_key"),
+        UniqueConstraint("draft_id", "version"),
+        Index("ix_lifecycle_events_owner_draft", "owner_id", "draft_id"),
+    )
+
+
+class ProjectSuggestionFeedback(Base):
+    """Append-only opt-in local project feedback, never training data."""
+
+    __tablename__ = "project_suggestion_feedback"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    draft_id: Mapped[str] = mapped_column(String(36))
+    owner_id: Mapped[str] = mapped_column(String(36))
+    code: Mapped[str] = mapped_column(String(64))
+    choice: Mapped[str] = mapped_column(String(12))
+    consent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(["draft_id", "owner_id"], ["idea_drafts.id", "idea_drafts.owner_id"]),
+        CheckConstraint("choice IN ('dismiss', 'restore')"),
+        Index("ix_feedback_owner_draft", "owner_id", "draft_id"),
     )

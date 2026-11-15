@@ -26,6 +26,22 @@ export function privateRoute(
       (joined === "idea-drafts" || new RegExp("^idea-drafts/" + id + "$").test(joined)))
     return "json";
 
+  // #52: explicit allowlist, never arbitrary private proxy forwarding.
+  if (
+    method === "GET" &&
+    (
+      new RegExp("^idea-drafts/" + id + "/lifecycle(?:/events)?$").test(joined) ||
+      new RegExp("^idea-drafts/" + id + "/assistant/(?:guidance|feedback)$").test(joined)
+    )
+  ) return "json";
+  if (
+    method === "POST" &&
+    (
+      new RegExp("^idea-drafts/" + id + "/lifecycle/transitions$").test(joined) ||
+      new RegExp("^idea-drafts/" + id + "/assistant/feedback$").test(joined)
+    )
+  ) return "json";
+
   // Projecte Viu: precisely bounded, authenticated BFF routes.
   if ((method === "GET" || method === "POST") && (
     new RegExp("^idea-drafts/" + id + "/experiments$").test(joined) ||

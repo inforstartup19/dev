@@ -92,6 +92,20 @@ def owned_draft(db, draft_id, actor):
     return item
 
 
+def require_active(db, draft_id, actor):
+    """Serialize project writes with operational transitions on PostgreSQL."""
+    draft = db.scalar(
+        select(IdeaDraft)
+        .where(IdeaDraft.id == str(draft_id), IdeaDraft.owner_id == actor.id)
+        .with_for_update()
+    )
+    if draft is None:
+        raise HTTPException(404, "Draft not found")
+    if draft.lifecycle_state != "active":
+        raise HTTPException(409, "Project is paused or closed; resume/reopen explicitly")
+    return draft
+
+
 def owned_experiment(db, draft_id, experiment_id, actor):
     item = db.scalar(
         select(ProjectExperiment).where(
@@ -152,7 +166,7 @@ def list_experiments(draft_id: UUID, db: DB, actor: Actor):
 
 @router.post("", response_model=ExperimentOut, status_code=201)
 def create_experiment(draft_id: UUID, payload: ExperimentIn, db: DB, actor: Actor):
-    owned_draft(db, draft_id, actor)
+    require_active(db, draft_id, actor)
     parent_id = str(payload.reformulates_id) if payload.reformulates_id else None
     if parent_id:
         parent = owned_experiment(db, draft_id, payload.reformulates_id, actor)
@@ -177,7 +191,7 @@ def create_experiment(draft_id: UUID, payload: ExperimentIn, db: DB, actor: Acto
 def edit_experiment(
     draft_id: UUID, experiment_id: UUID, payload: ExperimentIn, db: DB, actor: Actor
 ):
-    owned_draft(db, draft_id, actor)
+    require_active(db, draft_id, actor)
     experiment = owned_experiment(db, draft_id, experiment_id, actor)
     if experiment.status != "draft":
         raise HTTPException(409, "Executed experiment revisions are immutable")
@@ -195,7 +209,7 @@ def edit_experiment(
 
 @router.post("/{experiment_id}/activate", response_model=ExperimentOut)
 def activate_experiment(draft_id: UUID, experiment_id: UUID, db: DB, actor: Actor):
-    owned_draft(db, draft_id, actor)
+    require_active(db, draft_id, actor)
     experiment = owned_experiment(db, draft_id, experiment_id, actor)
     if experiment.status != "draft":
         raise HTTPException(409, "Only draft experiments can be activated")
@@ -230,7 +244,7 @@ def list_results(draft_id: UUID, experiment_id: UUID, db: DB, actor: Actor):
 
 @router.post("/{experiment_id}/results", response_model=ResultOut, status_code=201)
 def record_result(draft_id: UUID, experiment_id: UUID, payload: ResultIn, db: DB, actor: Actor):
-    owned_draft(db, draft_id, actor)
+    require_active(db, draft_id, actor)
     experiment = owned_experiment(db, draft_id, experiment_id, actor)
     if experiment.status == "draft":
         raise HTTPException(409, "Activate the experiment before recording a result")
