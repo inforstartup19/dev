@@ -26,8 +26,8 @@ router = APIRouter(
     tags=["projecte viu experiments"],
     dependencies=[Depends(require_private_context)],
 )
-Question = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
-LongText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=3000)]
+Question = Annotated[str, StringConstraints(strip_whitespace=True, max_length=2000)]
+LongText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=3000)]
 Observation = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=5000)
 ]
@@ -35,14 +35,16 @@ Outcome = Literal["supportive", "unsupported", "inconclusive"]
 
 
 class ExperimentIn(Input):
-    question: Question
-    method: LongText
-    success_criterion: LongText
+    question: Question = ""
+    method: LongText = ""
+    success_criterion: LongText = ""
+    reformulates_id: UUID | None = None
 
 
 class ExperimentOut(Output):
     id: str
     draft_id: str
+    reformulates_id: str | None
     question: str
     method: str
     success_criterion: str
@@ -151,10 +153,52 @@ def list_experiments(draft_id: UUID, db: DB, actor: Actor):
 @router.post("", response_model=ExperimentOut, status_code=201)
 def create_experiment(draft_id: UUID, payload: ExperimentIn, db: DB, actor: Actor):
     owned_draft(db, draft_id, actor)
+    parent_id = str(payload.reformulates_id) if payload.reformulates_id else None
+    if parent_id:
+        parent = owned_experiment(db, draft_id, payload.reformulates_id, actor)
+        if parent.status != "completed":
+            raise HTTPException(409, "Only completed experiments can be reformulated")
+    fields = payload.model_dump(exclude={"reformulates_id"})
+    ready = all((fields["question"], fields["method"], fields["success_criterion"]))
     experiment = ProjectExperiment(
-        draft_id=str(draft_id), owner_id=actor.id, **payload.model_dump()
+        draft_id=str(draft_id),
+        owner_id=actor.id,
+        reformulates_id=parent_id,
+        status="active" if ready else "draft",
+        **fields,
     )
     db.add(experiment)
+    db.commit()
+    db.refresh(experiment)
+    return experiment
+
+
+@router.post("/{experiment_id}", response_model=ExperimentOut)
+def edit_experiment(
+    draft_id: UUID, experiment_id: UUID, payload: ExperimentIn, db: DB, actor: Actor
+):
+    owned_draft(db, draft_id, actor)
+    experiment = owned_experiment(db, draft_id, experiment_id, actor)
+    if experiment.status != "draft":
+        raise HTTPException(409, "Executed experiment revisions are immutable")
+    if payload.reformulates_id is not None and str(payload.reformulates_id) != experiment.reformulates_id:
+        raise HTTPException(422, "Reformulation source cannot be changed")
+    for field in ("question", "method", "success_criterion"):
+        setattr(experiment, field, getattr(payload, field))
+    db.commit()
+    db.refresh(experiment)
+    return experiment
+
+
+@router.post("/{experiment_id}/activate", response_model=ExperimentOut)
+def activate_experiment(draft_id: UUID, experiment_id: UUID, db: DB, actor: Actor):
+    owned_draft(db, draft_id, actor)
+    experiment = owned_experiment(db, draft_id, experiment_id, actor)
+    if experiment.status != "draft":
+        raise HTTPException(409, "Only draft experiments can be activated")
+    if not all((experiment.question.strip(), experiment.method.strip(), experiment.success_criterion.strip())):
+        raise HTTPException(422, "Question, method and success criterion are required to activate")
+    experiment.status = "active"
     db.commit()
     db.refresh(experiment)
     return experiment
@@ -179,6 +223,8 @@ def list_results(draft_id: UUID, experiment_id: UUID, db: DB, actor: Actor):
 def record_result(draft_id: UUID, experiment_id: UUID, payload: ResultIn, db: DB, actor: Actor):
     owned_draft(db, draft_id, actor)
     experiment = owned_experiment(db, draft_id, experiment_id, actor)
+    if experiment.status == "draft":
+        raise HTTPException(409, "Activate the experiment before recording a result")
     result = ExperimentResult(
         experiment_id=experiment.id,
         owner_id=actor.id,
