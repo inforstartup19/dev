@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: connected-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   connected:
     runs-on: ubuntu-latest
