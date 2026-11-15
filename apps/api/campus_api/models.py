@@ -426,3 +426,21 @@ class ProjectLifecycleEvent(Base):
         UniqueConstraint("draft_id", "version"),
         Index("ix_lifecycle_events_owner_draft", "owner_id", "draft_id"),
     )
+
+
+class ProjectSuggestionFeedback(Base):
+    """Append-only opt-in local project feedback, never training data."""
+
+    __tablename__ = "project_suggestion_feedback"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    draft_id: Mapped[str] = mapped_column(String(36))
+    owner_id: Mapped[str] = mapped_column(String(36))
+    code: Mapped[str] = mapped_column(String(64))
+    choice: Mapped[str] = mapped_column(String(12))
+    consent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(["draft_id", "owner_id"], ["idea_drafts.id", "idea_drafts.owner_id"]),
+        CheckConstraint("choice IN ('dismiss', 'restore')"),
+        Index("ix_feedback_owner_draft", "owner_id", "draft_id"),
+    )
