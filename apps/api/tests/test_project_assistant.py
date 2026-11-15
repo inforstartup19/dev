@@ -1,5 +1,6 @@
 """Contract tests for owner-scoped explainable guidance and lifecycle."""
 
+
 def make_draft(api, actor="alice"):
     response = api.request(
         "POST",
@@ -72,9 +73,7 @@ def test_historical_choices_do_not_change_operational_lifecycle(api):
         assert report["lifecycle"] == "active"
         assert report["latest_decision_id"] == decision.json()["id"]
         assert api.request("GET", root, "alice").json()["visibility"] == "private"
-        assert api.request("GET", root + "/experiments", "alice").json()[0][
-            "status"
-        ] == "active"
+        assert api.request("GET", root + "/experiments", "alice").json()[0]["status"] == "active"
     assert len(api.request("GET", root + "/decisions", "alice").json()) == 3
     assert experiment["id"]
 
