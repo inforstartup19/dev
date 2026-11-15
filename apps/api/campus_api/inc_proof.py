@@ -27,7 +27,9 @@ router = APIRouter(
 Summary = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1200)]
 Note = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
 Source = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
-VersionLabel = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+VersionLabel = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)
+]
 Provenance = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
 
 
