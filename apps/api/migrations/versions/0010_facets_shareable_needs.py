@@ -176,6 +176,9 @@ def upgrade():
 
 
 def downgrade():
+    if op.get_bind().dialect.name == "postgresql":
+        # The shareable_needs policy references need_viewer_grants; remove it first.
+        op.execute(sa.text("DROP POLICY IF EXISTS needs_select ON shareable_needs"))
     op.drop_index("ix_need_events_owner", table_name="need_publication_events")
     op.drop_table("need_publication_events")
     op.drop_index("ix_need_viewers_viewer", table_name="need_viewer_grants")
