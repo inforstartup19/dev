@@ -769,7 +769,9 @@ class ProofAttestation(Base):
             ],
         ),
         UniqueConstraint(
-            "contribution_id", "proof_version", "actor_id",
+            "contribution_id",
+            "proof_version",
+            "actor_id",
             name="uq_proof_attestation_actor_version",
         ),
         CheckConstraint("decision IN ('confirm','dispute')"),
