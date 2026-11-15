@@ -343,13 +343,12 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
           </button>
           {showDecisions && <>
             <form className={styles.form} onSubmit={saveDecision}>
-              <label>Decisió
-                <select value={decisionChoice}
+              <label htmlFor="project-decision-choice">Decisió</label>
+                <select id="project-decision-choice" value={decisionChoice}
                   onChange={(e) => setDecisionChoice(e.target.value as Decision["choice"])}>
                   {Object.entries(choices).map(([key, label]) =>
                     <option key={key} value={key}>{label}</option>)}
                 </select>
-              </label>
               <label>Motiu i proper pas
                 <textarea required maxLength={3000} value={rationale}
                   onChange={(e) => setRationale(e.target.value)} />
