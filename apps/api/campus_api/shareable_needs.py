@@ -9,7 +9,7 @@ from sqlalchemy import select, update
 
 from campus_api.auth import DB, Actor, require_private_context
 from campus_api.idea_drafts import owned
-from campus_api.models import IdeaDraft, ShareableNeed, NeedPublicationEvent
+from campus_api.models import IdeaDraft, NeedPublicationEvent, ShareableNeed
 from campus_api.schemas import Input, Output
 
 router = APIRouter(
@@ -17,7 +17,9 @@ router = APIRouter(
     dependencies=[Depends(require_private_context)],
 )
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
-Description = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1200)]
+Description = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1200)
+]
 Reason = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
 
 
