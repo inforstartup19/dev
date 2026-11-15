@@ -45,13 +45,14 @@ def upgrade():
         sa.CheckConstraint("version >= 0"),
         sa.CheckConstraint("length(trim(title)) > 0"),
         sa.CheckConstraint("length(trim(description)) > 0"),
+        sa.UniqueConstraint("id", "owner_id", name="uq_shareable_need_owner"),
     )
     op.create_index("ix_needs_owner_draft", "shareable_needs", ["owner_id","draft_id"])
     op.create_index("ix_needs_discovery", "shareable_needs", ["state","audience"])
     op.create_table(
         "need_publication_events",
         sa.Column("id", sa.String(36), primary_key=True),
-        sa.Column("need_id", sa.String(36), sa.ForeignKey("shareable_needs.id"), nullable=False),
+        sa.Column("need_id", sa.String(36), nullable=False),
         sa.Column("owner_id", sa.String(36), nullable=False),
         sa.Column("actor_id", sa.String(36), sa.ForeignKey("users.id"), nullable=False),
         sa.Column("action", sa.String(12), nullable=False),
@@ -59,6 +60,7 @@ def upgrade():
         sa.Column("reason", sa.String(500), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.CheckConstraint("action IN ('publish','revoke')"),
+        sa.ForeignKeyConstraint(["need_id", "owner_id"], ["shareable_needs.id", "shareable_needs.owner_id"]),
         sa.UniqueConstraint("need_id","version"),
     )
     op.create_index("ix_need_events_owner", "need_publication_events", ["owner_id","need_id"])
