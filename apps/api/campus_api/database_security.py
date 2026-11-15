@@ -34,7 +34,9 @@ def verify_runtime_database(engine, *, scanner=False, documents=False):
                                 'shareable_needs', 'need_publication_events',
                                 'need_viewer_grants', 'connect_requests',
                                 'connect_events', 'collaboration_agreements',
-                                'agreement_revisions', 'agreement_confirmations')
+                                'agreement_revisions', 'agreement_confirmations',
+                                'proof_contributions', 'proof_evidence',
+                                'proof_attestations')
         """)
         ).all()
         can_create = connection.scalar(
@@ -72,7 +74,7 @@ def verify_runtime_database(engine, *, scanner=False, documents=False):
             or (scanner and api_member)
             or (documents and not api_member)
             or ((scanner or documents) and not active)
-            or len(rows) != 23
+            or len(rows) != 26
             or any(not r.relrowsecurity or not r.relforcerowsecurity or r.owns for r in rows)
         ):
             raise RuntimeError("Unsafe database role or missing forced vault RLS")
