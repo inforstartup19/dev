@@ -60,7 +60,9 @@ def upgrade():
         sa.Column("reason", sa.String(500), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.CheckConstraint("action IN ('publish','revoke')"),
-        sa.ForeignKeyConstraint(["need_id", "owner_id"], ["shareable_needs.id", "shareable_needs.owner_id"]),
+        sa.ForeignKeyConstraint(
+            ["need_id", "owner_id"], ["shareable_needs.id", "shareable_needs.owner_id"]
+        ),
         sa.UniqueConstraint("need_id","version"),
     )
     op.create_index("ix_need_events_owner", "need_publication_events", ["owner_id","need_id"])
@@ -73,14 +75,17 @@ def upgrade():
             f"CREATE POLICY facets_select ON identity_facets FOR SELECT USING (user_id = {actor})"
         ))
         op.execute(sa.text(
-            f"CREATE POLICY facets_insert ON identity_facets FOR INSERT WITH CHECK (user_id = {actor} AND audience = 'private')"
+            f"CREATE POLICY facets_insert ON identity_facets FOR INSERT WITH CHECK "
+            f"(user_id = {actor} AND audience = 'private')"
         ))
         op.execute(sa.text(
-            f"CREATE POLICY facets_update ON identity_facets FOR UPDATE USING (user_id = {actor}) WITH CHECK (user_id = {actor} AND audience = 'private')"
+            f"CREATE POLICY facets_update ON identity_facets FOR UPDATE USING (user_id = "
+            f"{actor}) WITH CHECK (user_id = {actor} AND audience = 'private')"
         ))
         op.execute(sa.text(
             f"CREATE POLICY needs_select ON shareable_needs FOR SELECT USING "
-            f"(owner_id = {actor} OR (state = 'published' AND audience = 'authenticated' AND {actor} IS NOT NULL))"
+            f"(owner_id = {actor} OR (state = 'published' AND audience = 'authenticated' "
+            f"AND {actor} IS NOT NULL))"
         ))
         op.execute(sa.text(
             f"CREATE POLICY needs_insert ON shareable_needs FOR INSERT WITH CHECK "
@@ -91,7 +96,8 @@ def upgrade():
             f"WITH CHECK (owner_id = {actor})"
         ))
         op.execute(sa.text(
-            f"CREATE POLICY need_events_select ON need_publication_events FOR SELECT USING (owner_id = {actor})"
+            f"CREATE POLICY need_events_select ON need_publication_events FOR SELECT "
+            f"USING (owner_id = {actor})"
         ))
         op.execute(sa.text(
             f"CREATE POLICY need_events_insert ON need_publication_events FOR INSERT "
