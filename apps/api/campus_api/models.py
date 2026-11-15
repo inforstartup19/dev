@@ -448,6 +448,7 @@ class ProjectSuggestionFeedback(Base):
 
 class IdentityFacet(Base):
     """Presentation preference; never a grant to any project."""
+
     __tablename__ = "identity_facets"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
@@ -465,6 +466,7 @@ class IdentityFacet(Base):
 
 class ShareableNeed(Base):
     """Projection deliberately separate from the owner-only parent draft."""
+
     __tablename__ = "shareable_needs"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
     draft_id: Mapped[str] = mapped_column(String(36), nullable=False)
@@ -490,6 +492,7 @@ class ShareableNeed(Base):
 
 class NeedPublicationEvent(Base):
     """Append-only publication / revocation audit, scoped to the owner."""
+
     __tablename__ = "need_publication_events"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
     need_id: Mapped[str] = mapped_column(String(36), nullable=False)
@@ -511,6 +514,7 @@ class NeedPublicationEvent(Base):
 
 class NeedViewerGrant(Base):
     """An explicit per-recipient grant, never a project membership."""
+
     __tablename__ = "need_viewer_grants"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
     need_id: Mapped[str] = mapped_column(String(36), nullable=False)
