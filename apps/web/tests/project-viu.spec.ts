@@ -218,3 +218,86 @@ test("BF sharing publishes only a need to another account and revokes it without
     await Promise.allSettled([ownerContext.close(), outsiderContext.close()]);
   }
 });
+
+
+test("BF Connect and Agreements UX needs two consenting accounts without sharing the project", async ({ browser }) => {
+  test.setTimeout(150000);
+  const ownerContext = await browser.newContext({ ignoreHTTPSErrors: true });
+  const collaboratorContext = await browser.newContext({ ignoreHTTPSErrors: true });
+  const owner = await ownerContext.newPage();
+  const collaborator = await collaboratorContext.newPage();
+  const origin = "http://localhost:3400";
+  try {
+    await login(owner, "Professor");
+    await login(collaborator, "Alumne");
+    const ownerView = owner.getByTestId("inc-connect-panel");
+    const otherView = collaborator.getByTestId("inc-connect-panel");
+    await expect(ownerView).toBeVisible();
+    await expect(otherView).toBeVisible();
+
+    await owner.getByLabel("Pregunta o necessitat").fill("BF: taller per prototip?");
+    await owner.getByLabel("Nom provisional").fill("BF — Connect UX");
+    await owner.getByRole("button", { name: "Desa al compte privat" }).click();
+    await expect(owner.getByTestId("project-workspace")).toBeVisible();
+    const drafts = await (await owner.request.get(`${origin}/api/private/idea-drafts`)).json();
+    const draft = drafts.find((item: { name: string }) => item.name === "BF — Connect UX");
+    expect(draft).toBeTruthy();
+    const root = `${origin}/api/private/idea-drafts/${draft.id}`;
+
+    const needPanel = owner.getByTestId("project-needs");
+    await needPanel.getByLabel("Títol de la necessitat").fill("Taller BF 1-of-1");
+    await needPanel.getByLabel("Text que podria veure un altre compte")
+      .fill("Busquem un professional per validar un prototip.");
+    await needPanel.getByRole("button", { name: "Preparar necessitat privada" }).click();
+    await expect(needPanel.getByTestId("need-preview")).toBeVisible();
+    const viewer = await (await collaborator.request.get(`${origin}/api/campus/me`)).json();
+    await needPanel.getByLabel("Identificador del destinatari autoritzat").fill(viewer.id);
+    await needPanel.getByRole("button", { name: "Afegir destinatari a aquesta necessitat" }).click();
+    await expect(needPanel.getByText(/Destinatari autoritzat/)).toBeVisible();
+    await needPanel.getByLabel("Motiu de publicació").fill("Pilot de contacte només per B");
+    await needPanel.getByRole("checkbox", { name: /Confirmo l'audiència/ }).check();
+    await needPanel.getByRole("button", { name: "Publicar només aquesta necessitat" }).click();
+    await expect(needPanel.getByText(/Necessitat publicada/)).toBeVisible();
+
+    await otherView.getByRole("button", { name: "Actualitzar" }).click();
+    await expect(otherView.getByText("Taller BF 1-of-1")).toBeVisible();
+    await otherView.getByRole("button", { name: "M'interessa aquesta necessitat" }).click();
+    await otherView.getByLabel("Nota d'interès")
+      .fill("Puc fer una mostra de prova sintètica.");
+    await otherView.getByRole("button", { name: "Enviar petició consentida" }).click();
+    await expect(otherView.getByText(/Sol·licitud d'interès enviada/)).toBeVisible();
+
+    await ownerView.getByRole("button", { name: "Actualitzar" }).click();
+    await expect(ownerView.getByText("Interès rebut")).toBeVisible();
+    await ownerView.getByRole("button", { name: "Acceptar interès" }).click();
+    await expect(ownerView.getByText(/Resposta enregistrada i auditada/)).toBeVisible();
+
+    await otherView.getByRole("button", { name: "Actualitzar" }).click();
+    await otherView.getByRole("button", { name: "Preparar una proposta d'acord" }).click();
+    for (const [label, value] of Object.entries({
+      "Objectiu compartit": "Validar BF 1-of-1",
+      "Aportació proposada": "Mostra de confecció",
+      "Dedicació estimada": "Dues jornades",
+      "Resultat o lliurable": "Una mostra i valoració",
+      "Condicions de col·laboració": "Treball de prova sintètic",
+    })) {
+      await otherView.getByLabel(label).fill(value);
+    }
+    await otherView.getByRole("button", { name: "Crear proposta privada" }).click();
+    await expect(otherView.getByText(/Proposta privada registrada/)).toBeVisible();
+
+    await ownerView.getByRole("button", { name: "Actualitzar" }).click();
+    await ownerView.getByRole("button", { name: /Versió 1 · Pendent de confirmacions/ }).click();
+    await expect(ownerView.getByTestId("agreement-review")).toBeVisible();
+    await ownerView.getByRole("button", { name: "Confirmar exactament aquesta versió" }).click();
+    await otherView.getByRole("button", { name: "Actualitzar" }).click();
+    await otherView.getByRole("button", { name: /Versió 1 · Pendent de confirmacions/ }).click();
+    await otherView.getByRole("button", { name: "Confirmar exactament aquesta versió" }).click();
+    await expect(otherView.getByRole("button", { name: /Confirmada per ambdues parts/ })).toBeVisible();
+
+    expect((await collaborator.request.get(root)).status()).toBe(404);
+    expect((await (await owner.request.get(root)).json()).visibility).toBe("private");
+  } finally {
+    await Promise.allSettled([ownerContext.close(), collaboratorContext.close()]);
+  }
+});
