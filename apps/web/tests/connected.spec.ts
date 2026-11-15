@@ -27,7 +27,9 @@ test("separate teacher and student accounts share the full invitation, submissio
   const studentContext = await browser.newContext({ ignoreHTTPSErrors: true });
   const teacher = await teacherContext.newPage();
   const student = await studentContext.newPage();
+  console.info("campus-regression: teacher-login-start");
   await login(teacher, "Professor");
+  console.info("campus-regression: teacher-login-done");
   await teacher
     .getByRole("button", { name: "Crea el primer espai docent", exact: true })
     .click();
@@ -48,6 +50,7 @@ test("separate teacher and student accounts share the full invitation, submissio
     .getByLabel("Enllaç d’invitació", { exact: true })
     .inputValue();
   expect(invitation).toContain("/campus/join#token=");
+  console.info("campus-regression: invitation-open");
   await student.goto(invitation);
   await expect(
     student.getByRole("button", {
@@ -65,9 +68,11 @@ test("separate teacher and student accounts share the full invitation, submissio
   await expect(
     student.getByText("Laia de proves", { exact: true }),
   ).toBeVisible();
+  console.info("campus-regression: invitation-accept-start");
   await student
     .getByRole("button", { name: "Accepta la invitació", exact: true })
     .click();
+  console.info("campus-regression: invitation-accept-done");
   await student
     .getByRole("link", { name: "Obre el Campus", exact: true })
     .click();
@@ -91,9 +96,11 @@ test("separate teacher and student accounts share the full invitation, submissio
   await student
     .getByLabel("Quin problema voleu resoldre?")
     .fill("Reduïm el malbaratament d’aigua del campus amb un pilot compartit.");
+  console.info("campus-regression: create-project-start");
   await student
     .getByRole("button", { name: "Crea el projecte", exact: true })
     .click();
+  console.info("campus-regression: create-project-done");
   await student
     .getByRole("button", { name: "Nova entrega", exact: true })
     .click();
@@ -111,6 +118,7 @@ test("separate teacher and student accounts share the full invitation, submissio
   await expect(
     student.getByRole("button", { name: "Publica l’avaluació", exact: true }),
   ).toHaveCount(0);
+  console.info("campus-regression: teacher-review-start");
   await teacher
     .getByRole("button", { name: "Actualitza les dades", exact: true })
     .click();
@@ -129,6 +137,7 @@ test("separate teacher and student accounts share the full invitation, submissio
     .getByRole("button", { name: "Publica l’avaluació", exact: true })
     .click();
   await expect(teacher.locator(".feedback")).toContainText("7,2 / 10");
+  console.info("campus-regression: teacher-review-done");
   await student
     .getByRole("button", { name: "Actualitza les dades", exact: true })
     .click();
@@ -151,6 +160,7 @@ test("separate teacher and student accounts share the full invitation, submissio
   ).toBeVisible();
   await student.getByRole("button", { name: "Versió 1", exact: false }).click();
   await expect(student.locator(".feedback")).toContainText("7,2 / 10");
+  console.info("campus-regression: second-submission-done");
   const session = await student.request.get(
     "http://localhost:3400/api/auth/session",
   );
@@ -216,6 +226,7 @@ test("separate teacher and student accounts share the full invitation, submissio
   await expect(
     student.getByRole("alert").filter({ hasText: "Aquesta invitació" }),
   ).toContainText("ja s’ha utilitzat");
+  console.info("campus-regression: permissions-done");
   await teacherContext.close();
   await studentContext.close();
 });
