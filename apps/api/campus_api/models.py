@@ -341,3 +341,45 @@ class ExperimentEvidence(Base):
         CheckConstraint("length(trim(reference)) > 0", name="ck_evidence_reference"),
         Index("ix_evidence_result", "owner_id", "result_id"),
     )
+
+
+class ProjectDecision(Base):
+    __tablename__ = "project_decisions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    draft_id: Mapped[str] = mapped_column(String(36))
+    experiment_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    owner_id: Mapped[str] = mapped_column(String(36))
+    choice: Mapped[str] = mapped_column(String(24))
+    rationale: Mapped[str] = mapped_column(String(3000))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(["draft_id", "owner_id"], ["idea_drafts.id", "idea_drafts.owner_id"]),
+        ForeignKeyConstraint(
+            ["experiment_id", "owner_id"],
+            ["project_experiments.id", "project_experiments.owner_id"],
+        ),
+        CheckConstraint(
+            "choice IN ('continue', 'reformulate', 'request_help', 'pause', 'close')",
+            name="ck_project_decision_choice",
+        ),
+        CheckConstraint("length(trim(rationale)) > 0", name="ck_decision_rationale"),
+        Index("ix_decisions_owner_draft", "owner_id", "draft_id"),
+    )
+
+
+class ProjectResourceIntent(Base):
+    __tablename__ = "project_resource_intents"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    draft_id: Mapped[str] = mapped_column(String(36))
+    owner_id: Mapped[str] = mapped_column(String(36))
+    kind: Mapped[str] = mapped_column(String(20))
+    description: Mapped[str] = mapped_column(String(3000))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(["draft_id", "owner_id"], ["idea_drafts.id", "idea_drafts.owner_id"]),
+        CheckConstraint(
+            "kind IN ('person', 'resources', 'funding')", name="ck_resource_intent_kind"
+        ),
+        CheckConstraint("length(trim(description)) > 0", name="ck_resource_description"),
+        Index("ix_resource_intents_owner_draft", "owner_id", "draft_id"),
+    )
