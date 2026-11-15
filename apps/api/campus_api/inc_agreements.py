@@ -141,8 +141,7 @@ def create_agreement(payload: AgreementIn, db: DB, actor: Actor):
     request = db.scalar(
         select(ConnectRequest).where(
             ConnectRequest.id == str(payload.request_id),
-            (ConnectRequest.owner_id == actor.id)
-            | (ConnectRequest.requester_id == actor.id),
+            (ConnectRequest.owner_id == actor.id) | (ConnectRequest.requester_id == actor.id),
             ConnectRequest.status == "accepted",
         )
     )
@@ -158,9 +157,7 @@ def create_agreement(payload: AgreementIn, db: DB, actor: Actor):
     if need is None:
         raise HTTPException(409, "The need is no longer published")
     if db.scalar(
-        select(CollaborationAgreement.id).where(
-            CollaborationAgreement.request_id == request.id
-        )
+        select(CollaborationAgreement.id).where(CollaborationAgreement.request_id == request.id)
     ):
         raise HTTPException(409, "An agreement already exists for this request")
     agreement = CollaborationAgreement(
@@ -219,9 +216,7 @@ def list_revisions(agreement_id: UUID, db: DB, actor: Actor):
 
 
 @router.post("/{agreement_id}/revisions", response_model=AgreementOut)
-def revise_agreement(
-    agreement_id: UUID, payload: RevisionIn, db: DB, actor: Actor
-):
+def revise_agreement(agreement_id: UUID, payload: RevisionIn, db: DB, actor: Actor):
     item = participant_agreement(db, agreement_id, actor)
     if item.status != "active" or item.current_version != payload.expected_version:
         raise HTTPException(409, "Cancelled or outdated agreement")
@@ -256,9 +251,7 @@ def revise_agreement(
 
 
 @router.post("/{agreement_id}/confirmations", response_model=AgreementOut)
-def confirm_agreement(
-    agreement_id: UUID, payload: ConfirmationIn, db: DB, actor: Actor
-):
+def confirm_agreement(agreement_id: UUID, payload: ConfirmationIn, db: DB, actor: Actor):
     item = participant_agreement(db, agreement_id, actor)
     if item.status != "active" or item.current_version != payload.expected_version:
         raise HTTPException(409, "Cancelled or outdated agreement")
