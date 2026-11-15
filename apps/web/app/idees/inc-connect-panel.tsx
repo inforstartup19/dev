@@ -144,8 +144,7 @@ export function IncConnectPanel() {
     }, "Proposta privada registrada. Encara requereix dues confirmacions independents.");
   }
 
-  async function reviseAgreement(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function reviseAgreement() {
     if (!agreement || !validTerms || !versionEdited) return;
     await act(async () => {
       await privateJson(`agreements/${agreement.id}/revisions`, {
@@ -269,7 +268,7 @@ export function IncConnectPanel() {
             ))}
             {agreement.status === "active" && <>
               <button type="button" disabled={busy || !validTerms || !versionEdited}
-                onClick={(event) => reviseAgreement(event as unknown as FormEvent<HTMLFormElement>)}>
+                onClick={reviseAgreement}>
                 Desar nova versió (anul·la confirmacions anteriors)
               </button>
               <button type="button" disabled={busy || Boolean(versionEdited)}
