@@ -47,7 +47,6 @@ class TransitionIn(Input):
     audience: Literal["authenticated", "selected"] | None = None
 
 
-
 class ViewerGrantIn(Input):
     viewer_id: UUID
     confirm: Literal[True]
@@ -127,7 +126,6 @@ def prepare_need(draft_id: UUID, payload: NeedIn, db: DB, actor: Actor):
     db.commit()
     db.refresh(item)
     return item
-
 
 
 @router.post("/v1/idea-drafts/{draft_id}/shared-needs/{need_id}/viewers", status_code=201)
