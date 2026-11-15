@@ -283,3 +283,43 @@ def test_rbac_tables_have_forced_rls(api):
         ).all()
     assert len(rows) == 3
     assert all(enabled and forced for _, enabled, forced in rows)
+
+
+def test_expired_agreement_cannot_be_revised_or_confirmed(api):
+    from datetime import UTC, datetime, timedelta
+
+    request_id, _, _, _, _, _ = accepted_bf_contact(api)
+    response = api.request(
+        "POST", "/agreements", "alice",
+        json={"request_id": request_id, "terms": TERMS},
+    )
+    assert response.status_code == 201, response.text
+    item = response.json()
+    aid = item["id"]
+    with api.app.state.engine.begin() as conn:
+        conn.execute(
+            text("UPDATE collaboration_agreements SET created_at = :old WHERE id = :id"),
+            {"old": datetime.now(UTC) - timedelta(days=31), "id": aid},
+        )
+    detail = api.request("GET", f"/agreements/{aid}", "bob")
+    assert detail.status_code == 200
+    assert detail.json()["acceptance_expired"] is True
+    confirmation = api.request(
+        "POST", f"/agreements/{aid}/confirmations", "bob",
+        json={
+            "expected_version": 1, "expected_hash": item["terms_sha256"],
+            "confirm": True,
+        },
+    )
+    assert confirmation.status_code == 410
+    revision = api.request(
+        "POST", f"/agreements/{aid}/revisions", "alice",
+        json={"expected_version": 1, "terms": TERMS},
+    )
+    assert revision.status_code == 410
+    cancelled = api.request(
+        "POST", f"/agreements/{aid}/cancel", "alice",
+        json={"expected_version": 1, "confirm": True, "reason": "Negociació caducada"},
+    )
+    assert cancelled.status_code == 200, cancelled.text
+    assert cancelled.json()["status"] == "cancelled"
