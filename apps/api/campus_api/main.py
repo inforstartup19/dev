@@ -21,6 +21,7 @@ from campus_api.inc_agreements import router as agreements_router
 from campus_api.inc_connect import router as connect_router
 from campus_api.inc_proof import router as proof_router
 from campus_api.knowledge import router as knowledge_router
+from campus_api.lab_preflight import router as lab_preflight_router
 from campus_api.project_assistant import router as project_assistant_router
 from campus_api.project_decisions import router as decisions_router
 from campus_api.project_lifecycle import router as lifecycle_router
@@ -115,6 +116,7 @@ def create_app(settings: Settings | None = None):
     app.include_router(lifecycle_router)
     app.include_router(project_assistant_router)
     app.include_router(knowledge_router)
+    app.include_router(lab_preflight_router)
     app.include_router(document_router)
 
     @app.get("/v1/private-access", dependencies=[Depends(require_private_context)])
