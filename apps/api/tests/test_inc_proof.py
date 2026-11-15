@@ -10,14 +10,18 @@ from tests.test_inc_agreements import TERMS, accepted_bf_contact
 def confirmed_bf(api):
     request_id, draft_id, _, _, _, _ = accepted_bf_contact(api)
     agreement = api.request(
-        "POST", "/agreements", "alice",
+        "POST",
+        "/agreements",
+        "alice",
         json={"request_id": request_id, "terms": TERMS},
     )
     assert agreement.status_code == 201, agreement.text
     item = agreement.json()
     for actor in ("alice", "bob"):
         r = api.request(
-            "POST", f"/agreements/{item['id']}/confirmations", actor,
+            "POST",
+            f"/agreements/{item['id']}/confirmations",
+            actor,
             json={
                 "expected_version": 1,
                 "expected_hash": item["terms_sha256"],
@@ -31,23 +35,33 @@ def confirmed_bf(api):
 def test_no_proof_without_bilateral_agreement(api):
     request_id, _, _, _, _, _ = accepted_bf_contact(api)
     agreement = api.request(
-        "POST", "/agreements", "alice",
+        "POST",
+        "/agreements",
+        "alice",
         json={"request_id": request_id, "terms": TERMS},
     ).json()
     path = f"/agreements/{agreement['id']}/proofs"
-    assert api.request(
-        "POST", path, "bob", json={"kind": "work", "summary": "Disseny de prova"}
-    ).status_code == 409
-    assert api.request(
-        "POST", path, "charlie", json={"kind": "work", "summary": "Sense permís"}
-    ).status_code == 404
+    assert (
+        api.request(
+            "POST", path, "bob", json={"kind": "work", "summary": "Disseny de prova"}
+        ).status_code
+        == 409
+    )
+    assert (
+        api.request(
+            "POST", path, "charlie", json={"kind": "work", "summary": "Sense permís"}
+        ).status_code
+        == 404
+    )
 
 
 def test_bf_proof_attestation_evidence_revision_and_withdrawal(api):
     agreement_id, draft_id = confirmed_bf(api)
     path = f"/agreements/{agreement_id}/proofs"
     response = api.request(
-        "POST", path, "bob",
+        "POST",
+        path,
+        "bob",
         json={"kind": "work", "summary": "Mostra tèxtil BF executada"},
     )
     assert response.status_code == 201, response.text
@@ -64,10 +78,14 @@ def test_bf_proof_attestation_evidence_revision_and_withdrawal(api):
     assert api.request("GET", "/proofs", "charlie").json() == []
 
     one = api.request(
-        "POST", root + "/attestations", "alice",
+        "POST",
+        root + "/attestations",
+        "alice",
         json={
-            "expected_version": 1, "decision": "confirm",
-            "note": "He vist la mostra aportada", "confirm": True,
+            "expected_version": 1,
+            "decision": "confirm",
+            "note": "He vist la mostra aportada",
+            "confirm": True,
         },
     )
     assert one.status_code == 200, one.text
@@ -75,43 +93,70 @@ def test_bf_proof_attestation_evidence_revision_and_withdrawal(api):
     assert one.json()["confirmed_by_me"] is True
     assert one.json()["confirmed_by_counterpart"] is False
     two = api.request(
-        "POST", root + "/attestations", "bob",
+        "POST",
+        root + "/attestations",
+        "bob",
         json={
-            "expected_version": 1, "decision": "confirm",
-            "note": "Confirmo haver fet la mostra", "confirm": True,
+            "expected_version": 1,
+            "decision": "confirm",
+            "note": "Confirmo haver fet la mostra",
+            "confirm": True,
         },
     )
     assert two.status_code == 200, two.text
     assert two.json()["recognition"] == "bilaterally_attested"
-    assert api.request(
-        "POST", root + "/attestations", "bob",
-        json={
-            "expected_version": 1, "decision": "dispute",
-            "note": "No puc substituir una atestació", "confirm": True,
-        },
-    ).status_code == 409
+    assert (
+        api.request(
+            "POST",
+            root + "/attestations",
+            "bob",
+            json={
+                "expected_version": 1,
+                "decision": "dispute",
+                "note": "No puc substituir una atestació",
+                "confirm": True,
+            },
+        ).status_code
+        == 409
+    )
 
     denied = api.request(
-        "POST", root + "/evidence", "charlie",
+        "POST",
+        root + "/evidence",
+        "charlie",
         json={
-            "expected_version": 1, "origin": "self",
-            "source_reference": "BF-001", "source_version": "R1",
-            "provenance": "Mesura declarada", "rights_note": "Privat",
+            "expected_version": 1,
+            "origin": "self",
+            "source_reference": "BF-001",
+            "source_version": "R1",
+            "provenance": "Mesura declarada",
+            "rights_note": "Privat",
         },
     )
     assert denied.status_code == 404
-    assert api.request(
-        "POST", root + "/evidence", "alice",
-        json={
-            "expected_version": 1, "origin": "self",
-            "source_reference": "BF-001", "source_version": "R1",
-            "provenance": "Mesura declarada", "rights_note": "Privat",
-        },
-    ).status_code == 403
+    assert (
+        api.request(
+            "POST",
+            root + "/evidence",
+            "alice",
+            json={
+                "expected_version": 1,
+                "origin": "self",
+                "source_reference": "BF-001",
+                "source_version": "R1",
+                "provenance": "Mesura declarada",
+                "rights_note": "Privat",
+            },
+        ).status_code
+        == 403
+    )
     evidence = api.request(
-        "POST", root + "/evidence", "bob",
+        "POST",
+        root + "/evidence",
+        "bob",
         json={
-            "expected_version": 1, "origin": "experiment",
+            "expected_version": 1,
+            "origin": "experiment",
             "source_reference": "BF-TEST-001",
             "source_version": "R1",
             "provenance": "Registre sintètic de prova tèxtil",
@@ -129,45 +174,66 @@ def test_bf_proof_attestation_evidence_revision_and_withdrawal(api):
     assert updated["confirmed_by_me"] is False
     assert updated["confirmed_by_counterpart"] is False
     assert updated["has_evidence"] is True
-    assert api.request(
-        "POST", root + "/attestations", "alice",
-        json={
-            "expected_version": 1, "decision": "confirm",
-            "note": "Confirmació antiga", "confirm": True,
-        },
-    ).status_code == 409
+    assert (
+        api.request(
+            "POST",
+            root + "/attestations",
+            "alice",
+            json={
+                "expected_version": 1,
+                "decision": "confirm",
+                "note": "Confirmació antiga",
+                "confirm": True,
+            },
+        ).status_code
+        == 409
+    )
     history = api.request("GET", root + "/evidence", "bob").json()
     assert len(history) == 1
     assert history[0]["source_reference"] == "BF-TEST-001"
     assert len(api.request("GET", root + "/attestations", "alice").json()) == 2
 
     disagreement = api.request(
-        "POST", root + "/attestations", "alice",
+        "POST",
+        root + "/attestations",
+        "alice",
         json={
-            "expected_version": 2, "decision": "dispute",
-            "note": "Aquest registre no verifica la qualitat", "confirm": True,
+            "expected_version": 2,
+            "decision": "dispute",
+            "note": "Aquest registre no verifica la qualitat",
+            "confirm": True,
         },
     )
     assert disagreement.status_code == 200, disagreement.text
     assert disagreement.json()["recognition"] == "disputed"
     assert api.request("GET", f"/idea-drafts/{draft_id}", "bob").status_code == 404
     withdrawn = api.request(
-        "POST", root + "/withdraw", "bob",
+        "POST",
+        root + "/withdraw",
+        "bob",
         json={
-            "expected_version": 2, "reason": "La prova serà reformulada",
+            "expected_version": 2,
+            "reason": "La prova serà reformulada",
             "confirm": True,
         },
     )
     assert withdrawn.status_code == 200, withdrawn.text
     assert withdrawn.json()["recognition"] == "withdrawn"
     assert withdrawn.json()["version"] == 3
-    assert api.request(
-        "POST", root + "/attestations", "alice",
-        json={
-            "expected_version": 3, "decision": "confirm",
-            "note": "No", "confirm": True,
-        },
-    ).status_code == 409
+    assert (
+        api.request(
+            "POST",
+            root + "/attestations",
+            "alice",
+            json={
+                "expected_version": 3,
+                "decision": "confirm",
+                "note": "No",
+                "confirm": True,
+            },
+        ).status_code
+        == 409
+    )
 
 
 def test_inc_proof_rls_forced_on_three_tables(api):
@@ -191,8 +257,7 @@ def test_inc_proof_direct_sql_cannot_read_unrelated_claims(protected_api):
     with admin.begin() as conn:
         conn.execute(
             text(
-                f"GRANT SELECT ON proof_contributions, proof_evidence, "
-                f"proof_attestations TO {role}"
+                f"GRANT SELECT ON proof_contributions, proof_evidence, proof_attestations TO {role}"
             )
         )
     # Populate through the admin harness. The separate SQL reader below must
@@ -201,7 +266,9 @@ def test_inc_proof_direct_sql_cannot_read_unrelated_claims(protected_api):
     try:
         agreement_id, _ = confirmed_bf(api)
         response = api.request(
-            "POST", f"/agreements/{agreement_id}/proofs", "bob",
+            "POST",
+            f"/agreements/{agreement_id}/proofs",
+            "bob",
             json={"kind": "knowledge", "summary": "Coneixement aportat al BF pilot"},
         )
         assert response.status_code == 201, response.text
