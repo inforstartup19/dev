@@ -155,7 +155,6 @@ def test_postgres_direct_query_does_not_bypass_need_rls(protected_api):
             f"GRANT SELECT, INSERT, UPDATE, DELETE ON identity_facets, "
             f"shareable_needs, need_publication_events, idea_drafts TO {role}"
         ))
-    alice = api.request("GET", "/me", "alice").json()["id"]
     bob = api.request("GET", "/me", "bob").json()["id"]
     bf = api.request("POST", "/idea-drafts", "alice", json={"question": "BF privat"})
     assert bf.status_code == 201, bf.text
