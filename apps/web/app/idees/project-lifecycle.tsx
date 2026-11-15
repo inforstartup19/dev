@@ -68,7 +68,13 @@ export function ProjectLifecycle({
     setSnapshot(state);
     setEvents(history);
     setAction((previous) =>
-      state.permitted_actions.includes(previous) ? previous : state.permitted_actions[0]
+      state.permitted_actions.includes(previous)
+        ? previous
+        : state.state === "paused"
+          ? "resume"
+          : state.state === "closed"
+            ? "reopen"
+            : state.permitted_actions[0]
     );
     return state;
   }, [draftId]);
