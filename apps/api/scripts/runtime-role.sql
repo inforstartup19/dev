@@ -18,6 +18,8 @@ GRANT SELECT, INSERT ON project_decisions, project_resource_intents TO incfs_api
 GRANT SELECT, INSERT, UPDATE ON identity_facets, shareable_needs TO incfs_api;
 GRANT SELECT, INSERT, UPDATE ON connect_requests TO incfs_api;
 GRANT SELECT, INSERT ON connect_events TO incfs_api;
+GRANT SELECT, INSERT, UPDATE ON collaboration_agreements TO incfs_api;
+GRANT SELECT, INSERT ON agreement_revisions, agreement_confirmations TO incfs_api;
 GRANT SELECT, INSERT ON need_publication_events, need_viewer_grants,
   project_lifecycle_events,
   project_suggestion_feedback TO incfs_api;
