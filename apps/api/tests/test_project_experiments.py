@@ -145,6 +145,7 @@ def test_experiment_rejects_overposting(api):
     )
     assert response.status_code == 422, response.text
 
+
 def test_result_validation_and_no_implicit_verification(api):
     draft = new_draft(api)
     experiment = new_experiment(api, draft)
