@@ -25,7 +25,8 @@ def verify_runtime_database(engine, *, scanner=False, documents=False):
             FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
             WHERE n.nspname = 'public'
               AND c.relname IN ('project_vaults', 'vault_memberships', 'vault_events',
-                                'vault_documents', 'document_scan_receipts', 'idea_drafts', 'knowledge_sources')
+                                'vault_documents', 'document_scan_receipts',
+                                'idea_drafts', 'knowledge_sources')
         """)
         ).all()
         can_create = connection.scalar(
