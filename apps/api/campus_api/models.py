@@ -484,6 +484,7 @@ class ShareableNeed(Base):
         CheckConstraint("length(trim(description)) > 0"),
         Index("ix_needs_owner_draft", "owner_id", "draft_id"),
         Index("ix_needs_discovery", "state", "audience"),
+        UniqueConstraint("id", "owner_id", name="uq_shareable_need_owner"),
     )
 
 
@@ -491,7 +492,7 @@ class NeedPublicationEvent(Base):
     """Append-only publication / revocation audit, scoped to the owner."""
     __tablename__ = "need_publication_events"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
-    need_id: Mapped[str] = mapped_column(ForeignKey("shareable_needs.id"), nullable=False)
+    need_id: Mapped[str] = mapped_column(String(36), nullable=False)
     owner_id: Mapped[str] = mapped_column(String(36), nullable=False)
     actor_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
     action: Mapped[str] = mapped_column(String(12), nullable=False)
@@ -500,6 +501,7 @@ class NeedPublicationEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
     __table_args__ = (
         CheckConstraint("action IN ('publish','revoke')"),
+        ForeignKeyConstraint(["need_id", "owner_id"], ["shareable_needs.id", "shareable_needs.owner_id"]),
         UniqueConstraint("need_id", "version"),
         Index("ix_need_events_owner", "owner_id", "need_id"),
     )
