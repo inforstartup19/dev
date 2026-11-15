@@ -67,8 +67,7 @@ def owned_connection(db: DB, request_id: UUID, actor: Actor):
     item = db.scalar(
         select(ConnectRequest).where(
             ConnectRequest.id == str(request_id),
-            (ConnectRequest.owner_id == actor.id)
-            | (ConnectRequest.requester_id == actor.id),
+            (ConnectRequest.owner_id == actor.id) | (ConnectRequest.requester_id == actor.id),
         )
     )
     if item is None:
@@ -132,10 +131,7 @@ def request_contact(need_id: UUID, payload: ConnectIn, db: DB, actor: Actor):
 def list_connections(db: DB, actor: Actor):
     items = db.scalars(
         select(ConnectRequest)
-        .where(
-            (ConnectRequest.owner_id == actor.id)
-            | (ConnectRequest.requester_id == actor.id)
-        )
+        .where((ConnectRequest.owner_id == actor.id) | (ConnectRequest.requester_id == actor.id))
         .order_by(ConnectRequest.created_at.desc(), ConnectRequest.id)
         .limit(100)
     ).all()
@@ -148,9 +144,7 @@ def get_connection(request_id: UUID, db: DB, actor: Actor):
 
 
 @router.post("/connect-requests/{request_id}/transitions", response_model=ConnectOut)
-def decide_contact(
-    request_id: UUID, payload: ConnectTransitionIn, db: DB, actor: Actor
-):
+def decide_contact(request_id: UUID, payload: ConnectTransitionIn, db: DB, actor: Actor):
     item = owned_connection(db, request_id, actor)
     if item.status != "pending" or item.version != payload.expected_version:
         raise HTTPException(409, "Request already handled or stale version")
@@ -208,8 +202,7 @@ def contact_events(request_id: UUID, db: DB, actor: Actor):
         select(ConnectEvent)
         .where(
             ConnectEvent.request_id == item.id,
-            (ConnectEvent.owner_id == actor.id)
-            | (ConnectEvent.requester_id == actor.id),
+            (ConnectEvent.owner_id == actor.id) | (ConnectEvent.requester_id == actor.id),
         )
         .order_by(ConnectEvent.version)
     ).all()
