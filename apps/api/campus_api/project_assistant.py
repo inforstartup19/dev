@@ -16,6 +16,7 @@ from campus_api.models import (
     ExperimentResult,
     ProjectDecision,
     ProjectExperiment,
+    ProjectLifecycleEvent,
     ProjectResourceIntent,
 )
 
@@ -46,8 +47,17 @@ class ProjectGuidance(BaseModel):
 
 @router.get("/assistant/guidance", response_model=ProjectGuidance)
 def guidance(draft_id: UUID, db: DB, actor: Actor):
-    owned_draft(db, draft_id, actor)
+    draft = owned_draft(db, draft_id, actor)
     scope = str(draft_id)
+    last_transition = db.scalar(
+        select(ProjectLifecycleEvent)
+        .where(
+            ProjectLifecycleEvent.draft_id == scope,
+            ProjectLifecycleEvent.owner_id == actor.id,
+        )
+        .order_by(ProjectLifecycleEvent.version.desc())
+        .limit(1)
+    )
     decisions = db.scalars(
         select(ProjectDecision)
         .where(ProjectDecision.draft_id == scope, ProjectDecision.owner_id == actor.id)
@@ -63,28 +73,20 @@ def guidance(draft_id: UUID, db: DB, actor: Actor):
         .where(ProjectResourceIntent.draft_id == scope, ProjectResourceIntent.owner_id == actor.id)
     ).all()
     latest = decisions[0] if decisions else None
-    lifecycle = (
-        "paused" if latest and latest.choice == "pause"
-        else "closed" if latest and latest.choice == "close"
-        else "active" if latest else "undecided"
-    )
-    effects = []
-    if lifecycle in ("paused", "closed"):
-        effects = [
-            "La decisió consta a l'historial; no bloqueja tècnicament noves proves.",
-            "Revisa proves actives, participants i compromisos abans de comunicar "
-            "cap suspensió o tancament.",
-            "Les evidències i decisions romanen consultables amb els permisos existents.",
-            "No s'han cancel·lat acords, invitacions, pagaments ni accessos automàticament.",
-        ]
-        if lifecycle == "paused":
-            effects.append(
-                "Documenta condicions de represa i responsables abans de tornar a executar."
-            )
-        else:
-            effects.append("Revisa retenció, obligacions i eventual reobertura de forma separada.")
-    else:
-        effects = ["Cap restricció operativa automàtica derivada de les decisions."]
+    # Operational state is authoritative; decisions are historical, not actions.
+    lifecycle = draft.lifecycle_state
+    effects = [
+        "L'estat operatiu es verifica al backend; les decisions històriques no l'alteren.",
+        "Ni permisos, ni acords externs, ni obligacions es resolen automàticament.",
+    ]
+    if lifecycle != "active":
+        effects.append(
+            "Les noves execucions estan bloquejades; la consulta d'historial continua disponible."
+        )
+        effects.append(
+            "La revisió de participants, acords i retenció és una declaració humana, "
+            "no una cancel·lació externa verificada."
+        )
     suggestions = []
     existing = {item.kind for item in intents}
     active = next((exp for exp in experiments if exp.status == "active"), None)
@@ -142,10 +144,10 @@ def guidance(draft_id: UUID, db: DB, actor: Actor):
         suggestions = [Suggestion(
             code="review-lifecycle", title="Revisa els efectes de la decisió",
             reason=(
-                "La darrera decisió és pausar o tancar. "
+                "El projecte està pausat o tancat operativament. "
                 "La situació dels compromisos requereix revisió humana."
             ),
-            evidence_ids=[latest.id], action="review",
+            evidence_ids=[last_transition.id] if last_transition else [], action="review",
         )]
     return ProjectGuidance(
         lifecycle=lifecycle,
