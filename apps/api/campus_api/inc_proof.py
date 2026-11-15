@@ -101,8 +101,7 @@ def owned_proof(db: DB, proof_id: UUID, actor: Actor):
     proof = db.scalar(
         select(ProofContribution).where(
             ProofContribution.id == str(proof_id),
-            (ProofContribution.owner_id == actor.id)
-            | (ProofContribution.requester_id == actor.id),
+            (ProofContribution.owner_id == actor.id) | (ProofContribution.requester_id == actor.id),
         )
     )
     if proof is None:
@@ -207,8 +206,7 @@ def list_proofs(db: DB, actor: Actor):
     items = db.scalars(
         select(ProofContribution)
         .where(
-            (ProofContribution.owner_id == actor.id)
-            | (ProofContribution.requester_id == actor.id)
+            (ProofContribution.owner_id == actor.id) | (ProofContribution.requester_id == actor.id)
         )
         .order_by(ProofContribution.created_at.desc(), ProofContribution.id)
         .limit(100)
