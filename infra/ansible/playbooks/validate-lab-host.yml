@@ -1,0 +1,19 @@
+---
+- name: Validate Inc Campus lab host configuration policy locally
+  hosts: local_validation
+  gather_facts: false
+  become: false
+  vars:
+    inc_campus_environment: "dev"
+    inc_campus_lab_enabled: false
+    inc_campus_max_lease_hours: 4
+  tasks:
+    - name: Require disabled infrastructure and bounded lease in proposal
+      ansible.builtin.assert:
+        that:
+          - inc_campus_environment in ["dev", "preprod", "prod"]
+          - not inc_campus_lab_enabled | bool
+          - inc_campus_max_lease_hours | int >= 1
+          - inc_campus_max_lease_hours | int <= 8
+        fail_msg: "A lab cannot be activated via the validation playbook."
+        success_msg: "Local policy stub validated; no remote changes performed."
