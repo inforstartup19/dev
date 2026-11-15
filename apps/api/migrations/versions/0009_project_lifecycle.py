@@ -14,18 +14,27 @@ depends_on = None
 
 
 def upgrade():
-    with op.batch_alter_table("idea_drafts") as batch:
-        batch.add_column(
-            sa.Column("lifecycle_state", sa.String(12), nullable=False, server_default="active")
-        )
-        batch.add_column(
-            sa.Column("lifecycle_version", sa.Integer(), nullable=False, server_default="0")
-        )
-        batch.create_check_constraint(
+    # SQLite batch-recreate would rewrite FK targets held by 0007/0008 tables.
+    # ADD COLUMN is safe on both dialects; PostgreSQL adds DB constraints.
+    op.add_column(
+        "idea_drafts",
+        sa.Column("lifecycle_state", sa.String(12), nullable=False, server_default="active"),
+    )
+    op.add_column(
+        "idea_drafts",
+        sa.Column("lifecycle_version", sa.Integer(), nullable=False, server_default="0"),
+    )
+    if op.get_bind().dialect.name == "postgresql":
+        op.create_check_constraint(
             "ck_idea_drafts_lifecycle",
+            "idea_drafts",
             "lifecycle_state IN ('active', 'paused', 'closed')",
         )
-        batch.create_check_constraint("ck_idea_drafts_lifecycle_version", "lifecycle_version >= 0")
+        op.create_check_constraint(
+            "ck_idea_drafts_lifecycle_version",
+            "idea_drafts",
+            "lifecycle_version >= 0",
+        )
     op.create_table(
         "project_lifecycle_events",
         sa.Column("id", sa.String(36), primary_key=True),
@@ -132,8 +141,10 @@ def downgrade():
     op.drop_table("project_suggestion_feedback")
     op.drop_index("ix_lifecycle_events_owner_draft", table_name="project_lifecycle_events")
     op.drop_table("project_lifecycle_events")
-    with op.batch_alter_table("idea_drafts") as batch:
-        batch.drop_constraint("ck_idea_drafts_lifecycle_version", type_="check")
-        batch.drop_constraint("ck_idea_drafts_lifecycle", type_="check")
-        batch.drop_column("lifecycle_version")
-        batch.drop_column("lifecycle_state")
+    if op.get_bind().dialect.name == "postgresql":
+        op.drop_constraint(
+            "ck_idea_drafts_lifecycle_version", "idea_drafts", type_="check"
+        )
+        op.drop_constraint("ck_idea_drafts_lifecycle", "idea_drafts", type_="check")
+    op.drop_column("idea_drafts", "lifecycle_version")
+    op.drop_column("idea_drafts", "lifecycle_state")
