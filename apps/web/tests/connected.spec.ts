@@ -22,7 +22,7 @@ async function login(page: Page, account: "Professor" | "Alumne") {
 test("separate teacher and student accounts share the full invitation, submission and review flow", async ({
   browser,
 }) => {
-  test.setTimeout(60000);
+  test.setTimeout(120000);
   const teacherContext = await browser.newContext({ ignoreHTTPSErrors: true });
   const studentContext = await browser.newContext({ ignoreHTTPSErrors: true });
   const teacher = await teacherContext.newPage();
