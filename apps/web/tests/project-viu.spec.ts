@@ -160,6 +160,7 @@ test("BF sharing publishes only a need to another account and revokes it without
     await owner.getByLabel("Intenció").fill("Pressupost intern que no es publica");
     await owner.getByLabel("Nom provisional").fill("BF — Selective Need Pilot");
     await owner.getByRole("button", { name: "Desa al compte privat" }).click();
+    await expect(owner.getByTestId("project-workspace")).toBeVisible();
     const records = await (await owner.request.get(`${origin}/api/private/idea-drafts`)).json();
     const parent = records.find((item: { name: string }) =>
       item.name === "BF — Selective Need Pilot");
