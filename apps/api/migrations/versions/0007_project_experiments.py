@@ -33,11 +33,12 @@ def _rls(table):
                 f"USING (owner_id = {actor}) WITH CHECK (owner_id = {actor})"
             )
         )
+    grant = "SELECT, INSERT, UPDATE" if table == "project_experiments" else "SELECT, INSERT"
     op.execute(
         sa.text(
-            f"""DO $$ BEGIN
+            f"""DO $ BEGIN
                 IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'incfs_api') THEN
-                    GRANT SELECT, INSERT{\", UPDATE\" if table == \"project_experiments\" else \"\"}
+                    GRANT {grant}
                     ON {table} TO incfs_api;
                 END IF;
             END $$"""
