@@ -152,7 +152,6 @@ test("BF sharing publishes only a need to another account and revokes it without
   try {
     await login(owner, "Professor");
     const facets = owner.getByTestId("identity-facets");
-    await facets.getByLabel("Faceta", { exact: true }).selectOption("creator");
     await facets.getByLabel("Presentació privada").fill("BF · creador");
     await facets.getByRole("button", { name: "Desar faceta privada" }).click();
     await expect(facets.getByText(/no concedeix accés a cap projecte/)).toBeVisible();
