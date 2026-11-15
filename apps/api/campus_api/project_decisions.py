@@ -1,4 +1,5 @@
 """Append-only human choices and private optional project resource intents."""
+
 from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
@@ -105,9 +106,7 @@ def list_resource_intents(draft_id: UUID, db: DB, actor: Actor):
 @router.post("/resource-intents", response_model=ResourceIntentOut, status_code=201)
 def add_resource_intent(draft_id: UUID, payload: ResourceIntentIn, db: DB, actor: Actor):
     owned_draft(db, draft_id, actor)
-    item = ProjectResourceIntent(
-        draft_id=str(draft_id), owner_id=actor.id, **payload.model_dump()
-    )
+    item = ProjectResourceIntent(draft_id=str(draft_id), owner_id=actor.id, **payload.model_dump())
     db.add(item)
     db.commit()
     db.refresh(item)
