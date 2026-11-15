@@ -60,9 +60,7 @@ def test_bf_consent_contact_then_owner_accepts_without_project_grant(api):
     endpoint = f"/shared-needs/{need}/connect-requests"
     assert api.request("POST", endpoint, "charlie", json={"note": "Interès"}).status_code == 404
     assert api.request("POST", endpoint, "alice", json={"note": "Auto-contacte"}).status_code == 404
-    response = api.request(
-        "POST", endpoint, "bob", json={"note": "Puc ajudar amb el prototip BF."}
-    )
+    response = api.request("POST", endpoint, "bob", json={"note": "Puc ajudar amb el prototip BF."})
     assert response.status_code == 201, response.text
     created = response.json()
     assert created["status"] == "pending"
@@ -79,26 +77,39 @@ def test_bf_consent_contact_then_owner_accepts_without_project_grant(api):
     assert api.request("GET", path + "/events", "charlie").status_code == 404
     assert api.request("GET", "/connect-requests", "charlie").json() == []
     assert api.request("POST", endpoint, "bob", json={"note": "Duplicat"}).status_code == 409
-    assert api.request(
-        "POST", path + "/transitions", "bob",
-        json={"expected_version": 0, "decision": "accepted", "confirm": True},
-    ).status_code == 404
+    assert (
+        api.request(
+            "POST",
+            path + "/transitions",
+            "bob",
+            json={"expected_version": 0, "decision": "accepted", "confirm": True},
+        ).status_code
+        == 404
+    )
     accepted = api.request(
-        "POST", path + "/transitions", "alice",
+        "POST",
+        path + "/transitions",
+        "alice",
         json={"expected_version": 0, "decision": "accepted", "confirm": True},
     )
     assert accepted.status_code == 200, accepted.text
     assert accepted.json()["status"] == "accepted"
     assert accepted.json()["version"] == 1
-    assert [
-        event["action"] for event in api.request("GET", path + "/events", "bob").json()
-    ] == ["requested", "accepted"]
+    assert [event["action"] for event in api.request("GET", path + "/events", "bob").json()] == [
+        "requested",
+        "accepted",
+    ]
     assert api.request("GET", f"/idea-drafts/{draft}", "bob").status_code == 404
     assert api.request("GET", f"/idea-drafts/{draft}", "charlie").status_code == 404
-    assert api.request(
-        "POST", path + "/transitions", "alice",
-        json={"expected_version": 0, "decision": "declined", "confirm": True},
-    ).status_code == 409
+    assert (
+        api.request(
+            "POST",
+            path + "/transitions",
+            "alice",
+            json={"expected_version": 0, "decision": "declined", "confirm": True},
+        ).status_code
+        == 409
+    )
 
 
 def test_bf_contact_rejection_withdrawal_and_revoked_need(api):
@@ -108,17 +119,26 @@ def test_bf_contact_rejection_withdrawal_and_revoked_need(api):
     assert response.status_code == 201
     path = f"/connect-requests/{response.json()['id']}"
     withdrawn = api.request(
-        "POST", path + "/transitions", "bob",
+        "POST",
+        path + "/transitions",
+        "bob",
         json={"expected_version": 0, "decision": "withdrawn", "confirm": True},
     )
     assert withdrawn.status_code == 200
     assert withdrawn.json()["status"] == "withdrawn"
-    assert api.request(
-        "POST", path + "/transitions", "alice",
-        json={"expected_version": 1, "decision": "accepted", "confirm": True},
-    ).status_code == 409
+    assert (
+        api.request(
+            "POST",
+            path + "/transitions",
+            "alice",
+            json={"expected_version": 1, "decision": "accepted", "confirm": True},
+        ).status_code
+        == 409
+    )
     revoke = api.request(
-        "POST", f"/idea-drafts/{draft}/shared-needs/{need}/revoke", "alice",
+        "POST",
+        f"/idea-drafts/{draft}/shared-needs/{need}/revoke",
+        "alice",
         json={"expected_version": 1, "confirm": True, "reason": "Prova tancada"},
     )
     assert revoke.status_code == 200, revoke.text
@@ -130,19 +150,28 @@ def test_bf_contact_rejection_withdrawal_and_revoked_need(api):
 def test_bf_deny_owner_acceptance_after_need_revocation(api):
     _, _, draft, need = published_bf(api)
     request = api.request(
-        "POST", f"/shared-needs/{need}/connect-requests", "bob",
+        "POST",
+        f"/shared-needs/{need}/connect-requests",
+        "bob",
         json={"note": "Interès explícit"},
     )
     assert request.status_code == 201
     revoke = api.request(
-        "POST", f"/idea-drafts/{draft}/shared-needs/{need}/revoke", "alice",
+        "POST",
+        f"/idea-drafts/{draft}/shared-needs/{need}/revoke",
+        "alice",
         json={"expected_version": 1, "confirm": True, "reason": "Retirada"},
     )
     assert revoke.status_code == 200
-    assert api.request(
-        "POST", f"/connect-requests/{request.json()['id']}/transitions", "alice",
-        json={"expected_version": 0, "decision": "accepted", "confirm": True},
-    ).status_code == 409
+    assert (
+        api.request(
+            "POST",
+            f"/connect-requests/{request.json()['id']}/transitions",
+            "alice",
+            json={"expected_version": 0, "decision": "accepted", "confirm": True},
+        ).status_code
+        == 409
+    )
 
 
 def test_connections_have_forced_rls(api):
