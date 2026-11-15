@@ -52,6 +52,7 @@ def test_bf_decisions_optional_resources_are_private_and_append_only(api):
     )
     assert decision.status_code == 201, decision.text
     assert decision.json()["experiment_id"] == test_id
+    assert decision.json()["result_id"] == result.json()["id"]
     assert api.request("GET", root + "/decisions", "alice").json()[0]["choice"] == "reformulate"
     intent = api.request(
         "POST",
