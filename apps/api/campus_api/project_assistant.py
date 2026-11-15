@@ -241,9 +241,7 @@ def list_suggestion_feedback(draft_id: UUID, db: DB, actor: Actor):
     return list(latest.values())
 
 
-@router.post(
-    "/assistant/feedback", response_model=SuggestionFeedbackOut, status_code=201
-)
+@router.post("/assistant/feedback", response_model=SuggestionFeedbackOut, status_code=201)
 def save_suggestion_feedback(draft_id: UUID, payload: SuggestionFeedbackIn, db: DB, actor: Actor):
     owned_draft(db, draft_id, actor)
     if not payload.consent or payload.code not in ALLOWED_FEEDBACK:
