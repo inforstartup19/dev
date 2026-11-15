@@ -2,7 +2,7 @@
 
 import hashlib
 import json
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -73,6 +73,8 @@ class AgreementOut(Output):
     fully_confirmed: bool
     cancelled_reason: str
     created_at: datetime
+    acceptance_expires_at: datetime
+    acceptance_expired: bool
 
 
 class RevisionOut(Output):
@@ -99,6 +101,13 @@ def participant_agreement(db: DB, id: UUID, actor: Actor):
     if item is None:
         raise HTTPException(404, "Agreement not found")
     return item
+
+
+def acceptance_deadline(item: CollaborationAgreement):
+    created = item.created_at
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=UTC)
+    return created + timedelta(days=30)
 
 
 def snapshot(db: DB, item: CollaborationAgreement):
@@ -133,6 +142,8 @@ def snapshot(db: DB, item: CollaborationAgreement):
         fully_confirmed=item.status == "active" and owner_confirmed and requester_confirmed,
         cancelled_reason=item.cancelled_reason,
         created_at=item.created_at,
+        acceptance_expires_at=acceptance_deadline(item),
+        acceptance_expired=now() > acceptance_deadline(item),
     )
 
 
@@ -218,6 +229,8 @@ def list_revisions(agreement_id: UUID, db: DB, actor: Actor):
 @router.post("/{agreement_id}/revisions", response_model=AgreementOut)
 def revise_agreement(agreement_id: UUID, payload: RevisionIn, db: DB, actor: Actor):
     item = participant_agreement(db, agreement_id, actor)
+    if now() > acceptance_deadline(item):
+        raise HTTPException(410, "Proposal expired; cancel and create a new negotiation")
     if item.status != "active" or item.current_version != payload.expected_version:
         raise HTTPException(409, "Cancelled or outdated agreement")
     changed = db.execute(
@@ -253,6 +266,8 @@ def revise_agreement(agreement_id: UUID, payload: RevisionIn, db: DB, actor: Act
 @router.post("/{agreement_id}/confirmations", response_model=AgreementOut)
 def confirm_agreement(agreement_id: UUID, payload: ConfirmationIn, db: DB, actor: Actor):
     item = participant_agreement(db, agreement_id, actor)
+    if now() > acceptance_deadline(item):
+        raise HTTPException(410, "Proposal expired; cannot confirm")
     if item.status != "active" or item.current_version != payload.expected_version:
         raise HTTPException(409, "Cancelled or outdated agreement")
     revision = db.scalar(

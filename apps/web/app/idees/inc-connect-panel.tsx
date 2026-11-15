@@ -8,6 +8,7 @@ type Need = { id: string; title: string; description: string; audience: "selecte
 type Contact = {
   id: string; need_id: string; role: "owner" | "requester";
   note: string; version: number;
+  acceptance_expired: boolean; accept_expires_at: string;
   status: "pending" | "accepted" | "declined" | "withdrawn";
 };
 type Terms = {
@@ -19,6 +20,7 @@ type Agreement = {
   version: number; terms: Terms; terms_sha256: string;
   owner_confirmed: boolean; requester_confirmed: boolean;
   fully_confirmed: boolean; cancelled_reason: string;
+  acceptance_expired: boolean; acceptance_expires_at: string;
 };
 const emptyTerms = (): Terms => ({
   goal: "", contribution: "", commitment: "", deliverable: "",
@@ -220,8 +222,11 @@ export function IncConnectPanel() {
               <strong>{item.role === "owner" ? "Interès rebut" : "Interès enviat"}</strong>
               <p>{item.note}</p>
               <small>{contactState[item.status]} · v{item.version}</small>
+              {item.status === "pending" && item.acceptance_expired &&
+                <small>La petició ha superat els 7 dies: no es pot acceptar, però es pot rebutjar o retirar.</small>}
               {item.status === "pending" && item.role === "owner" && <>
-                <button type="button" disabled={busy} onClick={() => decide(item, "accepted")}>Acceptar interès</button>
+                <button type="button" disabled={busy || item.acceptance_expired}
+                  onClick={() => decide(item, "accepted")}>Acceptar interès</button>
                 <button type="button" disabled={busy} onClick={() => decide(item, "declined")}>Rebutjar interès</button>
               </>}
               {item.status === "pending" && item.role === "requester" &&
@@ -266,12 +271,14 @@ export function IncConnectPanel() {
                   onChange={(event) => changeTerm(key, event.target.value)} />
               </label>
             ))}
+            {agreement.acceptance_expired && agreement.status === "active" &&
+              <p>El termini de 30 dies per revisar o confirmar ha caducat. Pots cancel·lar la proposta.</p>}
             {agreement.status === "active" && <>
-              <button type="button" disabled={busy || !validTerms || !versionEdited}
+              <button type="button" disabled={busy || agreement.acceptance_expired || !validTerms || !versionEdited}
                 onClick={reviseAgreement}>
                 Desar nova versió (anul·la confirmacions anteriors)
               </button>
-              <button type="button" disabled={busy || Boolean(versionEdited)}
+              <button type="button" disabled={busy || agreement.acceptance_expired || Boolean(versionEdited)}
                 onClick={confirmAgreement}>Confirmar exactament aquesta versió</button>
               <label>Motiu de cancel·lació
                 <input maxLength={500} value={reason} onChange={(event) => setReason(event.target.value)} />
