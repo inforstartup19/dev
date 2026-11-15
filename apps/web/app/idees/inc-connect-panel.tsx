@@ -20,6 +20,7 @@ type Agreement = {
   version: number; terms: Terms; terms_sha256: string;
   owner_confirmed: boolean; requester_confirmed: boolean;
   fully_confirmed: boolean; cancelled_reason: string;
+  acceptance_expired: boolean; acceptance_expires_at: string;
 };
 const emptyTerms = (): Terms => ({
   goal: "", contribution: "", commitment: "", deliverable: "",
@@ -270,12 +271,14 @@ export function IncConnectPanel() {
                   onChange={(event) => changeTerm(key, event.target.value)} />
               </label>
             ))}
+            {agreement.acceptance_expired && agreement.status === "active" &&
+              <p>El termini de 30 dies per revisar o confirmar ha caducat. Pots cancel·lar la proposta.</p>}
             {agreement.status === "active" && <>
-              <button type="button" disabled={busy || !validTerms || !versionEdited}
+              <button type="button" disabled={busy || agreement.acceptance_expired || !validTerms || !versionEdited}
                 onClick={reviseAgreement}>
                 Desar nova versió (anul·la confirmacions anteriors)
               </button>
-              <button type="button" disabled={busy || Boolean(versionEdited)}
+              <button type="button" disabled={busy || agreement.acceptance_expired || Boolean(versionEdited)}
                 onClick={confirmAgreement}>Confirmar exactament aquesta versió</button>
               <label>Motiu de cancel·lació
                 <input maxLength={500} value={reason} onChange={(event) => setReason(event.target.value)} />
