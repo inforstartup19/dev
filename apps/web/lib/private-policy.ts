@@ -25,6 +25,16 @@ export function privateRoute(
   if ((method === "GET" || method === "POST") &&
       (joined === "idea-drafts" || new RegExp("^idea-drafts/" + id + "$").test(joined)))
     return "json";
+
+  // Projecte Viu: precisely bounded, authenticated BFF routes.
+  if ((method === "GET" || method === "POST") && (
+    new RegExp("^idea-drafts/" + id + "/experiments$").test(joined) ||
+    new RegExp("^idea-drafts/" + id + "/experiments/" + id + "$").test(joined) && method === "POST" ||
+    new RegExp("^idea-drafts/" + id + "/experiments/" + id + "/activate$").test(joined) && method === "POST" ||
+    new RegExp("^idea-drafts/" + id + "/experiments/" + id + "/results$").test(joined) ||
+    new RegExp("^idea-drafts/" + id + "/experiments/" + id + "/results/" + id + "/evidence$").test(joined) && method === "POST" ||
+    new RegExp("^idea-drafts/" + id + "/(decisions|resource-intents)$").test(joined)
+  )) return "json";
   return null;
 }
 export function privateClaims(context: string): string {

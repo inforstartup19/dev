@@ -1,0 +1,21 @@
+.workspace{margin-top:24px;border:1px solid #375665;border-radius:22px;padding:clamp(18px,3vw,32px);background:#101b29;display:grid;gap:22px;color:#edf6f6}
+.heading{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}
+.heading h2{font-size:clamp(1.4rem,3vw,2rem);margin:7px 0}.heading p,.panel p{color:#bfd0d8;line-height:1.5}
+.kicker{font-size:11px;letter-spacing:.15em;color:#9fdbcc;font-weight:700}
+.columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.panel{border:1px solid #375161;border-radius:14px;padding:18px;display:grid;align-content:start;gap:14px;min-width:0}
+.panel h3{font-size:1.1rem;margin:0}
+.workspace button{background:#203e46;color:#e8f5f3;border:1px solid #6a9b9d;border-radius:9px;padding:11px 14px;text-align:left;cursor:pointer;font:inherit}
+.workspace button:hover{background:#285158}
+.workspace button:disabled{opacity:.5;cursor:not-allowed}
+.form{display:grid;gap:12px}
+.form label{display:grid;gap:7px;font-weight:650;font-size:14px}
+.form input,.form select,.form textarea{width:100%;border:1px solid #6b838e;background:#152b38;border-radius:8px;padding:10px;color:#fff;font:inherit;min-width:0}
+.form textarea{min-height:72px;resize:vertical}
+.form button{font-weight:700}
+.row,.selected{display:grid;gap:5px;overflow-wrap:anywhere}
+.selected{border-color:#a9eedc!important;background:#285351!important}
+.row small,.selected small,.panel small{color:#c0d0d5}
+.history{padding-left:22px;display:grid;gap:10px;overflow-wrap:anywhere}
+.history li{border-left:2px solid #48777e;padding-left:12px}
+@media(max-width:760px){.columns{grid-template-columns:1fr}.workspace{padding:16px}}

@@ -14,6 +14,7 @@ GRANT SELECT, INSERT, UPDATE ON idea_drafts TO incfs_api;
 GRANT SELECT, INSERT, UPDATE ON knowledge_sources TO incfs_api;
 GRANT SELECT, INSERT, UPDATE ON project_experiments TO incfs_api;
 GRANT SELECT, INSERT ON experiment_results, experiment_evidence TO incfs_api;
+GRANT SELECT, INSERT ON project_decisions, project_resource_intents TO incfs_api;
 GRANT incfs_documents_api TO incfs_api WITH INHERIT TRUE;
 COMMIT;
 -- Separately: GRANT incfs_api TO "the-runtime-login";

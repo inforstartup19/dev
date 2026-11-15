@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: connected-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   connected:
     runs-on: ubuntu-latest
@@ -40,3 +44,11 @@ jobs:
         working-directory: apps/web
       - run: npm run test:connected
         working-directory: apps/web
+      - name: Upload synthetic connected E2E failure context
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: connected-e2e-context
+          path: apps/web/test-results/**/error-context.md
+          retention-days: 3
+          if-no-files-found: ignore
