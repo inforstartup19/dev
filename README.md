@@ -15,6 +15,8 @@
 | Azure i Terraform | Bootstrap, entorn de desenvolupament i integració OIDC documentats; web i API encara no desplegades a Azure |
 | BF — Be First | Primer projecte de referència per validar el recorregut UX; les dades del pilot no equivalen a dades reals o públiques |
 
+**Estratègia d'entorns aprovada:** [DEV → PREPROD → PROD](docs/architecture/environments-release-strategy.md), amb promoció controlada. **No hi ha PostgreSQL desplegat a Azure** i no s'ha iniciat cap desplegament de les aplicacions. En aquesta etapa, tot el nou treball queda a la branca Git `dev`; cap canvi de `main` ni d'infraestructura real sense acord explícit.
+
 **Desenvolupament actiu:** [Issue #27 — reconciliació tècnica](https://github.com/inforstartup19/dev/issues/27) · [PR #17 — fitxa curta](https://github.com/inforstartup19/dev/pull/17) · [PR #47 — migracions reconciliades](https://github.com/inforstartup19/dev/pull/47) · [PR #48 — proves i evidències](https://github.com/inforstartup19/dev/pull/48).
 
 ## 🗂️ Estructura real del repositori
@@ -52,7 +54,8 @@ Per desenvolupar l'API i la web, consulta les instruccions específiques: [API F
 - **`dev`** és la branca d'integració del desenvolupament actiu.
 - Cada funcionalitat es treballa en una branca específica i entra per PR amb proves i revisió. Les PR apilades han de mantenir l'ordre de dependències.
 - El conjunt actual segueix **#17 → #47 → #48**. Les tres PR **no** s'han fusionat a `dev`; abans cal revisar l'estat real de les migracions Alembic i els criteris de seguretat.
-- No s'han d'executar `terraform apply`, desplegaments o migracions en entorns amb dades reals només perquè la CI sigui verda.
+- No s'han d'executar `terraform apply`, desplegaments o migracions només perquè la CI sigui verda. L'auditoria d'una BD Azure DEV inexistent no bloqueja la integració del **codi** a Git `dev`, però el primer desplegament Azure requerirà un gate separat.
+- Promoció prevista: **codi Git `dev` → Azure DEV → Azure PREPROD → Azure PROD**, amb entorns aïllats i aprovacions específiques.
 
 Consulta [CONTRIBUTING.md](CONTRIBUTING.md) i [les decisions d'infraestructura](docs/infrastructure.md). Els controls de branca obligatoris s'han de verificar a GitHub Settings; la presència de workflows no prova que estiguin imposats.
 
@@ -70,7 +73,7 @@ Consulta [CONTRIBUTING.md](CONTRIBUTING.md) i [les decisions d'infraestructura](
 
 Terraform **1.13.5** defineix bootstrap, estat remot, identitat federada GitHub–Azure i entorn `dev`. Els workflows validen configuració i plans segons el cas; el `plan` no autoritza un `apply` automàtic.
 
-[Infraestructura](docs/infrastructure.md) · [OIDC GitHub–Azure](docs/github-azure.md) · [Terraform plan](docs/terraform-plan.md) · [Xarxa privada](docs/private-network.md) · [Allotjament de les aplicacions](docs/application-hosting.md).
+[Estratègia DEV/PREPROD/PROD](docs/architecture/environments-release-strategy.md) · [Infraestructura](docs/infrastructure.md) · [OIDC GitHub–Azure](docs/github-azure.md) · [Terraform plan](docs/terraform-plan.md) · [Xarxa privada](docs/private-network.md) · [Allotjament de les aplicacions](docs/application-hosting.md).
 
 ---
 
