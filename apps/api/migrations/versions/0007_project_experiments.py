@@ -54,6 +54,7 @@ def upgrade():
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("draft_id", sa.String(36), nullable=False),
         sa.Column("owner_id", sa.String(36), nullable=False),
+        sa.Column("reformulates_id", sa.String(36), nullable=True),
         sa.Column("question", sa.String(2000), nullable=False),
         sa.Column("method", sa.String(3000), nullable=False),
         sa.Column("success_criterion", sa.String(3000), nullable=False),
@@ -62,8 +63,16 @@ def upgrade():
         sa.ForeignKeyConstraint(
             ["draft_id", "owner_id"], ["idea_drafts.id", "idea_drafts.owner_id"]
         ),
-        sa.CheckConstraint("status IN ('active', 'completed')", name="ck_experiment_status"),
-        sa.CheckConstraint("length(trim(question)) > 0", name="ck_experiment_question"),
+        sa.ForeignKeyConstraint(
+            ["reformulates_id", "owner_id"],
+            ["project_experiments.id", "project_experiments.owner_id"],
+        ),
+        sa.CheckConstraint("status IN ('draft', 'active', 'completed')", name="ck_experiment_status"),
+        sa.CheckConstraint(
+            "status = 'draft' OR (length(trim(question)) > 0 "
+            "AND length(trim(method)) > 0 AND length(trim(success_criterion)) > 0)",
+            name="ck_experiment_active_fields",
+        ),
         sa.UniqueConstraint("id", "owner_id", name="uq_experiment_id_owner"),
     )
     op.create_index("ix_experiments_owner_draft", "project_experiments", ["owner_id", "draft_id"])
