@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
+from campus_api.academic_catalog import router as academic_catalog_router
 from campus_api.auth import require_private_context
 from campus_api.blob_store import AzureDocumentStore
 from campus_api.config import Settings
@@ -101,6 +102,7 @@ def create_app(settings: Settings | None = None):
             return JSONResponse(status_code=503, content={"status": "not_ready"})
 
     app.include_router(router)
+    app.include_router(academic_catalog_router)
     app.include_router(vault_router)
     app.include_router(idea_drafts_router)
     app.include_router(facets_router)
