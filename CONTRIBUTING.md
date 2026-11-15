@@ -5,11 +5,11 @@ El codi de la plataforma es desenvolupa de manera incremental, amb revisions i c
 ## Branques i pull requests
 
 1. `main` és la branca predeterminada del repositori i el punt d'entrada de la documentació general.
-2. `dev` és la branca d'integració del producte en desenvolupament.
+2. `dev` és la branca d'integració del producte en desenvolupament i el **destí de tots els nous canvis de codi i documentació** fins que s'aprovi una altra estratègia.
 3. Crea una branca de treball amb un objectiu concret (`feat/`, `fix/`, `docs/` o `chore/`). Per als canvis de producte, obre habitualment una PR cap a `dev`.
 4. Quan un canvi depèn de codi encara no fusionat, pots crear una **PR apilada** cap a la branca anterior. Exemple: `feat/issue-11-short-project-card` → `fix/issue-27-combined-idea-knowledge` → `feat/projecte-viu-experiments-evidence`.
 5. Comprova el diff i els workflows de la PR, documenta la validació i resol els bloquejos abans de considerar el merge. Després de cada merge, actualitza/revisa la base de la següent PR.
-6. Canvis cap a `main` han de ser conscients i revisats, especialment per a publicacions o infraestructura. Una PR aprovada no implica desplegament automàtic.
+6. **No fer canvis a `main`** sense petició expressa. La promoció a Azure DEV, PREPROD i PROD és independent del merge Git i requereix validació i aprovació per entorn. Vegeu [l'estratègia d'entorns](docs/architecture/environments-release-strategy.md).
 
 ## Validacions
 
