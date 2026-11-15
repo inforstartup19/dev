@@ -36,6 +36,12 @@ export function privateRoute(
       new RegExp("^idea-drafts/" + id + "/shared-needs$").test(joined))
     return "json";
   if (method === "GET" &&
+      new RegExp("^idea-drafts/" + id + "/shared-needs/" + id + "/viewers$").test(joined))
+    return "json";
+  if (method === "POST" &&
+      new RegExp("^idea-drafts/" + id + "/shared-needs/" + id + "/viewers$").test(joined))
+    return "json";
+  if (method === "GET" &&
       new RegExp("^idea-drafts/" + id + "/shared-needs/" + id + "/events$").test(joined))
     return "json";
   if (method === "POST" &&
