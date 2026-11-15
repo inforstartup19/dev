@@ -70,10 +70,12 @@ def test_bf_pause_freezes_new_work_preserves_history_and_resumes(api):
     for method, path, data in (
         ("POST", root, {"question": "Canvi indegut"}),
         ("POST", root + "/experiments", {}),
-        ("POST", root + f"/experiments/{experiment_id}/results",
-         {"outcome": "supportive", "observations": "Intent bloquejat"}),
-        ("POST", root + "/resource-intents",
-         {"kind": "funding", "description": "Desar nou"}),
+        (
+            "POST",
+            root + f"/experiments/{experiment_id}/results",
+            {"outcome": "supportive", "observations": "Intent bloquejat"},
+        ),
+        ("POST", root + "/resource-intents", {"kind": "funding", "description": "Desar nou"}),
     ):
         assert api.request(method, path, "alice", json=data).status_code == 409
     assert api.request("GET", root + "/experiments", "alice").status_code == 200
@@ -117,15 +119,21 @@ def test_bf_lifecycle_idempotency_stale_version_and_mandatory_review(api):
     again = transition(api, project, "pause", 0, idempotency_key=key)
     assert again.status_code == 201
     assert again.json()["id"] == first.json()["id"]
-    assert transition(api, project, "pause", 0, idempotency_key=key,
-                      reason="Different request").status_code == 409
+    assert (
+        transition(
+            api, project, "pause", 0, idempotency_key=key, reason="Different request"
+        ).status_code
+        == 409
+    )
     assert transition(api, project, "close", 0).status_code == 409
-    assert transition(api, project, "close", 1,
-                      reviewed=["experiments", "participants", "agreements"]).status_code == 422
-    assert transition(api, project, "resume", 1,
-                      resume_conditions="").status_code == 422
-    assert len(api.request("GET", f"/idea-drafts/{project}/lifecycle/events",
-                           "alice").json()) == 1
+    assert (
+        transition(
+            api, project, "close", 1, reviewed=["experiments", "participants", "agreements"]
+        ).status_code
+        == 422
+    )
+    assert transition(api, project, "resume", 1, resume_conditions="").status_code == 422
+    assert len(api.request("GET", f"/idea-drafts/{project}/lifecycle/events", "alice").json()) == 1
 
 
 def test_bf_two_accounts_cannot_read_write_or_infer_lifecycle(api):
@@ -145,6 +153,4 @@ def test_no_review_attestation_no_transition(api, action):
     project = create(api)
     response = transition(api, project, action, 0, review_note="")
     assert response.status_code == 422
-    assert api.request("GET", f"/idea-drafts/{project}/lifecycle", "alice").json()[
-        "version"
-    ] == 0
+    assert api.request("GET", f"/idea-drafts/{project}/lifecycle", "alice").json()["version"] == 0
