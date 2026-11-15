@@ -5,7 +5,7 @@ test.skip(
   "Requires isolated OIDC and API test services.",
 );
 
-async function login(page: Page, account: "Professor" | "Alumne") {
+async function login(page: Page, account: "Professor" | "Alumne" | "Tercer") {
   await page.goto("http://localhost:3400/idees");
   await page.getByRole("button", { name: "Continua amb el teu compte", exact: true }).click();
   await page.getByRole("link", { name: `${account} de proves`, exact: true }).click();
@@ -294,6 +294,118 @@ test("BF Connect and Agreements UX needs two consenting accounts without sharing
     await otherView.getByRole("button", { name: /Versió 1 · Pendent de confirmacions/ }).click();
     await otherView.getByRole("button", { name: "Confirmar exactament aquesta versió" }).click();
     await expect(otherView.getByRole("button", { name: /Confirmada per ambdues parts/ })).toBeVisible();
+
+    // #23: genuine API-backed Proof lifecycle for two participants and an outsider.
+    const proofA = owner.getByTestId("inc-proof-panel");
+    const proofB = collaborator.getByTestId("inc-proof-panel");
+    await proofB.getByRole("button", { name: "Actualitzar Proof" }).click();
+    await expect(proofB.getByLabel("Acord confirmat").locator("option")).toHaveCount(2);
+    await proofB.getByLabel("Acord confirmat").selectOption({ index: 1 });
+    await proofB.getByLabel("Resum de l’aportació").fill("Mostra tèxtil BF Proof");
+    await proofB.getByRole("button", { name: "Declarar aportació privada" }).click();
+    await expect(proofB.getByTestId("proof-detail")).toContainText("Versió 1 · Declarada");
+    const records = await (await collaborator.request.get(`${origin}/api/private/proofs`)).json();
+    const proof = records.find((p: {summary: string}) => p.summary === "Mostra tèxtil BF Proof");
+    const proofRoot = `${origin}/api/private/proofs/${proof.id}`;
+
+    const thirdContext = await browser.newContext({ ignoreHTTPSErrors: true });
+    try {
+      const third = await thirdContext.newPage();
+      await login(third, "Tercer");
+      await expect(third.getByTestId("inc-proof-panel")).toContainText("No hi ha aportacions accessibles.");
+      for (const suffix of ["", "/evidence", "/attestations"])
+        expect((await third.request.get(proofRoot + suffix)).status()).toBe(404);
+      expect((await third.request.post(proofRoot + "/attestations", {
+        headers: { Origin: origin }, data: {expected_version: 1, decision: "confirm", note: "Intent aliè", confirm: true},
+      })).status()).toBe(404);
+    } finally { await thirdContext.close(); }
+
+    await proofA.getByRole("button", { name: "Actualitzar Proof" }).click();
+    await proofA.getByRole("button", { name: /Mostra tèxtil BF Proof · v1/ }).click();
+    await expect(proofA.getByLabel("Referència de la font")).toHaveCount(0);
+    await expect(proofA.getByRole("button", { name: "Retirar aportació" })).toHaveCount(0);
+    for (const panel of [proofA, proofB]) {
+      await panel.getByLabel("Nota de revisió").fill("He revisat la mostra sintètica");
+      await panel.getByRole("checkbox", { name: /He revisat la versió 1/ }).check();
+      await panel.getByRole("button", { name: "Registrar decisió de Proof" }).click();
+      await expect(panel.getByText("Decisió registrada per a aquesta versió.", { exact: true })).toBeVisible();
+    }
+    await expect(proofB.getByTestId("proof-detail")).toContainText("Versió 1 · Confirmada per ambdues parts");
+    await proofB.getByLabel("Referència de la font").fill("BF-PROOF-001");
+    await proofB.getByLabel("Versió de la font").fill("R1");
+    await proofB.getByLabel("Procedència").fill("Mesura sintètica, sense dades de clients");
+    await proofB.getByLabel("Drets d’ús declarats").fill("Només participants");
+    await proofB.getByRole("button", { name: "Afegir evidència i revisar versió" }).click();
+    await expect(proofB.getByTestId("proof-detail")).toContainText("Versió 2 · Declarada");
+    await expect(proofB.getByTestId("proof-detail")).toContainText("Històrica, no vigent");
+
+    // Refresh recovers the latest version; a dispute is a human decision, not certification.
+    await proofA.getByRole("button", { name: "Actualitzar Proof" }).click();
+    await expect(proofA.getByTestId("proof-detail")).toContainText("Versió 2 · Declarada");
+    const concurrent = await collaborator.request.post(proofRoot + "/evidence", {
+      headers: { Origin: origin }, data: {expected_version: 2, origin: "self", source_reference: "BF-PROOF-002", source_version: "R2", provenance: "Revisió concurrent sintètica", rights_note: "Privat"},
+    });
+    expect(concurrent.status()).toBe(201);
+    await proofA.getByLabel("Nota de revisió").fill("Decisió sobre versió antiga");
+    await proofA.getByRole("checkbox", { name: /He revisat la versió 2/ }).check();
+    await proofA.getByRole("button", { name: "Registrar decisió de Proof" }).click();
+    await expect(proofA.getByRole("alert")).toContainText("La versió ha canviat");
+    await expect(proofA.getByTestId("proof-detail")).toContainText("Versió 3 · Declarada");
+    await expect(proofA.getByRole("checkbox", { name: /He revisat la versió 3/ })).not.toBeChecked();
+    await proofA.getByLabel("Decisió", { exact: true }).selectOption("dispute");
+    await proofA.getByLabel("Nota de revisió").fill("Cal contrastar aquesta nova evidència");
+    await proofA.getByRole("checkbox", { name: /He revisat la versió 3/ }).check();
+    await proofA.getByRole("button", { name: "Registrar decisió de Proof" }).click();
+    await expect(proofA.getByTestId("proof-detail")).toContainText("Versió 3 · En disputa");
+    await proofB.getByRole("button", { name: "Actualitzar Proof" }).click();
+    await expect(proofB.getByTestId("proof-detail")).toContainText("Versió 3 · En disputa");
+    await proofB.getByLabel("Motiu de retirada").fill("Retirem la mostra per revisar-la");
+    await proofB.getByRole("checkbox", { name: /Vull retirar aquesta aportació/ }).check();
+    await proofB.getByRole("button", { name: "Retirar aportació" }).click();
+    await expect(proofB.getByTestId("proof-detail")).toContainText("Retirada");
+    await expect(proofB.getByRole("button", { name: "Registrar decisió de Proof" })).toHaveCount(0);
+    await expect(proofB.getByTestId("proof-detail")).toContainText("BF-PROOF-001");
+
+    // A late response for the old selection must not replace the new contribution.
+    const second = await collaborator.request.post(`${origin}/api/private/agreements/${proof.agreement_id}/proofs`, {
+      headers: { Origin: origin }, data: {kind: "knowledge", summary: "Segona aportació BF"},
+    });
+    expect(second.status()).toBe(201);
+    await proofB.getByRole("button", { name: "Actualitzar Proof" }).click();
+    await expect(proofB.getByRole("button", {name: /Segona aportació BF · v1/})).toBeVisible();
+    await expect(proofB.getByTestId("proof-detail")).toContainText("Retirada");
+    let release!: () => void;
+    let began!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    const intercepted = new Promise<void>(resolve => { began = resolve; });
+    await collaborator.route(proofRoot, async route => {
+      const response = await route.fetch(); began(); await gate;
+      await route.fulfill({response}).catch(() => {}); // The selection change aborts this request.
+    });
+    await proofB.getByRole("button", { name: /Mostra tèxtil BF Proof · v4/ }).click();
+    await intercepted;
+    await proofB.getByRole("button", { name: /Segona aportació BF · v1/ }).click();
+    await expect(proofB.getByTestId("proof-detail")).toContainText("Segona aportació BF");
+    release();
+    await collaborator.unroute(proofRoot);
+    await expect(proofB.getByTestId("proof-detail")).not.toContainText("BF-PROOF-001");
+
+    // Access loss removes cached details; list failures terminate loading and can recover.
+    const secondId = (await second.json()).id;
+    const secondRoot = `${origin}/api/private/proofs/${secondId}`;
+    await collaborator.route(secondRoot, route => route.fulfill({status: 403, json: {code: "request_failed"}}));
+    await proofB.getByRole("button", { name: /Segona aportació BF · v1/ }).click();
+    await expect(proofB.getByRole("alert")).toContainText("Aportació no disponible");
+    await expect(proofB.getByTestId("proof-detail")).toHaveCount(0);
+    await collaborator.unroute(secondRoot);
+    await collaborator.route(`${origin}/api/private/proofs`, route => route.fulfill({status: 503, json: {code: "service_unavailable"}}));
+    await proofB.getByRole("button", { name: "Actualitzar Proof" }).click();
+    await expect(proofB.getByRole("alert")).toBeVisible();
+    await expect(proofB.getByText("Carregant aportacions…")).toHaveCount(0);
+    await expect(proofB.getByTestId("proof-detail")).toHaveCount(0);
+    await collaborator.unroute(`${origin}/api/private/proofs`);
+    await proofB.getByRole("button", { name: "Actualitzar Proof" }).click();
+    await expect(proofB.getByRole("button", {name: /Segona aportació BF · v1/})).toBeVisible();
 
     expect((await collaborator.request.get(root)).status()).toBe(404);
     expect((await (await owner.request.get(root)).json()).visibility).toBe("private");

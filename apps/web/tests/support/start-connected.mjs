@@ -62,6 +62,7 @@ const accessTokens = new Map();
 const users = {
   teacher: { sub: "teacher-1", name: "Marta de proves" },
   student: { sub: "student-1", name: "Laia de proves" },
+  outsider: { sub: "outsider-1", name: "Tercer de proves" },
 };
 const children = [];
 let server;
@@ -139,7 +140,7 @@ server = createServer(
         "Cache-Control": "no-store",
       });
       return response.end(
-        `<!doctype html><html lang="ca"><title>Identitat de proves</title><body><h1>Tria un compte de proves</h1><p>Aquests comptes només existeixen en aquest entorn efímer.</p><a href="/choose?ticket=${ticket}&account=teacher">Professor de proves</a><br><a href="/choose?ticket=${ticket}&account=student">Alumne de proves</a></body></html>`,
+        `<!doctype html><html lang="ca"><title>Identitat de proves</title><body><h1>Tria un compte de proves</h1><p>Aquests comptes només existeixen en aquest entorn efímer.</p><a href="/choose?ticket=${ticket}&account=teacher">Professor de proves</a><br><a href="/choose?ticket=${ticket}&account=student">Alumne de proves</a><br><a href="/choose?ticket=${ticket}&account=outsider">Tercer de proves</a></body></html>`,
       );
     }
     if (url.pathname === "/choose") {

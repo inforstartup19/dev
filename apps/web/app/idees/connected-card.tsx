@@ -7,6 +7,7 @@ import { pendingIdeaFields, validateIdea, type IdeaInput } from "../../lib/idea-
 import styles from "./short-card.module.css";
 import { ProjectWorkspace } from "./project-workspace";
 import { IdentityFacets } from "./identity-facets";
+import { IncProofPanel } from "./inc-proof-panel";
 import { IncConnectPanel } from "./inc-connect-panel";
 
 type ServerDraft = {
@@ -164,7 +165,7 @@ export function ConnectedIdeaDrafts() {
         </form>
       </section>
       {!loadFailed && !loading && <IdentityFacets />}
-      {!loadFailed && !loading && <IncConnectPanel />}
+      {!loadFailed && !loading && <><IncConnectPanel /><IncProofPanel /></>}
       {selectedId && !loadFailed && <ProjectWorkspace key={selectedId} draftId={selectedId} />}
     </main>
   );
