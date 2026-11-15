@@ -1,6 +1,6 @@
 # Estratègia d'entorns i promoció: DEV → PREPROD → PROD
 
-**Decisió arquitectònica — 15/11/2026**  
+**Decisió arquitectònica — 15/11/2026**
 **Estat:** aprovada com a estratègia; **no desplegada**. Tot el treball preparatori queda a la branca Git `dev`. No crear PostgreSQL ni altres serveis Azure fins a l'aprovació explícita del desplegament controlat.
 
 ## Principis
