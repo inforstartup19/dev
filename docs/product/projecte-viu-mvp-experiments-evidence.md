@@ -54,3 +54,12 @@ POST /v1/idea-drafts/{draft_id}/experiments
 POST /v1/idea-drafts/{draft_id}/experiments/{experiment_id}/results
 {"outcome":"inconclusive","observations":"Mostra insuficient","evidence":[{"reference":"demo-bf-001","source_note":"Prova fictícia"}]}
 ```
+
+
+## Suport a esborranys incomplets i reformulacions (#6/#12)
+- `POST /v1/idea-drafts/{draft_id}/experiments` pot rebre un cos buit: crea una prova amb estat `draft`.
+- Els camps de pregunta, mètode i criteri poden completar-se progressivament amb `POST /v1/idea-drafts/{draft_id}/experiments/{experiment_id}`.
+- `POST /v1/idea-drafts/{draft_id}/experiments/{experiment_id}/activate` exigeix els tres camps i canvia a `active`; no es poden registrar resultats abans de l'activació.
+- Una prova activa o completada no es pot reescriure com a esborrany. Una reformulació és un **nou experiment** amb `reformulates_id` que ha de referenciar una prova completada del mateix propietari i projecte.
+- El resultat antic i les evidències associades no s'eliminen amb aquesta reformulació.
+- Continua pendent desenvolupar la UI integrada i el flux de decisions i retenció de #14; el resultat no s'aprova per a Inc AI.
