@@ -39,3 +39,27 @@ test("binary proxy limits incoming and outgoing bytes", async () => {
   assert.deepEqual([...bytes], [0, 255, 1]);
   await assert.rejects(boundedBytes(new Response("too large"), 2));
 });
+test("lifecycle and Inc AI proxy routes remain tightly allowlisted", () => {
+  for (const path of [
+    ["lifecycle"],
+    ["lifecycle", "events"],
+    ["assistant", "guidance"],
+    ["assistant", "feedback"],
+  ]) {
+    assert.equal(privateRoute("GET", ["idea-drafts", id, ...path]), "json");
+  }
+  for (const path of [["lifecycle", "transitions"], ["assistant", "feedback"]]) {
+    assert.equal(privateRoute("POST", ["idea-drafts", id, ...path]), "json");
+  }
+  for (const path of [
+    ["lifecycle", "transitions", id],
+    ["assistant", "admin"],
+    ["assistant", "guidance", id],
+    ["lifecycle", "events", "other"],
+  ]) {
+    assert.equal(privateRoute("GET", ["idea-drafts", id, ...path]), null);
+    assert.equal(privateRoute("POST", ["idea-drafts", id, ...path]), null);
+  }
+  assert.equal(privateRoute("POST", ["idea-drafts", id, "assistant", "guidance"]), null);
+  assert.equal(privateRoute("DELETE", ["idea-drafts", id, "lifecycle"]), null);
+});
