@@ -9,7 +9,7 @@ type Need = {
   title: string;
   description: string;
   state: "draft" | "published" | "revoked";
-  audience: "private" | "authenticated";
+  audience: "private" | "authenticated" | "selected";
   version: number;
 };
 type Event = {
@@ -25,6 +25,9 @@ export function ProjectNeeds({ draftId, active }: { draftId: string; active: boo
   const [reason, setReason] = useState("");
   const [ack, setAck] = useState(false);
   const [selected, setSelected] = useState("");
+  const [audienceChoice, setAudienceChoice] = useState<"selected" | "authenticated">("selected");
+  const [viewerId, setViewerId] = useState("");
+  const [viewers, setViewers] = useState<string[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -43,6 +46,9 @@ export function ProjectNeeds({ draftId, active }: { draftId: string; active: boo
   useEffect(() => {
     let mounted = true;
     if (!selected) return;
+    privateJson<{ viewer_id: string }[]>(`${root(draftId)}/${selected}/viewers`)
+      .then((items) => { if (mounted) setViewers(items.map((i) => i.viewer_id)); })
+      .catch((err) => { if (mounted) setError(String(err)); });
     privateJson<Event[]>(`${root(draftId)}/${selected}/events`)
       .then((items) => { if (mounted) setEvents(items); })
       .catch((err) => { if (mounted) setError(String(err)); });
@@ -78,11 +84,24 @@ export function ProjectNeeds({ draftId, active }: { draftId: string; active: boo
   }
 
   const item = needs.find((need) => need.id === selected);
+  async function addViewer(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!item) return;
+    await run(async () => {
+      await privateJson(`${root(draftId)}/${item.id}/viewers`, {
+        viewer_id: viewerId.trim(), confirm: true,
+      });
+      setViewers((ids) => [...ids, viewerId.trim()]);
+      setViewerId("");
+    }, "Destinatari autoritzat per a aquesta necessitat, no per al projecte.");
+  }
+
   async function change(action: "publish" | "revoke") {
     if (!item || !ack || !reason.trim()) return;
     await run(async () => {
       await privateJson(`${root(draftId)}/${item.id}/${action}`, {
         expected_version: item.version, confirm: true, reason,
+        ...(action === "publish" ? { audience: audienceChoice } : {}),
       });
     }, action === "publish"
       ? "Necessitat publicada per a comptes autenticats. El projecte continua privat."
@@ -111,7 +130,7 @@ export function ProjectNeeds({ draftId, active }: { draftId: string; active: boo
       {needs.map((need) => (
         <button key={need.id} type="button"
           aria-pressed={selected === need.id} onClick={() => {
-            setSelected(need.id); setAck(false); setReason(""); setEvents([]);
+            setSelected(need.id); setAck(false); setReason(""); setEvents([]); setViewers([]);
           }} className={selected === need.id ? styles.selected : styles.row}>
           {need.title} · {need.state === "draft" ? "Privada" :
             need.state === "published" ? "Publicada a comptes autenticats" : "Revocada"}
@@ -121,8 +140,29 @@ export function ProjectNeeds({ draftId, active }: { draftId: string; active: boo
         <h3>Vista prèvia exacta</h3>
         <p><strong>{item.title}</strong></p>
         <p>{item.description}</p>
-        <p><strong>Audiència:</strong> {item.state === "published"
-          ? "Comptes autenticats" : "Només el meu compte (fins a confirmar la publicació)"}</p>
+        <p><strong>Audiència actual:</strong> {item.state === "published"
+          ? item.audience === "selected" ? "Només destinataris seleccionats" : "Comptes autenticats"
+          : "Només el meu compte (fins a confirmar la publicació)"}</p>
+        {item.state === "draft" && <>
+          <label>Audiència de publicació
+            <select value={audienceChoice} onChange={(event) => setAudienceChoice(
+              event.target.value as "selected" | "authenticated"
+            )}>
+              <option value="selected">Només destinataris seleccionats</option>
+              <option value="authenticated">Tots els comptes autenticats</option>
+            </select>
+          </label>
+          {audienceChoice === "selected" && <form className={styles.form} onSubmit={addViewer}>
+            <label>Identificador del destinatari autoritzat
+              <input required pattern="[0-9a-fA-F-]{36}" value={viewerId}
+                onChange={(event) => setViewerId(event.target.value)}
+                placeholder="Identificador del compte amb consentiment" />
+            </label>
+            <button type="submit" disabled={busy}>Afegir destinatari a aquesta necessitat</button>
+            <small>Demana l'identificador al destinatari. No es concedeix accés al projecte.</small>
+          </form>}
+          {viewers.length > 0 && <p>Destinataris autoritzats: {viewers.length}</p>}
+        </>}
         <p>No s'hi inclou cap dada de la fitxa mare, pressupost, resultat ni evidència.</p>
         {(item.state === "draft" || item.state === "published") && <>
           <label>Motiu de {item.state === "draft" ? "publicació" : "revocació"}
@@ -135,7 +175,8 @@ export function ProjectNeeds({ draftId, active }: { draftId: string; active: boo
             Confirmo l'audiència i les conseqüències d'aquesta acció.
           </label>
           <button type="button" disabled={busy || !ack || !reason.trim() ||
-            (item.state === "draft" && !active)}
+            (item.state === "draft" && (!active ||
+              (audienceChoice === "selected" && viewers.length === 0)))}
             onClick={() => change(item.state === "draft" ? "publish" : "revoke")}>
             {item.state === "draft" ? "Publicar només aquesta necessitat" :
               "Revocar aquesta necessitat"}
