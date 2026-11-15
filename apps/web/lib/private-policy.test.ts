@@ -72,6 +72,8 @@ test("facets and shareable needs remain explicitly allowlisted", () => {
   assert.equal(privateRoute("POST", ["shared-needs"]), null);
   for (const method of ["GET", "POST"])
     assert.equal(privateRoute(method, ["idea-drafts", id, "shared-needs"]), "json");
+  assert.equal(privateRoute("GET", ["idea-drafts", id, "shared-needs", id, "viewers"]), "json");
+  assert.equal(privateRoute("POST", ["idea-drafts", id, "shared-needs", id, "viewers"]), "json");
   assert.equal(privateRoute("GET", ["idea-drafts", id, "shared-needs", id, "events"]), "json");
   for (const action of ["publish", "revoke"]) {
     assert.equal(privateRoute("POST", ["idea-drafts", id, "shared-needs", id, action]), "json");
