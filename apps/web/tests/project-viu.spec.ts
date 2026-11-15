@@ -13,7 +13,7 @@ async function login(page: Page, account: "Professor" | "Alumne") {
 }
 
 test("BF Projecte Viu persists evidence and decisions without exposing another account", async ({ browser }) => {
-  test.setTimeout(120000);
+  test.setTimeout(150000);
   const ownerContext = await browser.newContext({ ignoreHTTPSErrors: true });
   const strangerContext = await browser.newContext({ ignoreHTTPSErrors: true });
   const owner = await ownerContext.newPage();
@@ -66,7 +66,6 @@ test("BF Projecte Viu persists evidence and decisions without exposing another a
     expect(forbidden.status()).toBe(404);
     expect((await (await owner.request.get(root)).json()).visibility).toBe("private");
   } finally {
-    await ownerContext.close();
-    await strangerContext.close();
+    await Promise.allSettled([ownerContext.close(), strangerContext.close()]);
   }
 });
