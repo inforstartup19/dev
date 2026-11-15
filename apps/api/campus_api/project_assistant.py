@@ -69,12 +69,15 @@ def guidance(draft_id: UUID, db: DB, actor: Actor):
     if lifecycle in ("paused", "closed"):
         effects = [
             "La decisió consta a l'historial; no bloqueja tècnicament noves proves.",
-            "Revisa proves actives, participants i compromisos abans de comunicar cap suspensió o tancament.",
+            "Revisa proves actives, participants i compromisos abans de comunicar "
+            "cap suspensió o tancament.",
             "Les evidències i decisions romanen consultables amb els permisos existents.",
             "No s'han cancel·lat acords, invitacions, pagaments ni accessos automàticament.",
         ]
         if lifecycle == "paused":
-            effects.append("Documenta condicions de represa i responsables abans de tornar a executar.")
+            effects.append(
+                "Documenta condicions de represa i responsables abans de tornar a executar."
+            )
         else:
             effects.append("Revisa retenció, obligacions i eventual reobertura de forma separada.")
     else:
@@ -85,7 +88,10 @@ def guidance(draft_id: UUID, db: DB, actor: Actor):
     if active:
         suggestions.append(Suggestion(
             code="review-active-experiment", title="Revisa la prova activa",
-            reason="Hi ha una prova activa sense resultat registrat; defineix qui en fa el seguiment.",
+            reason=(
+                "Hi ha una prova activa sense resultat registrat; "
+                "defineix qui en fa el seguiment."
+            ),
             evidence_ids=[active.id], action="review",
         ))
     last_result = None
@@ -107,7 +113,10 @@ def guidance(draft_id: UUID, db: DB, actor: Actor):
     if latest and latest.choice == "request_help" and "person" not in existing:
         suggestions.append(Suggestion(
             code="person-after-help", title="Prepara una necessitat de col·laboració",
-            reason="La darrera decisió demana ajuda i encara no hi ha una necessitat de persona registrada.",
+            reason=(
+                "La darrera decisió demana ajuda i encara no hi ha "
+                "una necessitat de persona registrada."
+            ),
             evidence_ids=[latest.id], action="prepare_person",
         ))
     if active and "resources" not in existing:
@@ -120,13 +129,19 @@ def guidance(draft_id: UUID, db: DB, actor: Actor):
         related = next(item for item in intents if item.kind == "resources")
         suggestions.append(Suggestion(
             code="optional-funding", title="Valora si cal finançament",
-            reason="Has registrat una necessitat de recursos; el cost i el finançament encara s'han de confirmar.",
+            reason=(
+                "Has registrat una necessitat de recursos; el cost "
+                "i el finançament encara s'han de confirmar."
+            ),
             evidence_ids=[related.id], action="prepare_funding",
         ))
     if lifecycle in ("paused", "closed"):
         suggestions = [Suggestion(
             code="review-lifecycle", title="Revisa els efectes de la decisió",
-            reason="La darrera decisió és pausar o tancar. La situació dels compromisos requereix revisió humana.",
+            reason=(
+                "La darrera decisió és pausar o tancar. "
+                "La situació dels compromisos requereix revisió humana."
+            ),
             evidence_ids=[latest.id], action="review",
         )]
     return ProjectGuidance(
@@ -134,7 +149,8 @@ def guidance(draft_id: UUID, db: DB, actor: Actor):
         latest_decision_id=latest.id if latest else None,
         operational_effects=effects,
         safeguards=[
-            "Les recomanacions són opcionals i basades només en registres del projecte autoritzats.",
+            "Les recomanacions són opcionals i basades només "
+            "en registres del projecte autoritzats.",
             "No es canvien permisos, visibilitat, compromisos, pagaments ni estats de proves.",
             "No es revela ni es consulta informació d'altres usuaris o projectes.",
         ],
