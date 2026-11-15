@@ -87,6 +87,10 @@ test("BF lifecycle pauses execution, preserves evidence and can resume with owne
     )).json();
     const id = records.find((r: { name: string }) => r.name === "BF — Lifecycle Pilot").id;
     const root = `http://localhost:3400/api/private/idea-drafts/${id}`;
+    for (const suffix of ["/lifecycle", "/lifecycle/events", "/assistant/guidance", "/assistant/feedback"]) {
+      const probe = await owner.request.get(root + suffix);
+      console.log("BF E2E probe", suffix, probe.status(), (await probe.text()).slice(0, 450));
+    }
     await expect(owner.getByTestId("lifecycle-state")).toContainText("Actiu");
 
     const panel = owner.getByTestId("project-lifecycle");
