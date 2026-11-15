@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { PrivateError, privateJson } from "../../lib/private-api";
 import styles from "./project-workspace.module.css";
+import { ProjectLifecycle } from "./project-lifecycle";
 
 type Experiment = {
   id: string;
@@ -41,6 +42,7 @@ type Resource = {
   description: string;
   created_at: string;
 };
+type Lifecycle = { state: "active" | "paused" | "closed"; version: number };
 type Guidance = {
   lifecycle: "undecided" | "active" | "paused" | "closed";
   operational_effects: string[];
@@ -77,6 +79,7 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
   const [guidance, setGuidance] = useState<Guidance | null>(null);
+  const [lifecycle, setLifecycle] = useState<Lifecycle | null>(null);
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [fields, setFields] = useState<ExperimentInput>(blank);
   const [observations, setObservations] = useState("");
@@ -102,16 +105,18 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
 
   const refresh = useCallback(async () => {
     const root = base(draftId);
-    const [tests, choicesList, resourceList, guidanceResult] = await Promise.all([
+    const [tests, choicesList, resourceList, guidanceResult, lifecycleResult] = await Promise.all([
       privateJson<Experiment[]>(`${root}/experiments`),
       privateJson<Decision[]>(`${root}/decisions`),
       privateJson<Resource[]>(`${root}/resource-intents`),
       privateJson<Guidance>(`${root}/assistant/guidance`),
+      privateJson<Lifecycle>(`${root}/lifecycle`),
     ]);
     setExperiments(tests);
     setDecisions(choicesList);
     setResources(resourceList);
     setGuidance(guidanceResult);
+    setLifecycle(lifecycleResult);
     return tests;
   }, [draftId]);
 
@@ -125,6 +130,7 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
       setDecisions([]);
       setResources([]);
       setGuidance(null);
+      setLifecycle(null);
       setDismissed([]);
       setSelected(null);
       setFields(blank());
@@ -138,6 +144,7 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
   }, [refresh, report]);
 
   const chosen = experiments.find((experiment) => experiment.id === selected);
+  const writable = lifecycle?.state === "active";
   useEffect(() => {
     let active = true;
     Promise.resolve().then(() => {
@@ -266,7 +273,7 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
           <h2>Proves, evidències i decisions</h2>
           <p>Tot es desa al teu compte. No es publica automàticament.</p>
         </div>
-        <button type="button" onClick={newExperiment}>+ Nova prova</button>
+        <button type="button" disabled={!writable} onClick={newExperiment}>+ Nova prova</button>
       </div>
       {loading && <p role="status">Carregant el Projecte Viu...</p>}
       {error && <p role="alert">{error}</p>}
@@ -299,14 +306,14 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
               <textarea value={fields.success_criterion} maxLength={3000}
                 onChange={(e) => setFields((s) => ({ ...s, success_criterion: e.target.value }))} />
             </label>
-            <button disabled={busy || Boolean(chosen && chosen.status !== "draft")} type="submit">
+            <button disabled={busy || !writable || Boolean(chosen && chosen.status !== "draft")} type="submit">
               Desar prova privada
             </button>
           </form>
           {chosen?.status === "draft" &&
-            <button disabled={busy} type="button" onClick={activate}>Activar prova</button>}
+            <button disabled={busy || !writable} type="button" onClick={activate}>Activar prova</button>}
           {chosen?.status === "completed" &&
-            <button disabled={busy} type="button" onClick={reformulate}>Reformular aquesta prova</button>}
+            <button disabled={busy || !writable} type="button" onClick={reformulate}>Reformular aquesta prova</button>}
         </div>
         <div className={styles.panel}>
           <h3>Resultats i evidències</h3>
@@ -343,11 +350,12 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
               <input maxLength={2000} value={sourceNote}
                 onChange={(e) => setSourceNote(e.target.value)} />
             </label>
-            <button type="submit" disabled={busy}>Registrar resultat</button>
+            <button type="submit" disabled={busy || !writable}>Registrar resultat</button>
             <small>Les evidències són declarades, no verificades per Inc.</small>
           </form>}
         </div>
       </div>}
+      {!loading && <ProjectLifecycle draftId={draftId} onChanged={refresh} />}
       {!loading && guidance && <section className={styles.panel} aria-label="Inc AI Project Assistant" data-testid="project-guidance">
         <h3>Inc AI · Assistent de projecte</h3>
         <p>Orientacions explicables a partir de proves i decisions privades desades. No executa accions.</p>
@@ -426,7 +434,7 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
                 <textarea required maxLength={3000} value={description}
                   onChange={(e) => setDescription(e.target.value)} />
               </label>
-              <button disabled={busy} type="submit">Desar necessitat privada</button>
+              <button disabled={busy || !writable} type="submit">Desar necessitat privada</button>
             </form>
             <ol className={styles.history}>{resources.map((r) =>
               <li key={r.id}>{r.kind}: {r.description}</li>)}</ol>
