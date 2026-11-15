@@ -1,6 +1,6 @@
 """Inc Connect: short opt-in interest requests, no project or contact grants."""
 
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -41,6 +41,8 @@ class ConnectOut(Output):
     version: int
     created_at: datetime
     updated_at: datetime
+    accept_expires_at: datetime
+    acceptance_expired: bool
 
 
 class ConnectEventOut(Output):
@@ -48,6 +50,13 @@ class ConnectEventOut(Output):
     action: Literal["requested", "accepted", "declined", "withdrawn"]
     version: int
     created_at: datetime
+
+
+def acceptance_deadline(item: ConnectRequest):
+    stamp = item.created_at
+    if stamp.tzinfo is None:
+        stamp = stamp.replace(tzinfo=UTC)
+    return stamp + timedelta(days=7)
 
 
 def view(item: ConnectRequest, actor: Actor):
@@ -60,6 +69,8 @@ def view(item: ConnectRequest, actor: Actor):
         "version": item.version,
         "created_at": item.created_at,
         "updated_at": item.updated_at,
+        "accept_expires_at": acceptance_deadline(item),
+        "acceptance_expired": now() > acceptance_deadline(item),
     }
 
 
@@ -95,6 +106,14 @@ def request_contact(need_id: UUID, payload: ConnectIn, db: DB, actor: Actor):
     )
     if pending >= 5:
         raise HTTPException(429, "Too many pending contact requests")
+    daily = db.scalar(
+        select(func.count(ConnectRequest.id)).where(
+            ConnectRequest.requester_id == actor.id,
+            ConnectRequest.created_at >= now() - timedelta(hours=24),
+        )
+    )
+    if daily >= 10:
+        raise HTTPException(429, "Daily request quota reached")
     if db.scalar(
         select(ConnectRequest.id).where(
             ConnectRequest.need_id == need.id,
@@ -154,6 +173,8 @@ def decide_contact(request_id: UUID, payload: ConnectTransitionIn, db: DB, actor
     elif actor.id != item.owner_id:
         raise HTTPException(404, "Connection not found")
     if payload.decision == "accepted":
+        if now() > acceptance_deadline(item):
+            raise HTTPException(410, "Contact request expired; cannot accept")
         need = db.scalar(
             select(ShareableNeed).where(
                 ShareableNeed.id == item.need_id,
