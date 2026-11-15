@@ -10,6 +10,10 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON spaces, space_memberships, teams,
 GRANT SELECT, INSERT ON project_vaults, vault_events TO incfs_api;
 GRANT SELECT, INSERT, DELETE ON vault_memberships TO incfs_api;
 GRANT SELECT ON alembic_version TO incfs_api;
+GRANT SELECT, INSERT, UPDATE ON idea_drafts TO incfs_api;
+GRANT SELECT, INSERT, UPDATE ON knowledge_sources TO incfs_api;
+GRANT SELECT, INSERT, UPDATE ON project_experiments TO incfs_api;
+GRANT SELECT, INSERT ON experiment_results, experiment_evidence TO incfs_api;
 GRANT incfs_documents_api TO incfs_api WITH INHERIT TRUE;
 COMMIT;
 -- Separately: GRANT incfs_api TO "the-runtime-login";
