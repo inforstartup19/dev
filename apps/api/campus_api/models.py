@@ -603,14 +603,13 @@ class CollaborationAgreement(Base):
         ForeignKeyConstraint(
             ["request_id", "owner_id", "requester_id"],
             [
-                "connect_requests.id", "connect_requests.owner_id",
+                "connect_requests.id",
+                "connect_requests.owner_id",
                 "connect_requests.requester_id",
             ],
         ),
         UniqueConstraint("request_id", name="uq_agreement_request"),
-        UniqueConstraint(
-            "id", "owner_id", "requester_id", name="uq_agreement_participants"
-        ),
+        UniqueConstraint("id", "owner_id", "requester_id", name="uq_agreement_participants"),
         CheckConstraint("current_version >= 1"),
         CheckConstraint("status IN ('active', 'cancelled')"),
         Index("ix_agreements_owner", "owner_id", "status"),
@@ -635,7 +634,8 @@ class AgreementRevision(Base):
         ForeignKeyConstraint(
             ["agreement_id", "owner_id", "requester_id"],
             [
-                "collaboration_agreements.id", "collaboration_agreements.owner_id",
+                "collaboration_agreements.id",
+                "collaboration_agreements.owner_id",
                 "collaboration_agreements.requester_id",
             ],
         ),
@@ -660,7 +660,8 @@ class AgreementConfirmation(Base):
         ForeignKeyConstraint(
             ["agreement_id", "owner_id", "requester_id"],
             [
-                "collaboration_agreements.id", "collaboration_agreements.owner_id",
+                "collaboration_agreements.id",
+                "collaboration_agreements.owner_id",
                 "collaboration_agreements.requester_id",
             ],
         ),
@@ -668,8 +669,6 @@ class AgreementConfirmation(Base):
             ["agreement_id", "version"],
             ["agreement_revisions.agreement_id", "agreement_revisions.version"],
         ),
-        UniqueConstraint(
-            "agreement_id", "version", "actor_id", name="uq_agreement_confirmation"
-        ),
+        UniqueConstraint("agreement_id", "version", "actor_id", name="uq_agreement_confirmation"),
         CheckConstraint("version >= 1"),
     )
