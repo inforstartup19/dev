@@ -13,8 +13,8 @@ from campus_api.config import Settings
 from campus_api.database_security import verify_runtime_database
 from campus_api.db import make_engine
 from campus_api.documents import router as document_router
-from campus_api.idea_drafts import router as idea_drafts_router
 from campus_api.experiments import router as experiments_router
+from campus_api.idea_drafts import router as idea_drafts_router
 from campus_api.knowledge import router as knowledge_router
 from campus_api.routes import router
 from campus_api.vaults import router as vault_router
