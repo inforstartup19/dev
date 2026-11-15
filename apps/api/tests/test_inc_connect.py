@@ -204,3 +204,35 @@ def test_cross_user_direct_sql_rls(protected_api):
         bind_actor(db, actor)
         assert db.execute(text("SELECT id FROM connect_requests")).all() == []
         assert db.execute(text("SELECT id FROM connect_events")).all() == []
+
+
+def test_expired_contact_cannot_be_accepted_but_can_be_declined(api):
+    from datetime import UTC, datetime, timedelta
+
+    _, _, _, need = published_bf(api)
+    interest = api.request(
+        "POST", f"/shared-needs/{need}/connect-requests", "bob",
+        json={"note": "Vull participar amb consentiment"},
+    )
+    assert interest.status_code == 201, interest.text
+    rid = interest.json()["id"]
+    old = datetime.now(UTC) - timedelta(days=8)
+    with api.app.state.engine.begin() as conn:
+        conn.execute(
+            text("UPDATE connect_requests SET created_at = :date WHERE id = :rid"),
+            {"date": old, "rid": rid},
+        )
+    detail = api.request("GET", f"/connect-requests/{rid}", "alice")
+    assert detail.status_code == 200
+    assert detail.json()["acceptance_expired"] is True
+    denied = api.request(
+        "POST", f"/connect-requests/{rid}/transitions", "alice",
+        json={"expected_version": 0, "decision": "accepted", "confirm": True},
+    )
+    assert denied.status_code == 410, denied.text
+    declined = api.request(
+        "POST", f"/connect-requests/{rid}/transitions", "alice",
+        json={"expected_version": 0, "decision": "declined", "confirm": True},
+    )
+    assert declined.status_code == 200, declined.text
+    assert declined.json()["status"] == "declined"
