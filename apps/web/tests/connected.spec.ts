@@ -30,9 +30,15 @@ test("separate teacher and student accounts share the full invitation, submissio
   console.info("campus-regression: teacher-login-start");
   await login(teacher, "Professor");
   console.info("campus-regression: teacher-login-done");
-  await teacher
-    .getByRole("button", { name: "Crea el primer espai docent", exact: true })
-    .click();
+  // The OIDC session alone does not guarantee that /me and /spaces loaded.
+  // Fail at the actual readiness contract rather than timing out on a disabled button.
+  const firstSpace = teacher.getByRole("button", {
+    name: "Crea el primer espai docent",
+    exact: true,
+  });
+  await expect(firstSpace).toBeEnabled({ timeout: 15000 });
+  console.info("campus-regression: teacher-profile-ready");
+  await firstSpace.click();
   await teacher.getByLabel("Nom de l’espai").fill("Campus entre comptes");
   await teacher
     .getByLabel("Assignatura o àmbit")
