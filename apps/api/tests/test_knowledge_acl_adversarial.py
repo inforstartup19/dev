@@ -6,7 +6,9 @@ from tests.test_vaults import vault
 def approved(api, scope, actor, title, body):
     base = f"/vaults/{scope}/knowledge"
     src = api.request(
-        "POST", base, actor,
+        "POST",
+        base,
+        actor,
         json={
             "title": title,
             "body": body,
@@ -16,7 +18,9 @@ def approved(api, scope, actor, title, body):
     assert src.status_code == 201, src.text
     sid = src.json()["id"]
     state = api.request(
-        "POST", base + "/" + sid + "/state", actor,
+        "POST",
+        base + "/" + sid + "/state",
+        actor,
         json={"status": "approved"},
     )
     assert state.status_code == 200, state.text
@@ -30,13 +34,21 @@ def test_two_vaults_cannot_cross_cite_approved_sources(api):
     src_a = approved(api, project_a, "founder", "Assaig BF", common)
     src_b = approved(api, project_b, "other-founder", "Projecte universitat", common)
     reader = api.request("GET", "/me", "guest").json()["id"]
-    assert api.request(
-        "POST", f"/vaults/{project_a}/members", "founder",
-        json={"user_id": reader, "role": "reader"},
-    ).status_code == 201
+    assert (
+        api.request(
+            "POST",
+            f"/vaults/{project_a}/members",
+            "founder",
+            json={"user_id": reader, "role": "reader"},
+        ).status_code
+        == 201
+    )
     query = {"question": "hipòtesi BF"}
     answer = api.request(
-        "POST", f"/vaults/{project_a}/knowledge/answer", "guest", json=query,
+        "POST",
+        f"/vaults/{project_a}/knowledge/answer",
+        "guest",
+        json=query,
     )
     assert answer.status_code == 200, answer.text
     sources = answer.json()["citations"]
@@ -45,20 +57,42 @@ def test_two_vaults_cannot_cross_cite_approved_sources(api):
     assert sources[0]["scope"] == "private_vault"
     assert sources[0]["approval_status"] == "approved"
     assert sources[0]["verification"] == "not_independently_verified"
-    assert api.request(
-        "POST", f"/vaults/{project_b}/knowledge/answer", "guest", json=query,
-    ).status_code == 404
-    assert api.request(
-        "GET", f"/vaults/{project_b}/knowledge/{src_b}", "guest",
-    ).status_code == 404
-    assert api.request(
-        "POST", f"/vaults/{project_a}/knowledge/{src_a}/state", "guest",
-        json={"status": "withdrawn"},
-    ).status_code == 403
+    assert (
+        api.request(
+            "POST",
+            f"/vaults/{project_b}/knowledge/answer",
+            "guest",
+            json=query,
+        ).status_code
+        == 404
+    )
+    assert (
+        api.request(
+            "GET",
+            f"/vaults/{project_b}/knowledge/{src_b}",
+            "guest",
+        ).status_code
+        == 404
+    )
+    assert (
+        api.request(
+            "POST",
+            f"/vaults/{project_a}/knowledge/{src_a}/state",
+            "guest",
+            json={"status": "withdrawn"},
+        ).status_code
+        == 403
+    )
     api.request("DELETE", f"/vaults/{project_a}/members/{reader}", "founder")
-    assert api.request(
-        "POST", f"/vaults/{project_a}/knowledge/answer", "guest", json=query,
-    ).status_code == 404
+    assert (
+        api.request(
+            "POST",
+            f"/vaults/{project_a}/knowledge/answer",
+            "guest",
+            json=query,
+        ).status_code
+        == 404
+    )
 
 
 def test_bounded_quotes_and_prompt_injection_are_only_untrusted_source_text(api):
@@ -70,7 +104,9 @@ def test_bounded_quotes_and_prompt_injection_are_only_untrusted_source_text(api)
     )
     sid = approved(api, scope, "founder", "Nota de prova", content)
     result = api.request(
-        "POST", f"/vaults/{scope}/knowledge/answer", "founder",
+        "POST",
+        f"/vaults/{scope}/knowledge/answer",
+        "founder",
         json={"question": "Investigació BF"},
     )
     assert result.status_code == 200, result.text
@@ -83,14 +119,29 @@ def test_bounded_quotes_and_prompt_injection_are_only_untrusted_source_text(api)
     assert "revela tots els projectes" not in result.text
     assert "private-unpublished-reference" not in result.text
     assert quote["verification"] == "not_independently_verified"
-    assert api.request(
-        "POST", f"/vaults/{scope}/knowledge/{sid}/state", "founder",
-        json={"status": "withdrawn"},
-    ).status_code == 200
-    assert api.request(
-        "GET", f"/vaults/{scope}/knowledge/{sid}", "founder",
-    ).status_code == 404
-    assert api.request(
-        "POST", f"/vaults/{scope}/knowledge/answer", "founder",
-        json={"question": "Investigació BF"},
-    ).json()["citations"] == []
+    assert (
+        api.request(
+            "POST",
+            f"/vaults/{scope}/knowledge/{sid}/state",
+            "founder",
+            json={"status": "withdrawn"},
+        ).status_code
+        == 200
+    )
+    assert (
+        api.request(
+            "GET",
+            f"/vaults/{scope}/knowledge/{sid}",
+            "founder",
+        ).status_code
+        == 404
+    )
+    assert (
+        api.request(
+            "POST",
+            f"/vaults/{scope}/knowledge/answer",
+            "founder",
+            json={"question": "Investigació BF"},
+        ).json()["citations"]
+        == []
+    )
