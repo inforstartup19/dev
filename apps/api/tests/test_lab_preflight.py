@@ -3,8 +3,12 @@
 
 def test_lab_preflight_is_always_blocked_and_non_provisioning(api):
     for template in (
-        "web_ide", "sql_sandbox", "jupyter",
-        "linux_lab", "avd_windows", "gpu_lab",
+        "web_ide",
+        "sql_sandbox",
+        "jupyter",
+        "linux_lab",
+        "avd_windows",
+        "gpu_lab",
     ):
         response = api.request(
             "POST",
