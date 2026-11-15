@@ -39,9 +39,7 @@ def test_bf_projecte_viu_complete_owner_journey(api):
     data = {
         "outcome": "inconclusive",
         "observations": "La mostra és massa petita per concloure.",
-        "evidence": [
-            {"reference": "simulacio-001", "source_note": "Resum fictici del test"}
-        ],
+        "evidence": [{"reference": "simulacio-001", "source_note": "Resum fictici del test"}],
     }
     result = api.request("POST", results_path, "alice", json=data)
     assert result.status_code == 201, result.text
@@ -86,22 +84,27 @@ def test_experiments_deny_unauthenticated_and_other_users(api):
     ):
         assert api.client.get("/v1" + path).status_code == 401
         assert api.request("GET", path, "bob").status_code == 404
-    assert api.request(
-        "POST",
-        f"/idea-drafts/{draft}/experiments",
-        "bob",
-        json={"question": "Forçat", "method": "metode", "success_criterion": "criteri"},
-    ).status_code == 404
-    assert api.request(
-        "POST",
-        results_path,
-        "bob",
-        json={"outcome": "supportive", "observations": "Intent aliè"},
-    ).status_code == 404
+    assert (
+        api.request(
+            "POST",
+            f"/idea-drafts/{draft}/experiments",
+            "bob",
+            json={"question": "Forçat", "method": "metode", "success_criterion": "criteri"},
+        ).status_code
+        == 404
+    )
+    assert (
+        api.request(
+            "POST",
+            results_path,
+            "bob",
+            json={"outcome": "supportive", "observations": "Intent aliè"},
+        ).status_code
+        == 404
+    )
     evidence_path = f"{results_path}/{recorded['id']}/evidence"
     assert (
-        api.request("POST", evidence_path, "bob", json={"reference": "prohibit"}).status_code
-        == 404
+        api.request("POST", evidence_path, "bob", json={"reference": "prohibit"}).status_code == 404
     )
     other_draft = new_draft(api, "bob")
     wrong_parent = f"/idea-drafts/{other_draft}/experiments/{experiment}/results"
@@ -125,9 +128,7 @@ def test_experiments_deny_unauthenticated_and_other_users(api):
 )
 def test_experiment_validation_rejects_bad_input(api, payload):
     draft = new_draft(api)
-    response = api.request(
-        "POST", f"/idea-drafts/{draft}/experiments", "alice", json=payload
-    )
+    response = api.request("POST", f"/idea-drafts/{draft}/experiments", "alice", json=payload)
     assert response.status_code == 422, response.text
 
 
@@ -154,12 +155,15 @@ def test_owner_scoped_composite_relationships(api):
     draft_b = new_draft(api, "bob")
     experiment = new_experiment(api, draft_a)
     # The API will never allow a cross-owner reference, including a valid UUID from Bob.
-    assert api.request(
-        "POST",
-        f"/idea-drafts/{draft_b}/experiments/{experiment}/results",
-        "bob",
-        json={"outcome": "supportive", "observations": "intrusió"},
-    ).status_code == 404
+    assert (
+        api.request(
+            "POST",
+            f"/idea-drafts/{draft_b}/experiments/{experiment}/results",
+            "bob",
+            json={"outcome": "supportive", "observations": "intrusió"},
+        ).status_code
+        == 404
+    )
 
 
 def test_postgres_experiment_rls_rejects_cross_owner_even_with_grants(api):
@@ -182,9 +186,10 @@ def test_postgres_experiment_rls_rejects_cross_owner_even_with_grants(api):
         assert all(row.relrowsecurity and row.relforcerowsecurity for row in rows)
     # A real non-privileged role is tested via the dedicated RLS role fixture in CI.
     assert alice != bob
-    assert api.request(
-        "GET", f"/idea-drafts/{draft}/experiments", "bob"
-    ).status_code == 404
-    assert api.request(
-        "GET", f"/idea-drafts/{draft}/experiments/{experiment}/results", "bob"
-    ).status_code == 404
+    assert api.request("GET", f"/idea-drafts/{draft}/experiments", "bob").status_code == 404
+    assert (
+        api.request(
+            "GET", f"/idea-drafts/{draft}/experiments/{experiment}/results", "bob"
+        ).status_code
+        == 404
+    )
