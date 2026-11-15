@@ -118,19 +118,32 @@ def test_experiments_deny_unauthenticated_and_other_users(api):
         {"question": "", "method": "test", "success_criterion": "criteri"},
         {"question": "Prova", "method": "", "success_criterion": "criteri"},
         {"question": "Prova", "method": "m", "success_criterion": ""},
-        {
+    ],
+)
+def test_incomplete_experiment_is_saved_but_cannot_start(api, payload):
+    draft = new_draft(api)
+    root = f"/idea-drafts/{draft}/experiments"
+    response = api.request("POST", root, "alice", json=payload)
+    assert response.status_code == 201, response.text
+    assert response.json()["status"] == "draft"
+    experiment_id = response.json()["id"]
+    assert api.request("POST", f"{root}/{experiment_id}/activate", "alice").status_code == 422
+
+
+def test_experiment_rejects_overposting(api):
+    draft = new_draft(api)
+    response = api.request(
+        "POST",
+        f"/idea-drafts/{draft}/experiments",
+        "alice",
+        json={
             "question": "Prova",
             "method": "m",
             "success_criterion": "c",
             "owner_id": "spoofed",
         },
-    ],
-)
-def test_experiment_validation_rejects_bad_input(api, payload):
-    draft = new_draft(api)
-    response = api.request("POST", f"/idea-drafts/{draft}/experiments", "alice", json=payload)
+    )
     assert response.status_code == 422, response.text
-
 
 def test_result_validation_and_no_implicit_verification(api):
     draft = new_draft(api)
