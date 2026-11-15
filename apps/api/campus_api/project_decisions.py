@@ -10,7 +10,7 @@ from sqlalchemy import select
 
 from campus_api.auth import DB, Actor, require_private_context
 from campus_api.experiments import owned_draft, owned_experiment
-from campus_api.models import ProjectDecision, ProjectResourceIntent
+from campus_api.models import ExperimentResult, ProjectDecision, ProjectResourceIntent
 from campus_api.schemas import Input, Output
 
 router = APIRouter(
@@ -36,6 +36,7 @@ class DecisionOut(Output):
     id: str
     draft_id: str
     experiment_id: str | None
+    result_id: str | None
     choice: Choice
     rationale: str
     created_at: datetime
@@ -71,14 +72,27 @@ def list_decisions(draft_id: UUID, db: DB, actor: Actor):
 def record_decision(draft_id: UUID, payload: DecisionIn, db: DB, actor: Actor):
     owned_draft(db, draft_id, actor)
     experiment_id = None
+    result_id = None
     if payload.experiment_id:
         experiment = owned_experiment(db, draft_id, payload.experiment_id, actor)
         experiment_id = experiment.id
         if experiment.status == "draft":
             raise HTTPException(409, "Cannot decide about an unexecuted draft experiment")
+        result = db.scalar(
+            select(ExperimentResult)
+            .where(
+                ExperimentResult.experiment_id == experiment_id,
+                ExperimentResult.owner_id == actor.id,
+            )
+            .order_by(ExperimentResult.created_at.desc(), ExperimentResult.id.desc())
+            .limit(1)
+        )
+        if result is not None:
+            result_id = result.id
     decision = ProjectDecision(
         draft_id=str(draft_id),
         experiment_id=experiment_id,
+        result_id=result_id,
         owner_id=actor.id,
         choice=payload.choice,
         rationale=payload.rationale,
