@@ -81,7 +81,10 @@ def upgrade():
     op.create_index("ix_need_events_owner", "need_publication_events", ["owner_id","need_id"])
     if op.get_bind().dialect.name == "postgresql":
         actor = "NULLIF(current_setting('app.actor_id', true), '')"
-        for table in ("identity_facets", "shareable_needs", "need_viewer_grants", "need_publication_events"):
+        for table in (
+            "identity_facets", "shareable_needs", "need_viewer_grants",
+            "need_publication_events",
+        ):
             op.execute(sa.text(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY"))
             op.execute(sa.text(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY"))
         op.execute(sa.text(
