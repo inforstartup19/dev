@@ -78,7 +78,7 @@ export function IncProofPanel(){
      <p>Afegir evidència crea una versió nova i invalida les confirmacions anteriors.</p><button>Afegir evidència i revisar versió</button>
     </fieldset></form>}
     {current.proof.can_attest&&<form onSubmit={e=>submit(e,"attest")}><fieldset disabled={busy}><legend>Revisar aquesta versió</legend>
-     <label>Decisió<select name="decision"><option value="confirm">Confirmar</option><option value="dispute">Disputar</option></select></label><label>Nota de revisió<textarea name="note" required maxLength={500}/></label>
+     <label htmlFor="inc-proof-decision">Decisió</label><select id="inc-proof-decision" name="decision"><option value="confirm">Confirmar</option><option value="dispute">Disputar</option></select><label>Nota de revisió<textarea name="note" required maxLength={500}/></label>
      <label className={styles.check}><input type="checkbox" name="consent" required/>He revisat la versió {current.proof.version} i confirmo aquesta decisió.</label><button>Registrar decisió de Proof</button>
     </fieldset></form>}
     {current.proof.can_withdraw&&<form onSubmit={e=>submit(e,"withdraw")}><fieldset disabled={busy}><legend>Retirar la meva aportació</legend><label>Motiu de retirada<textarea name="reason" required maxLength={500}/></label>
