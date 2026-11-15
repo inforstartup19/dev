@@ -105,3 +105,26 @@ def test_assistant_recommends_help_from_owned_decision_only(api):
     assert "person-after-help" not in [
         item["code"] for item in get_guidance(api, alice).json()["suggestions"]
     ]
+
+
+def test_optional_feedback_requires_consent_and_is_private(api):
+    alice = make_draft(api)
+    bob = make_draft(api, "bob")
+    root = f"/idea-drafts/{alice}/assistant/feedback"
+    payload = {"code": "resource-planning", "choice": "dismiss", "consent": False}
+    assert api.request("POST", root, "alice", json=payload).status_code == 422
+    assert api.request("GET", root, "alice").json() == []
+    payload["consent"] = True
+    response = api.request("POST", root, "alice", json=payload)
+    assert response.status_code == 201, response.text
+    assert api.request("GET", root, "alice").json()[0]["choice"] == "dismiss"
+    payload["choice"] = "restore"
+    restored = api.request("POST", root, "alice", json=payload)
+    assert restored.status_code == 201
+    assert api.request("GET", root, "alice").json()[0]["choice"] == "restore"
+    assert api.request("GET", root, "bob").status_code == 404
+    assert api.request("POST", root, "bob", json=payload).status_code == 404
+    assert api.request(
+        "GET", f"/idea-drafts/{bob}/assistant/feedback", "bob"
+    ).json() == []
+    assert api.client.get("/v1" + root).status_code == 401
