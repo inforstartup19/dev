@@ -444,3 +444,62 @@ class ProjectSuggestionFeedback(Base):
         CheckConstraint("choice IN ('dismiss', 'restore')"),
         Index("ix_feedback_owner_draft", "owner_id", "draft_id"),
     )
+
+
+class IdentityFacet(Base):
+    """Presentation preference; never a grant to any project."""
+    __tablename__ = "identity_facets"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    summary: Mapped[str] = mapped_column(String(500), default="")
+    audience: Mapped[str] = mapped_column(String(20), default="private")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        CheckConstraint("kind IN ('creator','student','mentor','professional')"),
+        CheckConstraint("audience = 'private'"),
+        UniqueConstraint("user_id", "kind", name="uq_identity_facets_user_kind"),
+        Index("ix_facets_user", "user_id"),
+    )
+
+
+class ShareableNeed(Base):
+    """Projection deliberately separate from the owner-only parent draft."""
+    __tablename__ = "shareable_needs"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    draft_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    title: Mapped[str] = mapped_column(String(120), nullable=False)
+    description: Mapped[str] = mapped_column(String(1200), nullable=False)
+    audience: Mapped[str] = mapped_column(String(20), default="private")
+    state: Mapped[str] = mapped_column(String(20), default="draft")
+    version: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(["draft_id", "owner_id"], ["idea_drafts.id", "idea_drafts.owner_id"]),
+        CheckConstraint("state IN ('draft','published','revoked')"),
+        CheckConstraint("audience IN ('private','authenticated')"),
+        CheckConstraint("version >= 0"),
+        CheckConstraint("length(trim(title)) > 0"),
+        CheckConstraint("length(trim(description)) > 0"),
+        Index("ix_needs_owner_draft", "owner_id", "draft_id"),
+        Index("ix_needs_discovery", "state", "audience"),
+    )
+
+
+class NeedPublicationEvent(Base):
+    """Append-only publication / revocation audit, scoped to the owner."""
+    __tablename__ = "need_publication_events"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    need_id: Mapped[str] = mapped_column(ForeignKey("shareable_needs.id"), nullable=False)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    actor_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    action: Mapped[str] = mapped_column(String(12), nullable=False)
+    version: Mapped[int] = mapped_column(nullable=False)
+    reason: Mapped[str] = mapped_column(String(500), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        CheckConstraint("action IN ('publish','revoke')"),
+        UniqueConstraint("need_id", "version"),
+        Index("ix_need_events_owner", "owner_id", "need_id"),
+    )
