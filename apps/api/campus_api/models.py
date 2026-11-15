@@ -552,9 +552,7 @@ class ConnectRequest(Base):
         CheckConstraint("version >= 0"),
         CheckConstraint("length(trim(note)) > 0"),
         UniqueConstraint("need_id", "requester_id", name="uq_connect_need_requester"),
-        UniqueConstraint(
-            "id", "owner_id", "requester_id", name="uq_connect_request_participants"
-        ),
+        UniqueConstraint("id", "owner_id", "requester_id", name="uq_connect_request_participants"),
         Index("ix_connect_requests_owner_status", "owner_id", "status"),
         Index("ix_connect_requests_requester_status", "requester_id", "status"),
     )
@@ -576,7 +574,8 @@ class ConnectEvent(Base):
         ForeignKeyConstraint(
             ["request_id", "owner_id", "requester_id"],
             [
-                "connect_requests.id", "connect_requests.owner_id",
+                "connect_requests.id",
+                "connect_requests.owner_id",
                 "connect_requests.requester_id",
             ],
         ),
