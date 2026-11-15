@@ -41,6 +41,13 @@ type Resource = {
   description: string;
   created_at: string;
 };
+type Guidance = {
+  lifecycle: "undecided" | "active" | "paused" | "closed";
+  operational_effects: string[];
+  safeguards: string[];
+  suggestions: { code: string; title: string; reason: string; evidence_ids: string[]; action: "review" | "prepare_person" | "prepare_resources" | "prepare_funding"; optional: boolean }[];
+  advisory_only: boolean;
+};
 type ExperimentInput = {
   question: string;
   method: string;
@@ -69,6 +76,8 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
   const [results, setResults] = useState<Result[]>([]);
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
+  const [guidance, setGuidance] = useState<Guidance | null>(null);
+  const [dismissed, setDismissed] = useState<string[]>([]);
   const [fields, setFields] = useState<ExperimentInput>(blank);
   const [observations, setObservations] = useState("");
   const [outcome, setOutcome] = useState<Result["outcome"]>("inconclusive");
@@ -93,14 +102,16 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
 
   const refresh = useCallback(async () => {
     const root = base(draftId);
-    const [tests, choicesList, resourceList] = await Promise.all([
+    const [tests, choicesList, resourceList, guidanceResult] = await Promise.all([
       privateJson<Experiment[]>(`${root}/experiments`),
       privateJson<Decision[]>(`${root}/decisions`),
       privateJson<Resource[]>(`${root}/resource-intents`),
+      privateJson<Guidance>(`${root}/assistant/guidance`),
     ]);
     setExperiments(tests);
     setDecisions(choicesList);
     setResources(resourceList);
+    setGuidance(guidanceResult);
     return tests;
   }, [draftId]);
 
@@ -113,6 +124,8 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
       setResults([]);
       setDecisions([]);
       setResources([]);
+      setGuidance(null);
+      setDismissed([]);
       setSelected(null);
       setFields(blank());
       setLoading(true);
@@ -335,6 +348,36 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
           </form>}
         </div>
       </div>}
+      {!loading && guidance && <section className={styles.panel} aria-label="Inc AI Project Assistant" data-testid="project-guidance">
+        <h3>Inc AI · Assistent de projecte</h3>
+        <p>Orientacions explicables a partir de proves i decisions privades desades. No executa accions.</p>
+        <p><strong>Situació orientativa:</strong> {{
+          undecided: "Sense decisió", active: "En desenvolupament",
+          paused: "Pausa registrada", closed: "Tancament registrat",
+        }[guidance.lifecycle]}</p>
+        <ul>{guidance.operational_effects.map((effect) => <li key={effect}>{effect}</li>)}</ul>
+        <h3>Propostes opcionals</h3>
+        {guidance.suggestions.filter((suggestion) => !dismissed.includes(suggestion.code)).length === 0 &&
+          <p>No hi ha propostes pendents de mostrar.</p>}
+        {guidance.suggestions.filter((suggestion) => !dismissed.includes(suggestion.code)).map((suggestion) =>
+          <div key={suggestion.code} className={styles.row}>
+            <strong>{suggestion.title}</strong>
+            <p>Per què? {suggestion.reason}</p>
+            <small>Referències internes: {suggestion.evidence_ids.join(", ")} · Suggeriment, no requisit</small>
+            <div>
+              {suggestion.action.startsWith("prepare_") &&
+                <button type="button" onClick={() => {
+                  setKind(suggestion.action === "prepare_person" ? "person" :
+                    suggestion.action === "prepare_funding" ? "funding" : "resources");
+                  setShowResources(true);
+                }}>Preparar necessitat</button>}
+              <button type="button" onClick={() => setDismissed((items) => [...items, suggestion.code])}>
+                Descartar suggeriment
+              </button>
+            </div>
+          </div>)}
+        <small>{guidance.safeguards.join(" ")}</small>
+      </section>}
       {!loading && <div className={styles.columns}>
         <div className={styles.panel}>
           <button type="button" aria-expanded={showDecisions}
