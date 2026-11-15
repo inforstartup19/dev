@@ -3,6 +3,7 @@
 Revision ID: 0008
 Revises: 0007
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -58,9 +59,7 @@ def upgrade():
         ),
         sa.CheckConstraint("length(trim(rationale)) > 0", name="ck_decision_rationale"),
     )
-    op.create_index(
-        "ix_decisions_owner_draft", "project_decisions", ["owner_id", "draft_id"]
-    )
+    op.create_index("ix_decisions_owner_draft", "project_decisions", ["owner_id", "draft_id"])
     op.create_table(
         "project_resource_intents",
         sa.Column("id", sa.String(36), primary_key=True),
