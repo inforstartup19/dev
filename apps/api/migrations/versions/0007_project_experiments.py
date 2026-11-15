@@ -75,7 +75,8 @@ def upgrade():
         sa.Column("observations", sa.String(5000), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(
-            ["experiment_id", "owner_id"], ["project_experiments.id", "project_experiments.owner_id"]
+            ["experiment_id", "owner_id"],
+            ["project_experiments.id", "project_experiments.owner_id"],
         ),
         sa.CheckConstraint(
             "outcome IN ('supportive', 'unsupported', 'inconclusive')",
