@@ -45,7 +45,9 @@ class LifecycleIn(Input):
     reason: Text
     review_note: Text
     reviewed: list[Review] = Field(min_length=3, max_length=4)
-    resume_conditions: Annotated[str, StringConstraints(strip_whitespace=True, max_length=3000)] = ""
+    resume_conditions: Annotated[
+        str, StringConstraints(strip_whitespace=True, max_length=3000)
+    ] = ""
 
 
 class LifecycleEventOut(Output):
