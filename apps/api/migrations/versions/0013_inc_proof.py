@@ -32,22 +32,22 @@ def upgrade():
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(
             ["agreement_id", "owner_id", "requester_id"],
-            ["collaboration_agreements.id", "collaboration_agreements.owner_id",
-             "collaboration_agreements.requester_id"],
+            [
+                "collaboration_agreements.id",
+                "collaboration_agreements.owner_id",
+                "collaboration_agreements.requester_id",
+            ],
         ),
-        sa.UniqueConstraint(
-            "id", "owner_id", "requester_id", name="uq_proof_participants"
-        ),
+        sa.UniqueConstraint("id", "owner_id", "requester_id", name="uq_proof_participants"),
         sa.CheckConstraint("kind IN ('work','knowledge','resource','other')"),
         sa.CheckConstraint("state IN ('active','withdrawn')"),
         sa.CheckConstraint("length(trim(summary)) > 0"),
         sa.CheckConstraint("agreement_version >= 1 AND version >= 1"),
     )
+    op.create_index("ix_proof_owner_agreement", "proof_contributions", ["owner_id", "agreement_id"])
     op.create_index(
-        "ix_proof_owner_agreement", "proof_contributions", ["owner_id", "agreement_id"]
-    )
-    op.create_index(
-        "ix_proof_requester_agreement", "proof_contributions",
+        "ix_proof_requester_agreement",
+        "proof_contributions",
         ["requester_id", "agreement_id"],
     )
     op.create_table(
@@ -68,8 +68,11 @@ def upgrade():
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(
             ["contribution_id", "owner_id", "requester_id"],
-            ["proof_contributions.id", "proof_contributions.owner_id",
-             "proof_contributions.requester_id"],
+            [
+                "proof_contributions.id",
+                "proof_contributions.owner_id",
+                "proof_contributions.requester_id",
+            ],
         ),
         sa.CheckConstraint("origin IN ('self','experiment','external')"),
         sa.CheckConstraint("review_state = 'declared'"),
@@ -77,7 +80,8 @@ def upgrade():
         sa.CheckConstraint("proof_version > 1"),
     )
     op.create_index(
-        "ix_proof_evidence_version", "proof_evidence",
+        "ix_proof_evidence_version",
+        "proof_evidence",
         ["contribution_id", "proof_version"],
     )
     op.create_table(
@@ -93,18 +97,24 @@ def upgrade():
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(
             ["contribution_id", "owner_id", "requester_id"],
-            ["proof_contributions.id", "proof_contributions.owner_id",
-             "proof_contributions.requester_id"],
+            [
+                "proof_contributions.id",
+                "proof_contributions.owner_id",
+                "proof_contributions.requester_id",
+            ],
         ),
         sa.UniqueConstraint(
-            "contribution_id", "proof_version", "actor_id",
+            "contribution_id",
+            "proof_version",
+            "actor_id",
             name="uq_proof_attestation_actor_version",
         ),
         sa.CheckConstraint("decision IN ('confirm','dispute')"),
         sa.CheckConstraint("proof_version >= 1"),
     )
     op.create_index(
-        "ix_proof_attestations_version", "proof_attestations",
+        "ix_proof_attestations_version",
+        "proof_attestations",
         ["contribution_id", "proof_version"],
     )
     if op.get_bind().dialect.name == "postgresql":
@@ -148,15 +158,9 @@ def upgrade():
             .scalar()
         )
         if exists:
+            op.execute(sa.text("GRANT SELECT, INSERT, UPDATE ON proof_contributions TO incfs_api"))
             op.execute(
-                sa.text(
-                    "GRANT SELECT, INSERT, UPDATE ON proof_contributions TO incfs_api"
-                )
-            )
-            op.execute(
-                sa.text(
-                    "GRANT SELECT, INSERT ON proof_evidence, proof_attestations TO incfs_api"
-                )
+                sa.text("GRANT SELECT, INSERT ON proof_evidence, proof_attestations TO incfs_api")
             )
 
 
