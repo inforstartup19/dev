@@ -143,20 +143,15 @@ def test_reject_invalid_choices_fields_and_unexecuted_experiment(api):
         {"choice": "close", "rationale": ""},
         {"choice": "close", "rationale": "No", "owner_id": str(uuid4())},
     ):
-        assert api.request(
-            "POST",
-        root + "/decisions",
-        "alice", json=payload
-        ).status_code == 422
+        assert api.request("POST", root + "/decisions", "alice", json=payload).status_code == 422
     for payload in (
         {"kind": "publish", "description": "No"},
         {"kind": "person", "description": ""},
         {"kind": "person", "description": "No", "owner_id": str(uuid4())},
     ):
-        assert api.request(
-            "POST",
-        root + "/resource-intents",
-        "alice", json=payload
-        ).status_code == 422
+        assert (
+            api.request("POST", root + "/resource-intents", "alice", json=payload).status_code
+            == 422
+        )
     assert api.request("GET", root + "/decisions", "alice").json() == []
     assert api.request("GET", root + "/resource-intents", "alice").json() == []
