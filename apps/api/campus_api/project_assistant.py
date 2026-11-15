@@ -14,7 +14,6 @@ from sqlalchemy import select
 
 from campus_api.auth import DB, Actor, require_private_context
 from campus_api.experiments import owned_draft
-from campus_api.schemas import Input, Output
 from campus_api.models import (
     ExperimentResult,
     ProjectDecision,
@@ -24,6 +23,7 @@ from campus_api.models import (
     ProjectSuggestionFeedback,
     now,
 )
+from campus_api.schemas import Input, Output
 
 router = APIRouter(
     prefix="/v1/idea-drafts/{draft_id}",
