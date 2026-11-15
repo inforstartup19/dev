@@ -528,3 +528,59 @@ class NeedViewerGrant(Base):
         UniqueConstraint("need_id", "viewer_id", name="uq_need_viewer"),
         Index("ix_need_viewers_viewer", "viewer_id", "need_id"),
     )
+
+
+class ConnectRequest(Base):
+    """One lightweight consent request per published need and requester."""
+
+    __tablename__ = "connect_requests"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    need_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    requester_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    note: Mapped[str] = mapped_column(String(500), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), default="pending")
+    version: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["need_id", "owner_id"], ["shareable_needs.id", "shareable_needs.owner_id"]
+        ),
+        CheckConstraint("status IN ('pending','accepted','declined','withdrawn')"),
+        CheckConstraint("owner_id <> requester_id"),
+        CheckConstraint("version >= 0"),
+        CheckConstraint("length(trim(note)) > 0"),
+        UniqueConstraint("need_id", "requester_id", name="uq_connect_need_requester"),
+        UniqueConstraint(
+            "id", "owner_id", "requester_id", name="uq_connect_request_participants"
+        ),
+        Index("ix_connect_requests_owner_status", "owner_id", "status"),
+        Index("ix_connect_requests_requester_status", "requester_id", "status"),
+    )
+
+
+class ConnectEvent(Base):
+    """Immutable acceptance, refusal and withdrawal evidence."""
+
+    __tablename__ = "connect_events"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    request_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    requester_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    actor_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    action: Mapped[str] = mapped_column(String(16), nullable=False)
+    version: Mapped[int] = mapped_column(nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["request_id", "owner_id", "requester_id"],
+            [
+                "connect_requests.id", "connect_requests.owner_id",
+                "connect_requests.requester_id",
+            ],
+        ),
+        CheckConstraint("action IN ('requested','accepted','declined','withdrawn')"),
+        UniqueConstraint("request_id", "version", name="uq_connect_event_version"),
+        Index("ix_connect_events_request", "request_id", "version"),
+    )
