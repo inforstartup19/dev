@@ -1,0 +1,40 @@
+name: IncForStartUp DEV Alembic inventory (read only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: dev
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout source without credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Authenticate using existing Azure OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Inventory available Azure PostgreSQL resources (read only)
+        env:
+          AUDIT_REPORT: ${{ runner.temp }}/dev-postgres-inventory.json
+        run: python3 scripts/audit_dev_alembic_inventory.py
+      - name: Save sanitized inventory for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-alembic-postgres-inventory
+          path: ${{ runner.temp }}/dev-postgres-inventory.json
+          retention-days: 7
+          if-no-files-found: warn
