@@ -302,7 +302,8 @@ def test_postgres_direct_query_does_not_bypass_need_rls(protected_api):
         conn.execute(
             text(
                 f"GRANT SELECT, INSERT, UPDATE, DELETE ON identity_facets, "
-                f"shareable_needs, need_publication_events, idea_drafts TO {role}"
+                f"shareable_needs, need_publication_events, idea_drafts, "
+                f"need_viewer_grants TO {role}"
             )
         )
     bob = api.request("GET", "/me", "bob").json()["id"]
