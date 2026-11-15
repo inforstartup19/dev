@@ -41,7 +41,7 @@ def upgrade():
             ["draft_id","owner_id"], ["idea_drafts.id","idea_drafts.owner_id"]
         ),
         sa.CheckConstraint("state IN ('draft','published','revoked')"),
-        sa.CheckConstraint("audience IN ('private','authenticated')"),
+        sa.CheckConstraint("audience IN ('private','authenticated','selected')"),
         sa.CheckConstraint("version >= 0"),
         sa.CheckConstraint("length(trim(title)) > 0"),
         sa.CheckConstraint("length(trim(description)) > 0"),
@@ -49,6 +49,19 @@ def upgrade():
     )
     op.create_index("ix_needs_owner_draft", "shareable_needs", ["owner_id","draft_id"])
     op.create_index("ix_needs_discovery", "shareable_needs", ["state","audience"])
+    op.create_table(
+        "need_viewer_grants",
+        sa.Column("id", sa.String(36), primary_key=True),
+        sa.Column("need_id", sa.String(36), nullable=False),
+        sa.Column("owner_id", sa.String(36), nullable=False),
+        sa.Column("viewer_id", sa.String(36), sa.ForeignKey("users.id"), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.ForeignKeyConstraint(
+            ["need_id", "owner_id"], ["shareable_needs.id", "shareable_needs.owner_id"]
+        ),
+        sa.UniqueConstraint("need_id", "viewer_id", name="uq_need_viewer"),
+    )
+    op.create_index("ix_need_viewers_viewer", "need_viewer_grants", ["viewer_id", "need_id"])
     op.create_table(
         "need_publication_events",
         sa.Column("id", sa.String(36), primary_key=True),
@@ -68,7 +81,7 @@ def upgrade():
     op.create_index("ix_need_events_owner", "need_publication_events", ["owner_id","need_id"])
     if op.get_bind().dialect.name == "postgresql":
         actor = "NULLIF(current_setting('app.actor_id', true), '')"
-        for table in ("identity_facets", "shareable_needs", "need_publication_events"):
+        for table in ("identity_facets", "shareable_needs", "need_viewer_grants", "need_publication_events"):
             op.execute(sa.text(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY"))
             op.execute(sa.text(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY"))
         op.execute(sa.text(
@@ -84,8 +97,18 @@ def upgrade():
         ))
         op.execute(sa.text(
             f"CREATE POLICY needs_select ON shareable_needs FOR SELECT USING "
-            f"(owner_id = {actor} OR (state = 'published' AND audience = 'authenticated' "
-            f"AND {actor} IS NOT NULL))"
+            f"(owner_id = {actor} OR (state = 'published' AND {actor} IS NOT NULL "
+            f"AND (audience = 'authenticated' OR (audience = 'selected' AND EXISTS "
+            f"(SELECT 1 FROM need_viewer_grants g WHERE g.need_id = shareable_needs.id "
+            f"AND g.viewer_id = {actor})))))"
+        ))
+        op.execute(sa.text(
+            f"CREATE POLICY viewer_select ON need_viewer_grants FOR SELECT "
+            f"USING (owner_id = {actor} OR viewer_id = {actor})"
+        ))
+        op.execute(sa.text(
+            f"CREATE POLICY viewer_insert ON need_viewer_grants FOR INSERT "
+            f"WITH CHECK (owner_id = {actor})"
         ))
         op.execute(sa.text(
             f"CREATE POLICY needs_insert ON shareable_needs FOR INSERT WITH CHECK "
@@ -106,7 +129,7 @@ def upgrade():
         op.execute(sa.text("""DO $$ BEGIN
             IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='incfs_api') THEN
                 GRANT SELECT, INSERT, UPDATE ON identity_facets, shareable_needs TO incfs_api;
-                GRANT SELECT, INSERT ON need_publication_events TO incfs_api;
+                GRANT SELECT, INSERT ON need_publication_events, need_viewer_grants TO incfs_api;
             END IF;
         END $$"""))
 
@@ -114,6 +137,8 @@ def upgrade():
 def downgrade():
     op.drop_index("ix_need_events_owner", table_name="need_publication_events")
     op.drop_table("need_publication_events")
+    op.drop_index("ix_need_viewers_viewer", table_name="need_viewer_grants")
+    op.drop_table("need_viewer_grants")
     op.drop_index("ix_needs_discovery", table_name="shareable_needs")
     op.drop_index("ix_needs_owner_draft", table_name="shareable_needs")
     op.drop_table("shareable_needs")
