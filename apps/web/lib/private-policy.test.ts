@@ -88,3 +88,36 @@ test("facets and shareable needs remain explicitly allowlisted", () => {
     assert.equal(privateRoute("POST", path), null);
   }
 });
+
+test("Connect and bilateral agreements expose only explicit private proxy routes", () => {
+  for (const path of [
+    ["connect-requests"],
+    ["connect-requests", id],
+    ["connect-requests", id, "events"],
+    ["agreements"],
+    ["agreements", id],
+    ["agreements", id, "revisions"],
+  ]) assert.equal(privateRoute("GET", path), "json");
+  for (const path of [
+    ["shared-needs", id, "connect-requests"],
+    ["connect-requests", id, "transitions"],
+    ["agreements"],
+    ["agreements", id, "revisions"],
+    ["agreements", id, "confirmations"],
+    ["agreements", id, "cancel"],
+  ]) assert.equal(privateRoute("POST", path), "json");
+
+  for (const path of [
+    ["connect-requests"],
+    ["connect-requests", id],
+    ["connect-requests", id, "events"],
+    ["agreements", id],
+    ["agreements", id, "events"],
+    ["agreements", id, "members"],
+    ["shared-needs", id],
+  ]) assert.equal(privateRoute("POST", path), null);
+  assert.equal(privateRoute("GET", ["agreements", id, "confirmations"]), null);
+  assert.equal(privateRoute("GET", ["shared-needs", id, "connect-requests"]), null);
+  assert.equal(privateRoute("DELETE", ["agreements", id]), null);
+  assert.equal(privateRoute("POST", ["agreements", "bad-uuid", "cancel"]), null);
+});
