@@ -259,7 +259,10 @@ def test_progressive_draft_activation_and_reformulation_preserves_history(api):
     assert new_revision.status_code == 201, new_revision.text
     assert new_revision.json()["reformulates_id"] == experiment_id
     assert len(api.request("GET", result_path, "alice").json()) == 1
-    assert api.request("POST", root, "bob", json={"reformulates_id": experiment_id}).status_code == 404
+    assert (
+        api.request("POST", root, "bob", json={"reformulates_id": experiment_id}).status_code
+        == 404
+    )
     assert api.request(
         "POST", root, "alice", json={"reformulates_id": str(uuid4())}
     ).status_code == 404
