@@ -124,7 +124,5 @@ def test_optional_feedback_requires_consent_and_is_private(api):
     assert api.request("GET", root, "alice").json()[0]["choice"] == "restore"
     assert api.request("GET", root, "bob").status_code == 404
     assert api.request("POST", root, "bob", json=payload).status_code == 404
-    assert api.request(
-        "GET", f"/idea-drafts/{bob}/assistant/feedback", "bob"
-    ).json() == []
+    assert api.request("GET", f"/idea-drafts/{bob}/assistant/feedback", "bob").json() == []
     assert api.client.get("/v1" + root).status_code == 401
