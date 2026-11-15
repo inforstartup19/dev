@@ -232,3 +232,112 @@ class ScanReceipt(Base):
             name="fk_receipt_document_vault",
         ),
     )
+
+
+class IdeaDraft(Base):
+    __tablename__ = "idea_drafts"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    owner_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    question: Mapped[str] = mapped_column(String(2000))
+    intention: Mapped[str] = mapped_column(String(3000), default="")
+    next_test: Mapped[str] = mapped_column(String(3000), default="")
+    name: Mapped[str] = mapped_column(String(120), default="")
+    visibility: Mapped[str] = mapped_column(String(12), default="private")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        CheckConstraint("visibility = 'private'", name="ck_idea_drafts_private"),
+        CheckConstraint("length(trim(question)) > 0", name="ck_idea_drafts_question"),
+        Index("ix_idea_drafts_owner_updated", "owner_id", "updated_at"),
+        UniqueConstraint("id", "owner_id", name="uq_idea_drafts_id_owner"),
+    )
+
+
+class KnowledgeSource(Base):
+    __tablename__ = "knowledge_sources"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    vault_id: Mapped[str] = mapped_column(String(36), index=True)
+    owner_id: Mapped[str] = mapped_column(String(36))
+    title: Mapped[str] = mapped_column(String(100))
+    body: Mapped[str] = mapped_column(String(12000))
+    source_reference: Mapped[str] = mapped_column(String(500))
+    sha256: Mapped[str] = mapped_column(String(64))
+    approved_by: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
+    status: Mapped[str] = mapped_column(String(16), default="draft")
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["vault_id", "owner_id"],
+            ["project_vaults.id", "project_vaults.created_by"],
+        ),
+        CheckConstraint("status IN ('draft', 'approved', 'withdrawn')"),
+        CheckConstraint("status <> 'approved' OR approved_by IS NOT NULL"),
+    )
+
+
+class ProjectExperiment(Base):
+    __tablename__ = "project_experiments"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    draft_id: Mapped[str] = mapped_column(String(36))
+    owner_id: Mapped[str] = mapped_column(String(36))
+    reformulates_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    question: Mapped[str] = mapped_column(String(2000))
+    method: Mapped[str] = mapped_column(String(3000))
+    success_criterion: Mapped[str] = mapped_column(String(3000))
+    status: Mapped[str] = mapped_column(String(16), default="draft")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(["draft_id", "owner_id"], ["idea_drafts.id", "idea_drafts.owner_id"]),
+        ForeignKeyConstraint(
+            ["reformulates_id", "owner_id"],
+            ["project_experiments.id", "project_experiments.owner_id"],
+        ),
+        CheckConstraint("status IN ('draft', 'active', 'completed')", name="ck_experiment_status"),
+        CheckConstraint(
+            "status = 'draft' OR (length(trim(question)) > 0 "
+            "AND length(trim(method)) > 0 AND length(trim(success_criterion)) > 0)",
+            name="ck_experiment_active_fields",
+        ),
+        UniqueConstraint("id", "owner_id", name="uq_experiment_id_owner"),
+        Index("ix_experiments_owner_draft", "owner_id", "draft_id"),
+    )
+
+
+class ExperimentResult(Base):
+    __tablename__ = "experiment_results"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    experiment_id: Mapped[str] = mapped_column(String(36))
+    owner_id: Mapped[str] = mapped_column(String(36))
+    outcome: Mapped[str] = mapped_column(String(16))
+    observations: Mapped[str] = mapped_column(String(5000))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["experiment_id", "owner_id"],
+            ["project_experiments.id", "project_experiments.owner_id"],
+        ),
+        CheckConstraint(
+            "outcome IN ('supportive', 'unsupported', 'inconclusive')",
+            name="ck_result_outcome",
+        ),
+        CheckConstraint("length(trim(observations)) > 0", name="ck_result_observation"),
+        UniqueConstraint("id", "owner_id", name="uq_result_id_owner"),
+        Index("ix_results_experiment", "owner_id", "experiment_id"),
+    )
+
+
+class ExperimentEvidence(Base):
+    __tablename__ = "experiment_evidence"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
+    result_id: Mapped[str] = mapped_column(String(36))
+    owner_id: Mapped[str] = mapped_column(String(36))
+    reference: Mapped[str] = mapped_column(String(2000))
+    source_note: Mapped[str] = mapped_column(String(2000))
+    review_status: Mapped[str] = mapped_column(String(16), default="declared")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["result_id", "owner_id"], ["experiment_results.id", "experiment_results.owner_id"]
+        ),
+        CheckConstraint("review_status = 'declared'", name="ck_evidence_declared"),
+        CheckConstraint("length(trim(reference)) > 0", name="ck_evidence_reference"),
+        Index("ix_evidence_result", "owner_id", "result_id"),
+    )
