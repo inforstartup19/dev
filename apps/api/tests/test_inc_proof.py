@@ -195,13 +195,19 @@ def test_inc_proof_direct_sql_cannot_read_unrelated_claims(protected_api):
                 f"proof_attestations TO {role}"
             )
         )
-    agreement_id, _ = confirmed_bf(api)
-    response = api.request(
-        "POST", f"/agreements/{agreement_id}/proofs", "bob",
-        json={"kind": "knowledge", "summary": "Coneixement aportat al BF pilot"},
-    )
-    assert response.status_code == 201, response.text
-    charlie = api.request("GET", "/me", "charlie").json()["id"]
+    # Populate through the admin harness. The separate SQL reader below must
+    # be under an unprivileged role to demonstrate that RLS rejects C.
+    api.app.state.engine = admin
+    try:
+        agreement_id, _ = confirmed_bf(api)
+        response = api.request(
+            "POST", f"/agreements/{agreement_id}/proofs", "bob",
+            json={"kind": "knowledge", "summary": "Coneixement aportat al BF pilot"},
+        )
+        assert response.status_code == 201, response.text
+        charlie = api.request("GET", "/me", "charlie").json()["id"]
+    finally:
+        api.app.state.engine = limited
     with Session(limited) as db:
         bind_actor(db, charlie)
         assert db.execute(text("SELECT id FROM proof_contributions")).all() == []
