@@ -102,15 +102,12 @@ def upgrade():
                 f"FOR INSERT WITH CHECK (owner_id = {actor})"
             )
         )
-        op.execute(
-            sa.text(
-                """DO $$ BEGIN
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'incfs_api') THEN
-                    GRANT SELECT, INSERT ON project_suggestion_feedback TO incfs_api;
-                END IF;
-                END $$"""
+        if op.get_bind().execute(
+            sa.text("SELECT 1 FROM pg_roles WHERE rolname = 'incfs_api'")
+        ).scalar():
+            op.execute(
+                sa.text("GRANT SELECT, INSERT ON project_suggestion_feedback TO incfs_api")
             )
-        )
         op.execute(sa.text("ALTER TABLE project_lifecycle_events ENABLE ROW LEVEL SECURITY"))
         op.execute(sa.text("ALTER TABLE project_lifecycle_events FORCE ROW LEVEL SECURITY"))
         op.execute(
