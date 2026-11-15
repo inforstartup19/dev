@@ -15,6 +15,8 @@ from campus_api.db import make_engine
 from campus_api.documents import router as document_router
 from campus_api.experiments import router as experiments_router
 from campus_api.idea_drafts import router as idea_drafts_router
+from campus_api.identity_facets import router as facets_router
+from campus_api.shareable_needs import router as needs_router
 from campus_api.knowledge import router as knowledge_router
 from campus_api.project_assistant import router as project_assistant_router
 from campus_api.project_decisions import router as decisions_router
@@ -98,6 +100,8 @@ def create_app(settings: Settings | None = None):
     app.include_router(router)
     app.include_router(vault_router)
     app.include_router(idea_drafts_router)
+    app.include_router(facets_router)
+    app.include_router(needs_router)
     app.include_router(experiments_router)
     app.include_router(decisions_router)
     app.include_router(lifecycle_router)
