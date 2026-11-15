@@ -35,6 +35,14 @@ class QuestionIn(Input):
     question: Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=300)]
 
 
+def bounded_excerpt(body: str, query: str, *, max_chars: int = 280) -> str:
+    """A literal bounded quote; never instruct an assistant from source contents."""
+    position = body.casefold().find(query.casefold())
+    start = max(0, position - 100) if position >= 0 else 0
+    end = min(len(body), start + max_chars)
+    return ("…" if start else "") + body[start:end] + ("…" if end < len(body) else "")
+
+
 def visible_source(db, vault_id, source_id):
     source = db.scalar(
         select(KnowledgeSource).where(
@@ -101,7 +109,10 @@ def answer(vault_id: UUID, payload: QuestionIn, db: DB, actor: Actor):
         {
             "source_id": source.id,
             "title": source.title,
-            "excerpt": source.body,
+            "excerpt": bounded_excerpt(source.body, payload.question),
+            "approval_status": "approved",
+            "verification": "not_independently_verified",
+            "scope": "private_vault",
             "sha256": source.sha256,
             "href": f"/v1/vaults/{vault_id}/knowledge/{source.id}",
         }
