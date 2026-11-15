@@ -140,3 +140,77 @@ test("BF lifecycle pauses execution, preserves evidence and can resume with owne
     await Promise.allSettled([ownerContext.close(), strangerContext.close()]);
   }
 });
+
+
+test("BF sharing publishes only a need to another account and revokes it without opening the project", async ({ browser }) => {
+  test.setTimeout(150000);
+  const ownerContext = await browser.newContext({ ignoreHTTPSErrors: true });
+  const outsiderContext = await browser.newContext({ ignoreHTTPSErrors: true });
+  const owner = await ownerContext.newPage();
+  const outsider = await outsiderContext.newPage();
+  const origin = "http://localhost:3400";
+  try {
+    await login(owner, "Professor");
+    const facets = owner.getByTestId("identity-facets");
+    await facets.getByLabel("Faceta", { exact: true }).selectOption("creator");
+    await facets.getByLabel("Presentació privada").fill("BF · creador");
+    await facets.getByRole("button", { name: "Desar faceta privada" }).click();
+    await expect(facets.getByText(/no concedeix accés a cap projecte/)).toBeVisible();
+
+    await owner.getByLabel("Pregunta o necessitat").fill("Com validar BF90?");
+    await owner.getByLabel("Intenció").fill("Pressupost intern que no es publica");
+    await owner.getByLabel("Nom provisional").fill("BF — Selective Need Pilot");
+    await owner.getByRole("button", { name: "Desa al compte privat" }).click();
+    const records = await (await owner.request.get(`${origin}/api/private/idea-drafts`)).json();
+    const parent = records.find((item: { name: string }) =>
+      item.name === "BF — Selective Need Pilot");
+    expect(parent).toBeTruthy();
+    const root = `${origin}/api/private/idea-drafts/${parent.id}`;
+
+    const panel = owner.getByTestId("project-needs");
+    await panel.getByLabel("Títol de la necessitat").fill("Taller de confecció 1-of-1");
+    await panel.getByLabel("Text que podria veure un altre compte")
+      .fill("Busquem un taller per validar una peça original.");
+    await panel.getByRole("button", { name: "Preparar necessitat privada" }).click();
+    await expect(panel.getByTestId("need-preview")).toContainText("Taller de confecció 1-of-1");
+    const ownerNeeds = await (await owner.request.get(root + "/shared-needs")).json();
+    const needId = ownerNeeds[0].id;
+
+    await login(outsider, "Alumne");
+    expect((await (await outsider.request.get(`${origin}/api/private/shared-needs`)).json())).toEqual([]);
+    expect((await outsider.request.get(root)).status()).toBe(404);
+    expect((await outsider.request.get(root + "/shared-needs")).status()).toBe(404);
+    expect((await outsider.request.get(`${origin}/api/private/shared-needs/${needId}`)).status()).toBe(404);
+
+    await panel.getByLabel("Motiu de publicació").fill("Només el text revisat");
+    await panel.getByRole("checkbox", { name: /Confirmo l'audiència/ }).check();
+    await panel.getByRole("button", { name: "Publicar només aquesta necessitat" }).click();
+    await expect(panel.getByText(/Necessitat publicada per a comptes autenticats/)).toBeVisible();
+    const visible = await (await outsider.request.get(`${origin}/api/private/shared-needs`)).json();
+    expect(visible).toHaveLength(1);
+    expect(visible[0]).toMatchObject({
+      id: needId, title: "Taller de confecció 1-of-1",
+      description: "Busquem un taller per validar una peça original.",
+      state: "published",
+    });
+    expect(JSON.stringify(visible)).not.toContain("Pressupost intern");
+    expect(JSON.stringify(visible)).not.toContain("BF — Selective Need Pilot");
+    expect(JSON.stringify(visible)).not.toContain("draft_id");
+    expect((await outsider.request.get(root)).status()).toBe(404);
+    expect((await outsider.request.get(root + "/shared-needs/" + needId + "/events")).status()).toBe(404);
+    expect((await outsider.request.post(root + "/shared-needs/" + needId + "/revoke", {
+      headers: { Origin: origin },
+      data: { expected_version: 1, confirm: true, reason: "Intent aliè" },
+    })).status()).toBe(404);
+
+    await panel.getByLabel("Motiu de revocació").fill("Necessitat coberta");
+    await panel.getByRole("checkbox", { name: /Confirmo l'audiència/ }).check();
+    await panel.getByRole("button", { name: "Revocar aquesta necessitat" }).click();
+    await expect(panel.getByText(/Necessitat revocada/)).toBeVisible();
+    expect((await (await outsider.request.get(`${origin}/api/private/shared-needs`)).json())).toEqual([]);
+    expect((await outsider.request.get(`${origin}/api/private/shared-needs/${needId}`)).status()).toBe(404);
+    expect((await (await owner.request.get(root)).json()).visibility).toBe("private");
+  } finally {
+    await Promise.allSettled([ownerContext.close(), outsiderContext.close()]);
+  }
+});
