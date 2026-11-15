@@ -156,14 +156,15 @@ def upgrade():
         )
         # Query the optional runtime role from Python, instead of a DO block:
         # SQLAlchemy interprets PostgreSQL dollar markers as bind syntax.
-        role_exists = op.get_bind().execute(
-            sa.text("SELECT 1 FROM pg_roles WHERE rolname = 'incfs_api'")
-        ).scalar()
+        role_exists = (
+            op.get_bind()
+            .execute(sa.text("SELECT 1 FROM pg_roles WHERE rolname = 'incfs_api'"))
+            .scalar()
+        )
         if role_exists:
             op.execute(
                 sa.text(
-                    "GRANT SELECT, INSERT, UPDATE ON identity_facets, "
-                    "shareable_needs TO incfs_api"
+                    "GRANT SELECT, INSERT, UPDATE ON identity_facets, shareable_needs TO incfs_api"
                 )
             )
             op.execute(
