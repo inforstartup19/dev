@@ -1,0 +1,14 @@
+/* Local demo drafts. One storage key per form/context; not a server identity boundary. */
+(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.CampusDrafts=api;})(typeof globalThis!=='undefined'?globalThis:this,()=>{
+ 'use strict';const prefix='quelcom.campus-draft.v1.';
+ const fields={title:180,university:180,degree:180,objective:3000,method:3000,milestone:300,changes:2000,comment:3000,decision:20,note:3000,done:1};
+ const clone=x=>JSON.parse(JSON.stringify(x));
+ function validate(data){if(!data||typeof data!=='object'||Array.isArray(data))throw Error('invalid');for(const [k,v] of Object.entries(data)){if(!Object.hasOwn(fields,k)||(k==='done'?typeof v!=='boolean':typeof v!=='string'||v.length>fields[k]))throw Error('invalid');if(k==='decision'&&!['changes','validated'].includes(v))throw Error('invalid');}return data;}
+ function academic(data){if(!data||typeof data!=='object')return false;return ['TFG','TFM'].every(k=>{const r=data[k];return r&&Array.isArray(r.versions)&&Array.isArray(r.reviews)&&r.versions.every(v=>v&&['title','university','degree','objective','method','milestone','changes'].every(f=>typeof v[f]==='string'&&v[f].length<=fields[f]))&&r.reviews.every(v=>v&&Number.isInteger(v.version)&&v.version>0&&v.version<=r.versions.length&&typeof v.comment==='string'&&v.comment.length<=3000&&['changes','validated'].includes(v.decision));});}
+ function open(storage){const entries=new Map();
+  function entry(id){if(!entries.has(id)){const e={raw:null,data:{},error:'',blocked:false};try{e.raw=storage.getItem(prefix+id);if(e.raw!==null){const parsed=JSON.parse(e.raw);if(parsed.version!==1)throw Error('invalid');e.data=validate(parsed.fields);}}catch{e.blocked=true;e.error='No es pot llegir l’esborrany. Conservem les dades originals; exporta una còpia.';}entries.set(id,e);}return entries.get(id);}
+  function flush(id,remove){const e=entry(id);try{if(e.blocked)throw Error('blocked');if(storage.getItem(prefix+id)!==e.raw){e.blocked=true;throw Error('conflict');}const raw=remove?null:JSON.stringify({version:1,fields:e.data});if(remove)storage.removeItem(prefix+id);else storage.setItem(prefix+id,raw);e.raw=raw;e.error='';return true;}catch(err){e.error=e.blocked?'Conflicte o dades no recuperables. No sobreescrivim el disc; exporta el text abans de recarregar.':'No s’ha pogut desar l’esborrany. El text es conserva en memòria; exporta’l abans de sortir.';return false;}}
+  return {get:id=>clone(entry(id).data),set(id,data){const e=entry(id);e.data=clone(validate(data));return flush(id,false);},clear(id){const e=entry(id);if(!flush(id,true))return false;e.data={};return true;},status:id=>entry(id).error,export(){return Object.fromEntries([...entries].map(([id,e])=>[id,{fields:clone(e.data),original:e.raw,error:e.error}]));},unsafe(){return [...entries.values()].some(e=>e.error);}};
+ }
+ return {open,validate,academic,prefix};
+});
