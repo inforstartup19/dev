@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { startSpaceRenderer } from "../lib/space-renderer";
+import { SPACE_TRAVEL_MS, startSpaceRenderer } from "../lib/space-renderer";
 import styles from "./space-entrance.module.css";
 
 export function SpaceEntrance({ destination }: { destination: string }) {
@@ -15,7 +15,7 @@ export function SpaceEntrance({ destination }: { destination: string }) {
   function enter() {
     if(navigating.current || timer.current) return;
     if(paused || reduced || fallback) { finish(); return; }
-    setTravel(true); renderer.current?.travel(true); timer.current=setTimeout(finish,1100);
+    setTravel(true); renderer.current?.travel(true); timer.current=setTimeout(finish,SPACE_TRAVEL_MS);
   }
   useEffect(()=>{
     const motion=matchMedia("(prefers-reduced-motion: reduce)");
@@ -28,7 +28,7 @@ export function SpaceEntrance({ destination }: { destination: string }) {
     <canvas ref={canvas} className={styles.canvas} aria-hidden="true"/>
     <header className={styles.top}><span className={styles.brand}>inc.</span><span>UN UNIVERS DE POSSIBILITATS</span><a href={destination} onClick={e=>{if(e.button===0&&!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&!e.altKey){e.preventDefault();finish();}}}>Entra directament ↗</a></header>
     <div className={styles.heading}><p>LES IDEES NO TENEN LÍMITS</p><h1>Tot comença amb<br/>una <em>connexió.</em></h1><p>Persones, coneixement i idees.<br/>Un espai per fer-los créixer.</p></div>
-    <div className={styles.universe}><span className={styles.concepts} aria-hidden="true">IDEES · CIÈNCIA · ART · PERSONES · UNIVERSITATS</span>
+    <div className={styles.universe}><div className={styles.concepts} aria-hidden="true">{["IDEES", "CIÈNCIA", "ART I CULTURA", "PERSONES", "UNIVERSITATS", "TECNOLOGIA"].map(word=><span key={word}>{word}</span>)}</div>
       <button ref={orb} className={`${styles.orb} ${fallback?styles.fallback:""}`} aria-label="Entra a IncForStartUp amb un viatge entre estrelles" aria-disabled={travel} onClick={enter} onPointerEnter={()=>renderer.current?.hover(true)} onPointerLeave={()=>renderer.current?.hover(false)} onFocus={()=>renderer.current?.hover(true)} onBlur={()=>renderer.current?.hover(false)}><span>inc.</span><small>ENTRA AL TEU UNIVERS ↗</small></button>
     </div>
     <footer className={styles.bottom}><span>UNA IDEA POT CANVIAR-HO TOT.</span><button aria-pressed={paused || reduced} disabled={reduced || fallback} onClick={()=>setPaused(v=>!v)}>{reduced?"Moviment reduït":paused?"Activa el moviment":"Pausa el moviment"}</button>{travel&&<button onClick={cancel}>Cancel·la el viatge</button>}</footer>

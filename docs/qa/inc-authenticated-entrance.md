@@ -32,3 +32,16 @@ landscape i focus. Prova connectada conserva sessió OIDC i accés privat /idees
 TypeScript i build locals. Chromium local continua limitat per socket EPERM
 observat a #80; els resultats funcionals provenen del CI, no de QA Safari real.
 Aquest increment no tanca #77 ni #55; no publica ni desplega Azure.
+
+## Refinament visual #76 — 16/11/2026
+Òrbites separades en hemisferi proper/llunyà, halo i reflex de vidre, nucli càlid
+conservat. Conceptes distribuïts al voltant de l'esfera en desktop i agrupats
+sense solapaments al mòbil. Transició amb acceleració smoothstep, dissolució
+progressiva de l'esfera i atenuació final de les esteles, sense flaix blanc.
+Durada de 1,1 s compartida entre renderitzador i controlador.
+
+Regressió Playwright addicional: compta dibuixos canvas en pausa i amb canvi
+simulat de visibility, reprèn i cancel·la el viatge si s'activa reduced-motion.
+Això comprova el cicle de vida, no mesura CPU, INP ni rendiment de Safari real.
+Encara pendent comparar dues variants al Site existent i aprovació visual;
+aquest increment en PR no es presenta com a disseny final ni publicació al Site.
