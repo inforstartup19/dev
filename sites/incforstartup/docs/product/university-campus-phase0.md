@@ -9,3 +9,7 @@ Circuit de demostració: llegir la necessitat, preparar una aportació, desar-la
 Implementació posterior: identitat personal amb afiliacions verificades per institució; projecte compartit amb identitat única; membresies explícites i revocables; permisos separats per necessitats, evidències i espais acadèmics; cotutories amb responsabilitats i decisions registrades. Cap afiliació inferida del proveïdor de login concedeix accés automàtic.
 
 Validació automatitzada: rutes, distinció entre mostra i projectes propis, revisió reservada al perfil de demostració docent, persistència, escapament del text i error de quota. QA visual i Safari/iOS pendent: el navegador de comprovació està bloquejat per la política de navegació de l’entorn.
+
+## Campus com a entrada principal
+
+La portada Quelcom conserva el viatge i arriba a #inici, ara Campus. #campus-demo i #espai-demo es mantenen com a àlies compatibles. Nova idea al Campus obre #noves-idees amb les tres perspectives Explorar, Investigar i Formar. La fitxa directa #nova-idea continua disponible des d’aquest recorregut i als projectes propis. El logotip Quelcom de les vistes internes retorna al Campus; Torna a Quelcom al peu del Campus recupera la portada. No es requereix login per consultar la demo.

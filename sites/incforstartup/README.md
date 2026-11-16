@@ -1,6 +1,6 @@
 # IncForStartUp / Quelcom — codi complet del Site
 
-Snapshot del Site publicat, origen `259559da067ef4cc4c605966a6857343a95c36e7`.
+Snapshot del Site publicat, origen `7767449654274e51887b8d05dcc6a2bbb3cc1199`.
 IncForStartUp és el projecte mare; Quelcom és l’experiència de campus i projectes.
 Els assets de `public/` es conserven amb normalització d’espais finals, verificables al manifest
 `docs/site-source-manifest.json`. No es copia configuració privada de Sites ni dades del navegador.
@@ -18,7 +18,8 @@ Obre http://localhost:4173. No cal compilació per al Site estàtic.
 | Ruta | Funció |
 | --- | --- |
 | Arrel / #entrada | Portada 0.3, òrbites i viatge |
-| #inici | Tres portes: Explorar, Investigar, Formar |
+| #inici | Campus universitari: arribada directa des de Quelcom |
+| #noves-idees | Nova idea: tres perspectives Explorar, Investigar, Formar |
 | #explorar | Observatori amb idees fictícies, filtres i desades |
 | #demo-fitxa / #demo-desades | Fitxa de mostra i biblioteca local |
 | #investigar / #formar | Laboratori demo i recorregut d’aprenentatge |

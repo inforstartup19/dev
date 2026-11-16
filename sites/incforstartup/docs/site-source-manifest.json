@@ -1,19 +1,19 @@
 {
-  "source_commit": "259559da067ef4cc4c605966a6857343a95c36e7",
+  "source_commit": "7767449654274e51887b8d05dcc6a2bbb3cc1199",
   "files_sha256": {
     "university-campus.css": "518c8edd5cde9f08d79a87f75b052c15567d81313f22a52e850a45a0e2a88ce4",
     "orbit-layout.js": "af15bd12e83cb8936c348c0c3a1fdc860eee069a064558325885a79588c1879c",
     "themes.js": "761a64498ba0f97ed9f547b9afab6a32d5ecaefe984ed6d5a846fe58c55ddc9a",
     "workspace.js": "3aae8b1120747e2a03e660832e9139918697e8a5ad7f80d2536ccc9b15aa5321",
-    "quelcom-demo.js": "240d3031a9fc00291ee267a6b729f97e96c420ed018b41cab62c8e840f70860d",
-    "quelcom-campus.js": "d800963d239e95300e4e79f6868f1be4051de278d4556e40004d596e567c964c",
+    "quelcom-demo.js": "c0470c02ecb2ab326539ebaacef35e7e41b2e16add7ce7310fa76b8f3bb386d6",
+    "quelcom-campus.js": "cf6d895cf9f9977b3a80ee00b72ed8350dca5e23137817dc086920e9afd76fa7",
     "projecte-viu-model.js": "2015dd2261f7ba9594405c1fb7ca503e81232434202bb4f1d026047a0d681230",
     "launch.js": "cd9debed66eff1bd7e2d89e1a4193c42ea5615854df217bc558dbe4e5c010507",
     "samples.js": "6ace1983d0e9418745df000990aee1adf65b9a39f3411941deee138a2f3ed2f9",
     "index.html": "d5d29cee4e7a3242dafcb4ea3b668cd8bbce9b04226da197037ff4bf7d34a7f4",
     "workspace.css": "9da065ea80ab84c794a0df247eca3551d09272ddda326c4708e27ef5b3c849ac",
     "projecte-viu.js": "daa13e2114eaf1bc70d30cae530cb17acfbce52e6d4724ba9ab27cb6c03f888c",
-    "university-campus.js": "c94740f398b3493427a19a91714ce8f8e2ccdc1996b48be320426aa0372c4d3c",
+    "university-campus.js": "e96ba264186de930bd3a76aa5b943d542ace08be1f1ca1621260ec9f632d4004",
     "space-entry.css": "1c002f0945ed61d02383bdfdc409741495ce6fad3ce96f76e0d806f9d6a8fcb4",
     "dimension.css": "699fae0025c7e9afcf23329d0a05ed12de849bda19ef09a762c597d4a83154fe",
     "themes.css": "e669df7cce942cccc0e499250f29b438acbb10f0b0d01f61e709b7474e55ed5b",
@@ -28,7 +28,7 @@
     "contributions.js": "b1ceb04fc70a5ce97e934c40d68828d8fe6627a9464850aa5d301f422530320e",
     "quelcom-campus.css": "e4ff1dbe4a4de33842fe7213e24239e613658413bea92379e6510ddf185c73b2",
     "ecosystem.js": "d2accac3d6886b94f58ff632a42d7f1fe9a8a2e112640a1800a4781b44c80e83",
-    "quelcom-login.js": "21d253d98c7a49619304bf64b8b50d474b4c34a71a4c529634120096e671192c"
+    "quelcom-login.js": "73e753a9db43aa753b6da04d6af6a1810e6716ac9e82863685ef90e60b478656"
   },
   "normalization": "Trailing whitespace removed from space-entry.js"
 }
