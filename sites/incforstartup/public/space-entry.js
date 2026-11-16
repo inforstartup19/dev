@@ -9,7 +9,7 @@
  routes.entrada=['Entra al teu univers',entrance];
  render=function(){dispose();const entry=!location.hash||location.hash==='#entrada';document.body.classList.toggle('space-entry-active',entry);if(entry){$('#view').innerHTML=entrance();document.title='IncForStartUp · Un univers de possibilitats';start();}else previousRender();};
  function start(){
- const canvas=$('#space-canvas'),orb=$('#space-orb');let ctx;try{ctx=canvas.getContext('2d')}catch{}if(!ctx){orb.onclick=()=>location.hash='inici';return;}
+ const canvas=$('#space-canvas'),orb=$('#space-orb');let ctx;try{ctx=canvas.getContext('2d')}catch{}if(!ctx){orb.onclick=()=>location.hash='univers';return;}
  document.querySelector('.space-scene').classList.add('has-canvas');
  const satellites=[...document.querySelectorAll('.space-concepts .concept')];
  // Independent orbital clocks, planes, eccentricities and slow precession.
@@ -102,7 +102,7 @@
  ctx.save();ctx.font=`600 ${compact?44:Math.max(42,Math.min(width*.034,60))}px system-ui,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#f5faff';ctx.shadowColor='#bdeeff';ctx.shadowBlur=3+engagement*12;ctx.fillText('quelcom',cx,cy-3,r*1.65);ctx.restore();
  paintSatellites(true);
  }
- function navigate(){if(!alive)return;clearTimeout(timer);location.hash='inici';requestAnimationFrame(()=>{window.scrollTo({top:0,left:0,behavior:'instant'});const heading=$('#view h1');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true})}})}
+ function navigate(){if(!alive)return;clearTimeout(timer);location.hash='univers';requestAnimationFrame(()=>{window.scrollTo({top:0,left:0,behavior:'instant'});const heading=$('#view h1');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true})}})}
  function tick(now){if(!alive||document.hidden||paused)return;const dt=Math.min((now-last)/1000||0,.05);last=now;
  const p=travel?Math.min((now-travelStart)/1050,1):0;
  const velocity=travel?.12+Math.pow(Math.min(p/.65,1),2)*3.8:.008;
