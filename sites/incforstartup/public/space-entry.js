@@ -20,7 +20,8 @@
 
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let width=0,height=0,dpr=1,frame=0,last=0,angle=0,speed=0.13,hover=false,paused=reduced.matches,travel=false,travelStart=0,alive=true,timer=0;
- const stars=Array.from({length:innerWidth<=700?860:1250},()=>({x:Math.random()*2-1,y:Math.random()*2-1,z:Math.random(),r:Math.random()*1.4+0.3}));
+ const idleStarCount=innerWidth<=700?860:1250;
+ const stars=Array.from({length:Math.round(idleStarCount*1.5)},()=>({x:Math.random()*2-1,y:Math.random()*2-1,z:Math.random(),r:Math.random()*1.4+0.3}));
  function resize(){const bounds=document.querySelector('.space-scene').getBoundingClientRect();width=bounds.width;height=bounds.height;dpr=Math.min(devicePixelRatio||1,2);canvas.width=width*dpr;canvas.height=height*dpr;canvas.style.width=width+'px';canvas.style.height=height+'px';ctx.setTransform(dpr,0,0,dpr,0,0);if(paused)draw(0);}
  function updatePause(){document.querySelector('.space-scene').classList.toggle('space-still',paused);}
  function draw(progress){
@@ -66,13 +67,16 @@
  const haze=ctx.createRadialGradient(cx,cy,10,cx,cy,Math.max(width,height)*.65);haze.addColorStop(0,'#192341');haze.addColorStop(.3,'#0b1226');haze.addColorStop(.7,'#070b18');haze.addColorStop(1,'#030610');ctx.fillStyle=haze;ctx.fillRect(0,0,width,height);
  const boost=travel?Math.pow(Math.min(progress/.7,1),2):0;
  const settle=travel?1-Math.max(0,(progress-.85)/.15)*.6:1;
- for(const s of stars){
+ // Light behind the trails: no opaque centre masking stars or creating a dark disc.
+ if(travel){const tunnel=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(width,height)*.65);tunnel.addColorStop(0,`rgba(139,204,255,${boost*.32*settle})`);tunnel.addColorStop(.12,`rgba(82,159,255,${boost*.22*settle})`);tunnel.addColorStop(.4,`rgba(85,82,210,${boost*.08*settle})`);tunnel.addColorStop(1,'transparent');ctx.fillStyle=tunnel;ctx.fillRect(0,0,width,height);}
+ const visibleStarCount=travel?Math.round(idleStarCount*(1+.5*Math.min(progress/.35,1))):idleStarCount;
+ for(let i=0;i<visibleStarCount;i++){const s=stars[i];
    const z=Math.max(.04,s.z),x=cx+s.x*width*.38/z,y=cy+s.y*height*.38/z;
    const tail=travel?(.025+boost*.34)*(1-z*.6):0;
    ctx.strokeStyle=`rgba(${travel?'170,222,255':'182,204,237'},${Math.min(.95,.22+(1-z)*.65)*settle})`;
    ctx.lineWidth=s.r*(travel?1.3:.65);ctx.beginPath();ctx.moveTo(cx+(x-cx)*(1-tail),cy+(y-cy)*(1-tail));ctx.lineTo(x+.5,y+.5);ctx.stroke();
  }
- if(travel){const tunnel=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(width,height)*.65);tunnel.addColorStop(0,'#020817');tunnel.addColorStop(.08,`rgba(82,159,255,${boost*.25*settle})`);tunnel.addColorStop(.35,`rgba(85,82,210,${boost*.12*settle})`);tunnel.addColorStop(1,'transparent');ctx.fillStyle=tunnel;ctx.fillRect(0,0,width,height);return;}
+ if(travel)return;
  paintSatellites(false);
  // Luminous glass shell and orbit paths, all rendered as live geometry.
  const halo=ctx.createRadialGradient(cx,cy,r*.65,cx,cy,r*1.5);halo.addColorStop(0,'#559cd31c');halo.addColorStop(.65,'#326fcd15');halo.addColorStop(1,'transparent');ctx.fillStyle=halo;ctx.beginPath();ctx.arc(cx,cy,r*1.5,0,Math.PI*2);ctx.fill();

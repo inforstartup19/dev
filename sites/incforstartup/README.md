@@ -1,6 +1,6 @@
 # IncForStartUp / Quelcom — codi complet del Site
 
-Snapshot del Site publicat, origen `a452d57f6a8bb47575534e3477c06215bfed4924`.
+Snapshot del Site publicat, origen `387011514000bf7d99f52c7a17c60d568988c077`.
 IncForStartUp és el projecte mare; Quelcom és l’experiència de campus i projectes.
 Els assets de `public/` es conserven amb normalització d’espais finals, verificables al manifest
 `docs/site-source-manifest.json`. No es copia configuració privada de Sites ni dades del navegador.
@@ -69,3 +69,5 @@ Campus fase 0: [recorregut i límits](docs/product/university-campus-phase0.md).
 Espais de mostra: `#uni-a`, `#uni-b`, `#uni-equip` i `#uni-cotutoria`.
 
 Campus: `#coworking`, `#sala-materials`, `#biblioteca`, `#biblioteca-projecte`, `#universitats`. Notes i recursos desats només al navegador; connectors pendents de configuració.
+
+Viatge: llum central translúcida darrere les estrelles; densitat progressiva fins a 1290 partícules en mòbil i 1875 en PC. Durada i moviment reduït preservats. Revisió visual en dispositiu pendent.
