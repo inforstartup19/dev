@@ -1,5 +1,5 @@
 {
-  "source_commit": "da466fcce81c8ad682062354ecb99f38075c0272",
+  "source_commit": "0dddc395e39e07c5c3b3f6cce1b797580e4de753",
   "files_sha256": {
     "university-campus.css": "f5c118068c8cd82875d42a9c8132c53272230f5bd59059faf70679de7c58c285",
     "orbit-layout.js": "af15bd12e83cb8936c348c0c3a1fdc860eee069a064558325885a79588c1879c",
@@ -29,7 +29,7 @@
     "projecte-viu.css": "1ce46b0925e4416195ea19ec0fefbde9e5fa48ca87241e10eb3bff081f33cc6a",
     "dimension.js": "67677c6c29dbcf1088da6d4e423fa9a4dcce271c8d019ac71dd09d9a1ecd6ff7",
     "contributions.js": "b1ceb04fc70a5ce97e934c40d68828d8fe6627a9464850aa5d301f422530320e",
-    "portal-polish.css": "e28c6836b6ed4c5e3f733c6bb3796a5393197caffa3d85f491e733b084b1d45f",
+    "portal-polish.css": "a029fc240eb64a58ffed591702d05aa3c1c2db9494c6cf8673364ab30549301b",
     "quelcom-campus.css": "e4ff1dbe4a4de33842fe7213e24239e613658413bea92379e6510ddf185c73b2",
     "ecosystem.js": "d2accac3d6886b94f58ff632a42d7f1fe9a8a2e112640a1800a4781b44c80e83",
     "quelcom-login.js": "73e753a9db43aa753b6da04d6af6a1810e6716ac9e82863685ef90e60b478656"
