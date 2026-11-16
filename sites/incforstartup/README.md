@@ -1,6 +1,6 @@
 # IncForStartUp / Quelcom — codi complet del Site
 
-Snapshot del Site publicat, origen `098e4c24d90bed8cf61dc5eced9a88f18c6323d4`.
+Snapshot del Site publicat, origen `7d38f15674d3b3317a28dc99095f2fbc4bb9f1af`.
 IncForStartUp és el projecte mare; Quelcom és l’experiència de campus i projectes.
 Els assets de `public/` es conserven amb normalització d’espais finals, verificables al manifest
 `docs/site-source-manifest.json`. No es copia configuració privada de Sites ni dades del navegador.
@@ -77,3 +77,5 @@ Portada: reflexos corbats de vidre, vores cian/violeta, anell exterior amb punts
 Esfera central energètica: geometria vectorial paramètrica original a energy-orb.js, render animat amb Path2D i export SVG estàtic quelcom-energy.svg. Corona turquesa i malla violeta ondulant; densitat reduïda en mòbil. Referència visual aportada per l’usuari, sense reutilitzar vídeo ni marques. Revisió visual i rendiment en dispositiu pendents.
 
 Satèl·lits: malla energètica amb detall reduït, rellotges independents i detecció del cursor per radi i profunditat. Hover individual amb transició suau de llum, amplitud i velocitat; no afegeix accions de clic. Revisió visual i rendiment en dispositiu pendents.
+
+Llegibilitat: text perlat seminegreta, contrast oval difuminat i accents temàtics cian/lila/ambre. Reflex del nucli amb seguiment suau i limitat del cursor; text central estable. Sense assets nous ni canvi de clic. Validació visual pendent.
