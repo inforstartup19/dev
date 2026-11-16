@@ -1,0 +1,19 @@
+{
+  "project_id": "shnitfrpgzhwobsuotdl",
+  "name": "quelcom-campus-dev",
+  "organization_id": "ekcxzlpqfnunfhoavxwv",
+  "region": "eu-west-1",
+  "environment": "dev",
+  "migration": {
+    "version": "20261116231210",
+    "name": "academic_workspace",
+    "source": "supabase/schema/academic-workspace.sql",
+    "sha256": "22278645fbd7d6b2f89509465866f63b077ac53cedd69dda1298398be30c52f6"
+  },
+  "validation": {
+    "sql_rls": "passed_rollback",
+    "security_advisors": 0,
+    "performance_unused_indexes": 6,
+    "browser_auth_storage": "pending"
+  }
+}

@@ -2,7 +2,7 @@
 
 ## Increment preparat el 16 de novembre de 2026
 
-Branca independent de la PR #85. No publicat al Site ni connectat a Supabase.
+PR #88 apilada sobre #85. Base Supabase DEV creada i esquema aplicat; interfície encara local i no publicada al Site.
 
 - Rutes `#treball-tfg` i `#treball-tfm`, accessibles des de les demos acadèmiques existents.
 - Tauler amb cinc estats, tasques/fites, responsable, data, objectiu, mètode, entrega, criteris i bloqueig.
@@ -14,15 +14,15 @@ Branca independent de la PR #85. No publicat al Site ni connectat a Supabase.
 
 ## Base de proves
 
-L’organització confirmada és IncForStartUp (`ekcxzlpqfnunfhoavxwv`). Nom proposat: `quelcom-campus-dev`, regió europea. El connector ha retornat cost de projecte 0 mensual. Pendent de confirmació final de creació segons el flux del connector. L’únic projecte existent és BF; no s’ha modificat.
+L’organització confirmada és IncForStartUp (`ekcxzlpqfnunfhoavxwv`). Projecte `quelcom-campus-dev` creat amb autorització d’Omar, pla Free i regió `eu-west-1`. Ref: `shnitfrpgzhwobsuotdl`. Cost consultat: 0 mensual. BF no s’ha modificat. El possible canvi futur al pla de 25 USD no s’ha executat.
 
-`supabase/schema/academic-workspace.sql` és un candidat de revisió **no aplicat ni validat contra PostgreSQL**. No és una migració registrada. Inclou projectes, membres, tasques, dependències, esdeveniments i presentacions. RLS restringeix l’accés al projecte; el docent es determina per membresia administrada al servidor. No s’utilitza el selector de demo ni user_metadata com a autorització.
+`supabase/schema/academic-workspace.sql` conté el SQL aplicat remotament com `20261116231210_academic_workspace` mitjançant el connector. El comentari inicial conserva el context de preparació original; el registre autoritatiu de desplegament és `supabase/deployment-dev.json`. La prova SQL transaccional de `supabase/tests/academic-workspace-rls.sql` ha passat a PostgreSQL DEV. Inclou projectes, membres, tasques, dependències, esdeveniments i presentacions. RLS restringeix l’accés al projecte; el docent es determina per membresia administrada al servidor. No s’utilitza el selector de demo ni user_metadata com a autorització.
 
 Abans de connectar la interfície:
 
-1. Crear el projecte de proves autoritzat i inspeccionar esquemes/configuració.
-2. Provar el candidat en DEV, generar migració amb CLI descobert via `--help`, executar advisors.
-3. Provar amb estudiant A, docent A i estudiant B: lectura/escriptura creuades, revisió exclusiva docent, impossibilitat d’autoconcedir membresia, versió immutable, conflictes de revisió i cicles concurrents.
+1. Fet: projecte creat i esquema públic buit comprovat abans d’aplicar DDL.
+2. Fet: migració aplicada i historial remot verificat. Advisors de seguretat sense avisos; rendiment només informa de sis índexs encara no utilitzats. Conservar-los fins a mesurar càrrega real.
+3. Fet amb identitats SQL transitòries: aïllament de lectura/escriptura, revisió exclusiva docent, autoconcessió de membresia denegada, snapshots immutables, rebuig de revisió obsoleta i cicle de dependències. Pendent: sessions Auth reals, Data API i concurrència entre transaccions simultànies. Fixtures eliminades amb ROLLBACK: zero usuaris/projectes/tasques després de provar.
 4. Connectar Auth real i l’adaptador. Cap importació automàtica dels esborranys locals: previsualització i confirmació per projecte.
 5. Reconciliar amb FastAPI/Alembic i l’OIDC/BFF existent abans d’integrar cap a dev. Aquest experiment Supabase no substitueix el backend ni la identitat del portal.
 
@@ -36,6 +36,8 @@ Abans de connectar la interfície:
 
 ## Verificació d’aquest increment
 
-49 proves Node passen (41 anteriors i 8 de domini/transport). Sintaxi JS comprovada. Sense prova de navegador, PostgreSQL, Supabase Auth o Storage en aquest increment. No hi ha càrrega de documents, correu, integració universitària ni autenticació nova activa.
+49 proves Node passen (41 anteriors i 8 de domini/transport). Sintaxi JS comprovada. Prova PostgreSQL/RLS passada amb dades temporals i ROLLBACK. Sense prova de navegador, Supabase Auth o Storage en aquest increment. No hi ha càrrega de documents, correu, integració universitària ni autenticació nova activa.
 
 Referències consultades: https://supabase.com/changelog.md, https://supabase.com/docs/guides/database/postgres/row-level-security, https://supabase.com/docs/guides/storage/security/access-control.
+
+Actualització: 17 de novembre de 2026 (Europe/Madrid). Advisor de rendiment: https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index.
