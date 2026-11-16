@@ -33,3 +33,9 @@ Dades a quelcom.campus-hub.v1, només navegador: recursos desats, nota de fins a
 A petició del fundador, es revisa el mòbil després de la validació inicial: navegació inferior amb Campus, Coworking, Biblioteca i Universitats; Menú per a Nova idea, projectes propis i compte; context i perfil de prova plegables. Tipografia de formularis de 16 px, controls de 44–48 px, espai per a la zona segura inferior i accions apilades. Les regles de disposició noves estan limitades a 800 px. L’escriptori conserva les columnes i la navegació superior.
 
 La continuïtat diferencia començar una mostra de reprendre una aportació desada. El projecte indica institucions fictícies i fase de primera prova. La sala indica preparació local i absència d’enviament. No s’inventen persones connectades, terminis o activitat recent. La nova disposició no ha estat verificada visualment en un dispositiu; la restricció del navegador de comprovació continua vigent.
+
+## Coherència visual i guia del pilot
+
+portal-polish.css trasllada la paleta perla/cian/lila/ambre a les vistes internes, amb llum continguda, targetes contrastades, focus i controls llegibles en mòbil. No modifica la portada validada. Cian: feina; lila: investigació/revisió; ambre: comunitat i universitats.
+
+#circuit-pilot guia l’estudiant i el docent amb passos enllaçats i estats derivats de la proposta i nota locals. Accessible des de la franja de context del Campus. La simulació es prova al mateix navegador: no hi ha lliurament entre comptes, comentaris ni sincronització real. Els permisos de compartició del Site es preserven. Validació visual del nou increment pendent.

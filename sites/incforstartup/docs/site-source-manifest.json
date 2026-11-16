@@ -1,5 +1,5 @@
 {
-  "source_commit": "7d38f15674d3b3317a28dc99095f2fbc4bb9f1af",
+  "source_commit": "da466fcce81c8ad682062354ecb99f38075c0272",
   "files_sha256": {
     "university-campus.css": "f5c118068c8cd82875d42a9c8132c53272230f5bd59059faf70679de7c58c285",
     "orbit-layout.js": "af15bd12e83cb8936c348c0c3a1fdc860eee069a064558325885a79588c1879c",
@@ -12,10 +12,10 @@
     "projecte-viu-model.js": "2015dd2261f7ba9594405c1fb7ca503e81232434202bb4f1d026047a0d681230",
     "launch.js": "cd9debed66eff1bd7e2d89e1a4193c42ea5615854df217bc558dbe4e5c010507",
     "samples.js": "6ace1983d0e9418745df000990aee1adf65b9a39f3411941deee138a2f3ed2f9",
-    "index.html": "ca5182c74bec40e8d0fe12d8c2a68fc71cea3be2e5c7d5774e46aeb3f48cbbdf",
+    "index.html": "1c2f5f79834acc71464c536ff879dfe1522d788e083f64660df5a9820de66727",
     "workspace.css": "9da065ea80ab84c794a0df247eca3551d09272ddda326c4708e27ef5b3c849ac",
     "projecte-viu.js": "daa13e2114eaf1bc70d30cae530cb17acfbce52e6d4724ba9ab27cb6c03f888c",
-    "university-campus.js": "d6b786ca7f96354d828a24515ad3c33b5402b4ea754baba8b32e5d27691194dd",
+    "university-campus.js": "53e5531c3357b0463cbbbd98d4dcc5d40b030b280b2a50135bb37dd0e6efcfbd",
     "space-entry.css": "1c002f0945ed61d02383bdfdc409741495ce6fad3ce96f76e0d806f9d6a8fcb4",
     "dimension.css": "699fae0025c7e9afcf23329d0a05ed12de849bda19ef09a762c597d4a83154fe",
     "themes.css": "933749ef95748a4bd5e5359252437bfd6a910524f6d0cfb4f1c895b20845056f",
@@ -29,6 +29,7 @@
     "projecte-viu.css": "1ce46b0925e4416195ea19ec0fefbde9e5fa48ca87241e10eb3bff081f33cc6a",
     "dimension.js": "67677c6c29dbcf1088da6d4e423fa9a4dcce271c8d019ac71dd09d9a1ecd6ff7",
     "contributions.js": "b1ceb04fc70a5ce97e934c40d68828d8fe6627a9464850aa5d301f422530320e",
+    "portal-polish.css": "e28c6836b6ed4c5e3f733c6bb3796a5393197caffa3d85f491e733b084b1d45f",
     "quelcom-campus.css": "e4ff1dbe4a4de33842fe7213e24239e613658413bea92379e6510ddf185c73b2",
     "ecosystem.js": "d2accac3d6886b94f58ff632a42d7f1fe9a8a2e112640a1800a4781b44c80e83",
     "quelcom-login.js": "73e753a9db43aa753b6da04d6af6a1810e6716ac9e82863685ef90e60b478656"

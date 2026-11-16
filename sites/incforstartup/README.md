@@ -1,6 +1,6 @@
 # IncForStartUp / Quelcom — codi complet del Site
 
-Snapshot del Site publicat, origen `7d38f15674d3b3317a28dc99095f2fbc4bb9f1af`.
+Snapshot del Site publicat, origen `da466fcce81c8ad682062354ecb99f38075c0272`.
 IncForStartUp és el projecte mare; Quelcom és l’experiència de campus i projectes.
 Els assets de `public/` es conserven amb normalització d’espais finals, verificables al manifest
 `docs/site-source-manifest.json`. No es copia configuració privada de Sites ni dades del navegador.
@@ -79,3 +79,5 @@ Esfera central energètica: geometria vectorial paramètrica original a energy-o
 Satèl·lits: malla energètica amb detall reduït, rellotges independents i detecció del cursor per radi i profunditat. Hover individual amb transició suau de llum, amplitud i velocitat; no afegeix accions de clic. Revisió visual i rendiment en dispositiu pendents.
 
 Llegibilitat: text perlat seminegreta, contrast oval difuminat i accents temàtics cian/lila/ambre. Reflex del nucli amb seguiment suau i limitat del cursor; text central estable. Sense assets nous ni canvi de clic. Validació visual pendent.
+
+Guia del pilot: `#circuit-pilot`, amb passos i estats locals per estudiant i docent. Paleta i components interns unificats a portal-polish.css.
