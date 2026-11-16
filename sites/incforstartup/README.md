@@ -1,6 +1,6 @@
 # IncForStartUp / Quelcom — codi complet del Site
 
-Snapshot del Site publicat, origen `8f7721670d9fa86b69afd17493a7fa88744154be`.
+Snapshot del Site publicat, origen `259559da067ef4cc4c605966a6857343a95c36e7`.
 IncForStartUp és el projecte mare; Quelcom és l’experiència de campus i projectes.
 Els assets de `public/` es conserven amb normalització d’espais finals, verificables al manifest
 `docs/site-source-manifest.json`. No es copia configuració privada de Sites ni dades del navegador.
@@ -23,7 +23,10 @@ Obre http://localhost:4173. No cal compilació per al Site estàtic.
 | #demo-fitxa / #demo-desades | Fitxa de mostra i biblioteca local |
 | #investigar / #formar | Laboratori demo i recorregut d’aprenentatge |
 | #espai / #login | Cinc accessos pendents i escenaris simulats |
-| #espai-demo / #projectes | Tauler local dels Projectes Vius |
+| #campus-demo / #espai-demo | Campus universitari fictici amb tres blocs |
+| #uni-comunitat / #uni-oportunitats | Comunitat i proposta local de participació |
+| #uni-projecte / #uni-revisio | Resum compartit i revisió docent simulada |
+| #projectes | Tauler local dels Projectes Vius |
 | #nova-idea | Pregunta mínima, intenció i context opcionals |
 | #viu/ID/resum | Fitxa i decisions del projecte |
 | #viu/ID/investigar | Prova, criteri, resultat i evidències textuals |
@@ -59,3 +62,5 @@ La publicació a Sites segueix un flux propi: aquesta còpia no desplega Azure n
 Propera acció segons estat, recuperació d’esborranys per formulari, indicador de desat,
 exportació de text pendent i detecció de canvis d’una altra pestanya abans de confirmar.
 Les vistes antigues no tenen encara la mateixa protecció. QA mòbil real pendent.
+
+Campus fase 0: [recorregut i límits](docs/product/university-campus-phase0.md).
