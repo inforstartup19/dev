@@ -1,0 +1,7 @@
+/* Quiet light replaces hover underlines across Quelcom. */
+a:any-link,a:any-link:hover,a:any-link:focus-visible,button:hover,summary:hover{text-decoration:none!important}
+@media(hover:hover) and (pointer:fine){
+ a:any-link:hover,button:not(:disabled):hover,summary:hover{text-shadow:0 0 10px #9bdfff99,0 0 20px #80c9f044}
+ a:any-link:hover{filter:brightness(1.14)}
+}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid #addfeb;outline-offset:4px;text-shadow:0 0 10px #9bdfff88}
