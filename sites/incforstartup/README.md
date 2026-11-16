@@ -1,6 +1,6 @@
 # IncForStartUp / Quelcom — codi complet del Site
 
-Snapshot del Site publicat, origen `0dddc395e39e07c5c3b3f6cce1b797580e4de753`.
+Snapshot del Site publicat, origen `af57e81662fc8e04fad0ea83448802d82cf83493`.
 IncForStartUp és el projecte mare; Quelcom és l’experiència de campus i projectes.
 Els assets de `public/` es conserven amb normalització d’espais finals, verificables al manifest
 `docs/site-source-manifest.json`. No es copia configuració privada de Sites ni dades del navegador.
@@ -81,3 +81,5 @@ Satèl·lits: malla energètica amb detall reduït, rellotges independents i det
 Llegibilitat: text perlat seminegreta, contrast oval difuminat i accents temàtics cian/lila/ambre. Reflex del nucli amb seguiment suau i limitat del cursor; text central estable. Sense assets nous ni canvi de clic. Validació visual pendent.
 
 Guia del pilot: `#circuit-pilot`, amb passos i estats locals per estudiant i docent. Paleta i components interns unificats a portal-polish.css.
+
+Demo acadèmica: `#demo-tfg` i `#demo-tfm`, integrades a `#circuit-pilot`. Idea, context, objectiu, mètode, fita, retorn docent i versions. Dades separades per modalitat a quelcom.academic-demo.v1, només al mateix navegador. Canviar Perfil de prova per revisar o tornar a presentar. Cap entrega real ni qualificació. Desament explícit; els camps no desats es perden en navegar. Verificació visual pendent.
