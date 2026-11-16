@@ -9,7 +9,7 @@
  routes.entrada=['Entra al teu univers',entrance];
  render=function(){dispose();const entry=!location.hash||location.hash==='#entrada';document.body.classList.toggle('space-entry-active',entry);if(entry){$('#view').innerHTML=entrance();document.title='IncForStartUp · Un univers de possibilitats';start();}else previousRender();};
  function start(){
- const canvas=$('#space-canvas'),orb=$('#space-orb');let ctx;try{ctx=canvas.getContext('2d')}catch{}if(!ctx){orb.onclick=()=>location.hash='inici';return;}
+ const canvas=$('#space-canvas'),orb=$('#space-orb');let ctx;try{ctx=canvas.getContext('2d')}catch{}if(!ctx){orb.onclick=()=>location.hash='univers';return;}
  document.querySelector('.space-scene').classList.add('has-canvas');
  const satellites=[...document.querySelectorAll('.space-concepts .concept')];
  // Independent orbital clocks, planes, eccentricities and slow precession.
@@ -102,12 +102,12 @@
  ctx.save();ctx.font=`600 ${compact?44:Math.max(42,Math.min(width*.034,60))}px system-ui,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#f5faff';ctx.shadowColor='#bdeeff';ctx.shadowBlur=3+engagement*12;ctx.fillText('quelcom',cx,cy-3,r*1.65);ctx.restore();
  paintSatellites(true);
  }
- function navigate(){if(!alive)return;clearTimeout(timer);location.hash='inici';requestAnimationFrame(()=>{window.scrollTo({top:0,left:0,behavior:'instant'});const heading=$('#view h1');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true})}})}
+ function navigate(){if(!alive)return;clearTimeout(timer);location.hash='univers';requestAnimationFrame(()=>{window.scrollTo({top:0,left:0,behavior:'instant'});const heading=$('#view h1');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true})}})}
  function tick(now){if(!alive||document.hidden||paused)return;const dt=Math.min((now-last)/1000||0,.05);last=now;
  const p=travel?Math.min((now-travelStart)/1050,1):0;
  const velocity=travel?.12+Math.pow(Math.min(p/.65,1),2)*3.8:.008;
  for(const s of stars){s.z-=dt*velocity;if(s.z<=.035){s.z=1;s.x=Math.random()*2-1;s.y=Math.random()*2-1;}}
- if(!travel){const bounds=orb.getBoundingClientRect(),surface=canvas.getBoundingClientRect(),ox=bounds.x-surface.x+bounds.width/2,oy=bounds.y-surface.y+bounds.height/2,reach=Math.max(bounds.width,1);const targetX=pointer?Math.max(-1,Math.min(1,(pointer.x-ox)/reach)):0,targetY=pointer?Math.max(-1,Math.min(1,(pointer.y-oy)/reach)):0;attractX+=(targetX-attractX)*Math.min(dt*3,1);attractY+=(targetY-attractY)*Math.min(dt*3,1);engagement+=((hover?1:0)-engagement)*Math.min(dt*5,1);speed+=((hover?.58:.13)-speed)*Math.min(dt*3,1);angle+=dt*speed;meshTime+=dt*(.52+engagement*1.65);for(const [index,orbit] of orbits.entries()){orbit.energy+=((hoveredSatellite===index?1:0)-orbit.energy)*Math.min(dt*5,1);orbit.meshTime+=dt*(.52+orbit.energy*1.65);orbit.phase+=dt*orbit.speed;orbit.tilt+=dt*orbit.precession;orbit.radialPhase+=dt*orbit.radialSpeed;}}draw(p);frame=requestAnimationFrame(tick);}
+ if(!travel){const centralHover=hover&&hoveredSatellite===-1;const bounds=orb.getBoundingClientRect(),surface=canvas.getBoundingClientRect(),ox=bounds.x-surface.x+bounds.width/2,oy=bounds.y-surface.y+bounds.height/2,reach=Math.max(bounds.width,1);const targetX=pointer&&centralHover?Math.max(-1,Math.min(1,(pointer.x-ox)/reach)):0,targetY=pointer&&centralHover?Math.max(-1,Math.min(1,(pointer.y-oy)/reach)):0;attractX+=(targetX-attractX)*Math.min(dt*3,1);attractY+=(targetY-attractY)*Math.min(dt*3,1);engagement+=((centralHover?1:0)-engagement)*Math.min(dt*5,1);speed+=((centralHover?.58:.13)-speed)*Math.min(dt*3,1);angle+=dt*speed;meshTime+=dt*(.52+engagement*1.65);for(const [index,orbit] of orbits.entries()){orbit.energy+=((hoveredSatellite===index?1:0)-orbit.energy)*Math.min(dt*5,1);orbit.meshTime+=dt*(.52+orbit.energy*1.65);orbit.phase+=dt*orbit.speed;orbit.tilt+=dt*orbit.precession;orbit.radialPhase+=dt*orbit.radialSpeed;}}draw(p);frame=requestAnimationFrame(tick);}
  function resume(){cancelAnimationFrame(frame);last=0;if(!paused&&!document.hidden)frame=requestAnimationFrame(tick);else if(!document.hidden)draw(0)}
  function enter(){if(travel)return;if(reduced.matches||paused){navigate();return;}travel=true;travelStart=performance.now();timer=setTimeout(navigate,1050);orb.disabled=true;document.querySelector('.space-scene').classList.add('space-travelling');$('#space-status').textContent='Entrant al teu espai de treball…';}
  function escape(e){if(e.key==='Escape'&&travel)navigate()}document.addEventListener('keydown',escape);document.addEventListener('visibilitychange',resume);
