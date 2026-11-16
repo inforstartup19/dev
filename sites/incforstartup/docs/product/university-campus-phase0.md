@@ -19,3 +19,11 @@ La portada Quelcom conserva el viatge i arriba a #inici, ara Campus. #campus-dem
 #uni-a i #uni-b mostren les aportacions, l’activitat acadèmica fictícia i la propera tasca de cada universitat. #uni-equip concreta quatre perfils ficticis, les seves responsabilitats i aportacions. #uni-cotutoria diferencia la revisió compartida del projecte de l’avaluació acadèmica institucional. Comunitat i projecte enllacen aquests espais amb retorn explícit. No es creen membresies, expedients, qualificacions ni invitacions.
 
 El fundador ha validat la visualització mòbil de la versió anterior el 16 de novembre de 2026. Aquest increment reutilitza els components responsius; no s’ha fet una nova verificació visual automatitzada.
+
+## Coworking, Biblioteca i Universitats
+
+Campus ofereix tres accessos i una continuïtat basada en l’últim desament local. #coworking porta a #sala-materials: tasca, nota local, marca de preparació, equip, cotutoria i biblioteca vinculada. #biblioteca permet cercar guies de mostra, filtrar per Personal (desats), Projectes o Comunitat, llegir i desar sense duplicar el recurs. #biblioteca-projecte conserva el retorn a la sala. #universitats mostra institucions fictícies i un repte amb proposta i visita a la sala.
+
+Les connexions institucionals estan plegades per defecte i pendents de configuració: identitat, catàleg, campus virtual i eines de treball. No es connecta cap proveïdor ni s’importen dades. La sala és visitable com a mostra independentment de la proposta; no representa acceptació o membresia real.
+
+Dades a quelcom.campus-hub.v1, només navegador: recursos desats, nota de fins a 3000 caràcters, tasca preparada i darrer espai desat. Desament explícit, sense sincronització entre dispositius ni protecció de concurrència entre pestanyes. No hi ha xat, presència, documents privats ni videotrucada. Error de quota: nota conservada al formulari i avís visible. Verificació visual del nou increment pendent; components responsius reutilitzats.
