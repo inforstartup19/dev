@@ -1,52 +1,85 @@
-# Site IncForStartUp
+# IncForStartUp / Quelcom — codi complet del Site
 
-Còpia del codi del Site de treball, actualitzada el 13 de novembre de 2026.
+Snapshot del Site publicat, origen `af57e81662fc8e04fad0ea83448802d82cf83493`.
+IncForStartUp és el projecte mare; Quelcom és l’experiència de campus i projectes.
+Els assets de `public/` es conserven amb normalització d’espais finals, verificables al manifest
+`docs/site-source-manifest.json`. No es copia configuració privada de Sites ni dades del navegador.
 
-- Site: https://incforstartup.independentankle2.chatgpt.site
-- Commit d’origen al repositori Sites: `983769536c39e48e8cacef64e5cf190cbf8fe8a0`.
-- Accés del Site: privat, només el propietari. Aquest repositori GitHub és públic.
-- Aplicació estàtica independent de `apps/web` i `apps/api`; sense dependències de compilació.
-
-## Execució local
-
-Des de l’arrel del repositori:
+## Executar
 
 ```sh
 python3 -m http.server 4173 --directory sites/incforstartup/public
 ```
 
-Obre http://localhost:4173. El desat requereix un navegador amb localStorage disponible.
+Obre http://localhost:4173. No cal compilació per al Site estàtic.
 
-## Funcionalitat conservada
+## Recorreguts implementats
 
-Campus obert, projectes de qualsevol disciplina, laboratori d’idees, direcció de projectes,
-registre d’aprenentatges, preparació jurídica i operativa, recorregut de la idea a l’empresa,
-i necessitats i aportacions vinculades a projectes amb propostes, acords, evidències i historial.
+| Ruta | Funció |
+| --- | --- |
+| Arrel / #entrada | Portada 0.3, òrbites i viatge |
+| #inici | Campus universitari: arribada directa des de Quelcom |
+| #noves-idees | Nova idea: tres perspectives Explorar, Investigar, Formar |
+| #explorar | Observatori amb idees fictícies, filtres i desades |
+| #demo-fitxa / #demo-desades | Fitxa de mostra i biblioteca local |
+| #investigar / #formar | Laboratori demo i recorregut d’aprenentatge |
+| #espai / #login | Cinc accessos pendents i escenaris simulats |
+| #campus-demo / #espai-demo | Campus universitari fictici amb tres blocs |
+| #uni-comunitat / #uni-oportunitats | Comunitat i proposta local de participació |
+| #uni-projecte / #uni-revisio | Resum compartit i revisió docent simulada |
+| #projectes | Tauler local dels Projectes Vius |
+| #nova-idea | Pregunta mínima, intenció i context opcionals |
+| #viu/ID/resum | Fitxa i decisions del projecte |
+| #viu/ID/investigar | Prova, criteri, resultat i evidències textuals |
+| #viu/ID/formar | Necessitats de coneixement, persones i recursos |
+| #viu/ID/historial | Proves completades, decisions i versions |
 
-Les universitats són el focus inicial. També hi tenen lloc iniciatives personals, startups i
-empreses de qualsevol sector. BF és només un projecte vinculat amb desenvolupament propi.
+Projectes desats a `incforstartup.workspace.v1`; demo fictícia a `quelcom.demo.v1`.
+Exportació JSON disponible. Pausar/tancar no esborra el projecte. Cap publicació
+ni invitació real. No hi ha autenticació, ACL entre usuaris, IA connectada,
+matrícula, laboratoris remots ni càrrega de documents en aquest Site.
 
-## Límits i dades
-
-Les dades són locals al navegador, sota `incforstartup.workspace.v1`, i es poden exportar com a JSON.
-Aquesta còpia inclou codi i contingut de la interfície; no inclou dades de localStorage,
-exportacions de l’usuari, credencials, tokens ni la configuració privada d’allotjament.
-No hi ha sincronització entre comptes, enviament de candidatures, signatura d’acords,
-pagaments, control d’accés per projecte ni IA connectada en aquest Site.
-Els camps de visibilitat i els estats són anotacions de planificació.
-Les referències a PR i proves anteriors són informació històrica mostrada pel Site.
+El frontend autenticat de `apps/web` i l’API són una implementació separada.
+El selector de login preparat a #82 requereix activació de proveïdors (#83).
+La integració visual React segueix a #81. Aquest snapshot no resol aquesta integració.
 
 ## Validació
 
-- Comprovació de sintaxi JavaScript amb `node --check`.
-- Formulari d’aportacions provat al navegador: rebutja verificació sense proposta,
-  acord/termini i evidència/persona revisora; desat comprovat després de recarregar.
-- La prova del navegador s’ha fet al Site abans de copiar aquests mateixos fitxers.
-- No s’han validat serveis backend ni integracions entre comptes.
+```sh
+node --test sites/incforstartup/tests/*.test.cjs
+python3 scripts/check_repo.py
+```
 
-## Continuïtat
+El CI executa les proves estàtiques. Inclou persistència, geometria, navegació,
+Projecte Viu, entrades mínimes i fallades de storage. QA visual completa,
+Safari/iOS i proveïdors reals continuen pendents.
 
-En cada increment del Site, actualitzar aquesta carpeta i la documentació en una branca
-amb PR. GitHub i Sites tenen repositoris separats: no hi ha sincronització automàtica.
-La publicació a Sites manté el seu flux propi i no es dispara des d’aquesta còpia.
-Els dissenys de Canva i el brief visual es documenten a `docs/design/incforstartup-canva.md`.
+`quelcom-preview/` conserva la previsualització anterior de #82; la versió completa
+actual és `public/`. `entrada-dev.html` conserva l’experiment anterior separat.
+La publicació a Sites segueix un flux propi: aquesta còpia no desplega Azure ni GitHub Pages.
+
+## Fiabilitat del Projecte Viu
+
+Propera acció segons estat, recuperació d’esborranys per formulari, indicador de desat,
+exportació de text pendent i detecció de canvis d’una altra pestanya abans de confirmar.
+Les vistes antigues no tenen encara la mateixa protecció. QA mòbil real pendent.
+
+Campus fase 0: [recorregut i límits](docs/product/university-campus-phase0.md).
+
+Espais de mostra: `#uni-a`, `#uni-b`, `#uni-equip` i `#uni-cotutoria`.
+
+Campus: `#coworking`, `#sala-materials`, `#biblioteca`, `#biblioteca-projecte`, `#universitats`. Notes i recursos desats només al navegador; connectors pendents de configuració.
+
+Viatge: llum central translúcida darrere les estrelles; densitat progressiva fins a 1290 partícules en mòbil i 1875 en PC. Durada i moviment reduït preservats. Revisió visual en dispositiu pendent.
+
+Portada: reflexos corbats de vidre, vores cian/violeta, anell exterior amb punts orbitals i llum central progressiva amb hover/focus. Geometria canvas interactiva; no assets raster nous. Comprovació visual en dispositiu pendent.
+
+Esfera central energètica: geometria vectorial paramètrica original a energy-orb.js, render animat amb Path2D i export SVG estàtic quelcom-energy.svg. Corona turquesa i malla violeta ondulant; densitat reduïda en mòbil. Referència visual aportada per l’usuari, sense reutilitzar vídeo ni marques. Revisió visual i rendiment en dispositiu pendents.
+
+Satèl·lits: malla energètica amb detall reduït, rellotges independents i detecció del cursor per radi i profunditat. Hover individual amb transició suau de llum, amplitud i velocitat; no afegeix accions de clic. Revisió visual i rendiment en dispositiu pendents.
+
+Llegibilitat: text perlat seminegreta, contrast oval difuminat i accents temàtics cian/lila/ambre. Reflex del nucli amb seguiment suau i limitat del cursor; text central estable. Sense assets nous ni canvi de clic. Validació visual pendent.
+
+Guia del pilot: `#circuit-pilot`, amb passos i estats locals per estudiant i docent. Paleta i components interns unificats a portal-polish.css.
+
+Demo acadèmica: `#demo-tfg` i `#demo-tfm`, integrades a `#circuit-pilot`. Idea, context, objectiu, mètode, fita, retorn docent i versions. Dades separades per modalitat a quelcom.academic-demo.v1, només al mateix navegador. Canviar Perfil de prova per revisar o tornar a presentar. Cap entrega real ni qualificació. Desament explícit; els camps no desats es perden en navegar. Verificació visual pendent.

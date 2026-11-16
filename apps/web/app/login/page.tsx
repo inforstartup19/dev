@@ -1,3 +1,4 @@
+import { loginMethods, methodParameters, loginErrorMessage } from "../../lib/login-methods";
 import Link from "next/link";
 import { Sprout, ArrowRight, LockKeyhole } from "lucide-react";
 import { loginConfig, loginDestination } from "../../lib/auth-config";
@@ -11,13 +12,14 @@ export default async function Login({
 }) {
   const params = await searchParams;
   const configured = !!loginConfig();
+  const message = loginErrorMessage(params.error);
   return (
     <main className="login-page">
       <section className="panel login-card">
         <span className="brand-icon">
           <Sprout size={28} />
         </span>
-        <span className="eyebrow">INCFORSTARTUP CAMPUS</span>
+        <span className="eyebrow">QUELCOM · INCFORSTARTUP</span>
         <h1>
           Un compte.
           <br />
@@ -27,37 +29,28 @@ export default async function Login({
           Accedeix al teu espai, comparteix avenços i continua el projecte amb
           el teu equip.
         </p>
-        {params.error && (
+        {message && (
           <p className="notice error" role="alert">
-            No hem pogut completar l’accés. Torna-ho a provar amb el teu compte.
+            {message}
           </p>
         )}
-        {configured ? (
-          <form
-            action={
+        <div style={{ display: "grid", gap: 12 }}>
+          {loginMethods.map(method => {
+            const available = configured && methodParameters(method.id) !== null;
+            return <form key={method.id} action={
               (params.next === "/private" || params.next === "/idees") && loginConfig()?.privateContext
-                ? privateLoginAction
-                : loginAction
-            }
-          >
-            <input
-              type="hidden"
-              name="next"
-              value={loginDestination(params.next)}
-            />
-            <button className="button primary">
-              Continua amb el teu compte <ArrowRight size={17} />
-            </button>
-          </form>
-        ) : (
-          <div className="waiting">
-            <LockKeyhole size={20} />
-            <p>
-              L’accés compartit al pilot està en preparació. Mentrestant, pots
-              explorar la demostració.
-            </p>
-          </div>
-        )}
+                ? privateLoginAction : loginAction
+            }>
+              <input type="hidden" name="next" value={loginDestination(params.next)} />
+              <input type="hidden" name="method" value={method.id} />
+              <button className="button primary" disabled={!available} style={{ width: "100%" }}>
+                Continua amb {method.label} {available ? <ArrowRight size={17} /> : <LockKeyhole size={17} />}
+              </button>
+              {!available && <small className="muted">Pendent de connexió</small>}
+            </form>;
+          })}
+        </div>
+        {!configured && <p className="waiting">L’accés compartit està en preparació. No s’enviaran codis ni es crearà cap sessió des d’aquesta pantalla.</p>}
         <p className="muted">
           Cada participant utilitza el seu compte. El professor et pot donar
           accés a un espai amb una invitació.
