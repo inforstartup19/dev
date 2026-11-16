@@ -19,7 +19,7 @@
  }));
 
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
- let width=0,height=0,dpr=1,frame=0,last=0,angle=0,speed=0.13,engagement=0,hover=false,paused=reduced.matches,travel=false,travelStart=0,alive=true,timer=0;
+ let width=0,height=0,dpr=1,frame=0,last=0,angle=0,meshTime=0,speed=0.13,engagement=0,hover=false,paused=reduced.matches,travel=false,travelStart=0,alive=true,timer=0;
  const idleStarCount=innerWidth<=700?860:1250;
  const stars=Array.from({length:Math.round(idleStarCount*1.5)},()=>({x:Math.random()*2-1,y:Math.random()*2-1,z:Math.random(),r:Math.random()*1.4+0.3}));
  function resize(){const bounds=document.querySelector('.space-scene').getBoundingClientRect();width=bounds.width;height=bounds.height;dpr=Math.min(devicePixelRatio||1,2);canvas.width=width*dpr;canvas.height=height*dpr;canvas.style.width=width+'px';canvas.style.height=height+'px';ctx.setTransform(dpr,0,0,dpr,0,0);if(paused)draw(0);}
@@ -102,7 +102,7 @@
  ctx.beginPath();ctx.arc(cx,cy,r*.985,0,Math.PI*2);ctx.fillStyle='#080e25';ctx.fill();
  const interior=ctx.createRadialGradient(cx-r*.25,cy-r*.25,0,cx,cy,r);interior.addColorStop(0,'#181130');interior.addColorStop(.65,'#11162f');interior.addColorStop(1,'#17627b');ctx.fillStyle=interior;ctx.fill();
  ctx.save();ctx.clip();ctx.translate(cx,cy);ctx.scale(r/100,r/100);
- for(const mesh of QuelcomEnergy.geometry(angle,compact)){ctx.strokeStyle=mesh.color;ctx.globalAlpha=mesh.opacity;ctx.lineWidth=.34+engagement*.12;ctx.stroke(new Path2D(mesh.d));}
+ for(const mesh of QuelcomEnergy.geometry(meshTime,compact,engagement)){ctx.strokeStyle=mesh.color;ctx.globalAlpha=mesh.opacity;ctx.lineWidth=.34+engagement*.12;ctx.stroke(new Path2D(mesh.d));}
  ctx.restore();
  ctx.beginPath();ctx.arc(cx,cy,r*.985,0,Math.PI*2);ctx.strokeStyle='#43f4d4';ctx.lineWidth=2+engagement;ctx.shadowColor='#2ef7d2';ctx.shadowBlur=18+engagement*8;ctx.stroke();ctx.shadowBlur=5;ctx.lineWidth=.8;ctx.strokeStyle='#a3ffef';ctx.stroke();ctx.restore();
  // The centre word belongs to the same depth layer as the central sphere.
@@ -114,7 +114,7 @@
  const p=travel?Math.min((now-travelStart)/1050,1):0;
  const velocity=travel?.12+Math.pow(Math.min(p/.65,1),2)*3.8:.008;
  for(const s of stars){s.z-=dt*velocity;if(s.z<=.035){s.z=1;s.x=Math.random()*2-1;s.y=Math.random()*2-1;}}
- if(!travel){engagement+=((hover?1:0)-engagement)*Math.min(dt*5,1);speed+=((hover?.58:.13)-speed)*Math.min(dt*3,1);angle+=dt*speed;for(const orbit of orbits){orbit.phase+=dt*orbit.speed;orbit.tilt+=dt*orbit.precession;orbit.radialPhase+=dt*orbit.radialSpeed;}}draw(p);frame=requestAnimationFrame(tick);}
+ if(!travel){engagement+=((hover?1:0)-engagement)*Math.min(dt*5,1);speed+=((hover?.58:.13)-speed)*Math.min(dt*3,1);angle+=dt*speed;meshTime+=dt*(.52+engagement*1.65);for(const orbit of orbits){orbit.phase+=dt*orbit.speed;orbit.tilt+=dt*orbit.precession;orbit.radialPhase+=dt*orbit.radialSpeed;}}draw(p);frame=requestAnimationFrame(tick);}
  function resume(){cancelAnimationFrame(frame);last=0;if(!paused&&!document.hidden)frame=requestAnimationFrame(tick);else if(!document.hidden)draw(0)}
  function enter(){if(travel)return;if(reduced.matches||paused){navigate();return;}travel=true;travelStart=performance.now();timer=setTimeout(navigate,1050);orb.disabled=true;document.querySelector('.space-scene').classList.add('space-travelling');$('#space-status').textContent='Entrant al teu espai de treball…';}
  function escape(e){if(e.key==='Escape'&&travel)navigate()}document.addEventListener('keydown',escape);document.addEventListener('visibilitychange',resume);
