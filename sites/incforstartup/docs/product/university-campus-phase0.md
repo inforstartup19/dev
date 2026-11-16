@@ -13,3 +13,9 @@ Validació automatitzada: rutes, distinció entre mostra i projectes propis, rev
 ## Campus com a entrada principal
 
 La portada Quelcom conserva el viatge i arriba a #inici, ara Campus. #campus-demo i #espai-demo es mantenen com a àlies compatibles. Nova idea al Campus obre #noves-idees amb les tres perspectives Explorar, Investigar i Formar. La fitxa directa #nova-idea continua disponible des d’aquest recorregut i als projectes propis. El logotip Quelcom de les vistes internes retorna al Campus; Torna a Quelcom al peu del Campus recupera la portada. No es requereix login per consultar la demo.
+
+## Institucions, equip i cotutoria
+
+#uni-a i #uni-b mostren les aportacions, l’activitat acadèmica fictícia i la propera tasca de cada universitat. #uni-equip concreta quatre perfils ficticis, les seves responsabilitats i aportacions. #uni-cotutoria diferencia la revisió compartida del projecte de l’avaluació acadèmica institucional. Comunitat i projecte enllacen aquests espais amb retorn explícit. No es creen membresies, expedients, qualificacions ni invitacions.
+
+El fundador ha validat la visualització mòbil de la versió anterior el 16 de novembre de 2026. Aquest increment reutilitza els components responsius; no s’ha fet una nova verificació visual automatitzada.
