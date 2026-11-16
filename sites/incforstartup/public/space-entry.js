@@ -94,12 +94,17 @@
  }
  if(travel)return;
  paintSatellites(false);
- // Luminous glass shell and orbit paths, all rendered as live geometry.
- const halo=ctx.createRadialGradient(cx,cy,r*.65,cx,cy,r*1.5);halo.addColorStop(0,`rgba(79,183,225,${.13+engagement*.13})`);halo.addColorStop(.65,`rgba(68,115,210,${.07+engagement*.07})`);halo.addColorStop(1,'transparent');ctx.fillStyle=halo;ctx.beginPath();ctx.arc(cx,cy,r*1.5,0,Math.PI*2);ctx.fill();
- ctx.save();ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle='#071527';ctx.fill();ctx.clip();const body=ctx.createRadialGradient(cx-r*.35,cy-r*.45,r*.03,cx,cy,r);body.addColorStop(0,'#9bdcf36b');body.addColorStop(.45,'#1b3d59cc');body.addColorStop(.8,'#0a1b30');body.addColorStop(1,'#66cde3a6');ctx.fillStyle=body;ctx.fillRect(cx-r,cy-r,r*2,r*2);
- for(let i=0;i<12;i++){ctx.beginPath();for(let j=0;j<=150;j++){const t=j/150*Math.PI*2,a=angle+i*Math.PI/12;const x=Math.cos(t)*r*.96,y=Math.sin(t)*r*.96;const depth=Math.sin(a)*x;const px=cx+Math.cos(a)*x*Math.cos(i*.43)-y*Math.sin(i*.43),py=cy+Math.cos(a)*x*Math.sin(i*.43)+y*Math.cos(i*.43);if(j===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.strokeStyle=i%3===0?'#dcc0ee99':'#a8eaffaa';ctx.lineWidth=i%3===0?.9:.6;ctx.shadowBlur=3+engagement*4;ctx.shadowColor='#72ccff';ctx.stroke();}
- ctx.shadowBlur=0;const core=ctx.createRadialGradient(cx,cy,0,cx,cy,r*.53);core.addColorStop(0,'#fff9e7');core.addColorStop(.06,'#ffe2b3');core.addColorStop(.2,`rgba(255,173,134,${.62+engagement*.2})`);core.addColorStop(.5,'#b974b23b');core.addColorStop(1,'transparent');ctx.fillStyle=core;ctx.fillRect(cx-r,cy-r,r*2,r*2);ctx.restore();ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.strokeStyle='#9ddcfb88';ctx.lineWidth=1.3;ctx.shadowBlur=14;ctx.shadowColor='#7bdfff';ctx.stroke();ctx.shadowBlur=0;
- glassFinish(cx,cy,r,angle,engagement,true);
+ // Vector plasma sphere: original cyan corona and slowly folding violet mesh.
+ ctx.save();
+ const aura=ctx.createRadialGradient(cx,cy,r*.7,cx,cy,r*1.38);aura.addColorStop(0,'#2eeed000');aura.addColorStop(.55,`rgba(38,238,211,${.23+engagement*.12})`);aura.addColorStop(1,'#23bbd000');ctx.fillStyle=aura;ctx.fillRect(cx-r*1.4,cy-r*1.4,r*2.8,r*2.8);
+ // A continuous, softly varying corona rather than flashing rays.
+ for(let i=0;i<(compact?72:108);i++){const a=i/(compact?72:108)*Math.PI*2,flow=(Math.sin(a*7+angle*1.3)+Math.sin(a*11-angle*.7)+2)/4,len=r*(.035+flow*.15);ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*r*.98,cy+Math.sin(a)*r*.98);ctx.lineTo(cx+Math.cos(a)*(r+len),cy+Math.sin(a)*(r+len));ctx.strokeStyle=`rgba(67,249,218,${.06+flow*.17+engagement*.06})`;ctx.lineWidth=compact?1.2:1.6;ctx.stroke();}
+ ctx.beginPath();ctx.arc(cx,cy,r*.985,0,Math.PI*2);ctx.fillStyle='#080e25';ctx.fill();
+ const interior=ctx.createRadialGradient(cx-r*.25,cy-r*.25,0,cx,cy,r);interior.addColorStop(0,'#181130');interior.addColorStop(.65,'#11162f');interior.addColorStop(1,'#17627b');ctx.fillStyle=interior;ctx.fill();
+ ctx.save();ctx.clip();ctx.translate(cx,cy);ctx.scale(r/100,r/100);
+ for(const mesh of QuelcomEnergy.geometry(angle,compact)){ctx.strokeStyle=mesh.color;ctx.globalAlpha=mesh.opacity;ctx.lineWidth=.34+engagement*.12;ctx.stroke(new Path2D(mesh.d));}
+ ctx.restore();
+ ctx.beginPath();ctx.arc(cx,cy,r*.985,0,Math.PI*2);ctx.strokeStyle='#43f4d4';ctx.lineWidth=2+engagement;ctx.shadowColor='#2ef7d2';ctx.shadowBlur=18+engagement*8;ctx.stroke();ctx.shadowBlur=5;ctx.lineWidth=.8;ctx.strokeStyle='#a3ffef';ctx.stroke();ctx.restore();
  // The centre word belongs to the same depth layer as the central sphere.
  ctx.save();ctx.font=`600 ${compact?44:Math.max(42,Math.min(width*.034,60))}px system-ui,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#f5faff';ctx.shadowColor='#bdeeff';ctx.shadowBlur=3+engagement*12;ctx.fillText('quelcom',cx,cy-3,r*1.65);ctx.restore();
  paintSatellites(true);
