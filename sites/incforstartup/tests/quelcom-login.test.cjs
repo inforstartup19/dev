@@ -3,7 +3,7 @@ test('login preview never authenticates, all providers pending; local demo stays
  const handlers={};const routes={};const workspaceHome=()=>'<h1>Local</h1>';
  const feedback={innerHTML:''};
  const c={routes,workspaceHome,render(){},location:{hash:'#espai'},document:{body:{classList:{toggle(){}}},querySelectorAll:()=>[],querySelector:()=>feedback,addEventListener:(name,fn)=>handlers[name]=fn}};
- vm.createContext(c);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../quelcom-preview/quelcom-login.js'),'utf8'),c);
+ vm.createContext(c);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../public/quelcom-login.js'),'utf8'),c);
  const html=routes.espai[1]();assert.equal((html.match(/type="button" disabled/g)||[]).length,5);
  for(const name of ['Microsoft','Apple','Google','universitat','Correu']) assert.ok(html.includes(name));
  assert.ok(!html.includes('type="password"'));assert.equal(routes['espai-demo'][1],workspaceHome);
