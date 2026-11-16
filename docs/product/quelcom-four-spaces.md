@@ -5,7 +5,7 @@ Campus conserva el protagonisme de la fase universitària. Posicions estables, f
 
 #noves-idees passa a ser un àlies de la selecció; les antigues rutes Explorar/Investigar/Formar continuen accessibles per compatibilitat. Startup ofereix accés a projectes, captura d’idea i mètode; les funcions específiques de negoci es mostren com a pendents. Cap transició de fase ni permís canvia en clicar una esfera.
 
-L’enllaç de continuació només apareix amb una destinació local coneguda desada. No és un compte ni sincronització de dispositius.
+Actualització: la segona escena mostra exclusivament les quatre esferes amb els seus noms i el fons espacial. Eliminades capçalera, descripcions i continuació. Els noms accessibles mantenen el context per a lectors de pantalla.
 
 Site publicat des del commit d4581b42338a8be8ede0dea8a62d23352dc9af87. Aquest increment de GitHub incorpora només els fitxers de les quatre entrades sobre #106; els esborranys i Supabase pendents d’altres PR no s’han publicat implícitament. El manifest històric del snapshot complet es conserva com a registre d’aquella versió.
 
