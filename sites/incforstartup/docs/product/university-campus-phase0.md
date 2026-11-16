@@ -27,3 +27,9 @@ Campus ofereix tres accessos i una continuïtat basada en l’últim desament lo
 Les connexions institucionals estan plegades per defecte i pendents de configuració: identitat, catàleg, campus virtual i eines de treball. No es connecta cap proveïdor ni s’importen dades. La sala és visitable com a mostra independentment de la proposta; no representa acceptació o membresia real.
 
 Dades a quelcom.campus-hub.v1, només navegador: recursos desats, nota de fins a 3000 caràcters, tasca preparada i darrer espai desat. Desament explícit, sense sincronització entre dispositius ni protecció de concurrència entre pestanyes. No hi ha xat, presència, documents privats ni videotrucada. Error de quota: nota conservada al formulari i avís visible. Verificació visual del nou increment pendent; components responsius reutilitzats.
+
+## Iteració mòbil: llegibilitat i jerarquia
+
+A petició del fundador, es revisa el mòbil després de la validació inicial: navegació inferior amb Campus, Coworking, Biblioteca i Universitats; Menú per a Nova idea, projectes propis i compte; context i perfil de prova plegables. Tipografia de formularis de 16 px, controls de 44–48 px, espai per a la zona segura inferior i accions apilades. Les regles de disposició noves estan limitades a 800 px. L’escriptori conserva les columnes i la navegació superior.
+
+La continuïtat diferencia començar una mostra de reprendre una aportació desada. El projecte indica institucions fictícies i fase de primera prova. La sala indica preparació local i absència d’enviament. No s’inventen persones connectades, terminis o activitat recent. La nova disposició no ha estat verificada visualment en un dispositiu; la restricció del navegador de comprovació continua vigent.

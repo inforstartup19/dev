@@ -1,6 +1,6 @@
 # IncForStartUp / Quelcom — codi complet del Site
 
-Snapshot del Site publicat, origen `3290eee533688ba0f2ed522805db81fe0f6226f9`.
+Snapshot del Site publicat, origen `a452d57f6a8bb47575534e3477c06215bfed4924`.
 IncForStartUp és el projecte mare; Quelcom és l’experiència de campus i projectes.
 Els assets de `public/` es conserven amb normalització d’espais finals, verificables al manifest
 `docs/site-source-manifest.json`. No es copia configuració privada de Sites ni dades del navegador.
