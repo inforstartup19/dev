@@ -21,3 +21,22 @@ Límits: desat local, no backend, ACL, IA, equip real, publicació ni càrrega d
 Les evidències són text/referències. No s'ha completat QA visual/Safari en aquesta ronda.
 Proves automatitzades: creació mínima, prova/resultat/decisió, reinici des de JSON,
 pausa/tancament reversibles, preservació del llegat, validació i rollback si storage falla.
+
+## Increment de fiabilitat
+
+La propera acció depèn d'estat, prova activa, últim resultat i decisió posterior.
+Esborranys per formulari a `quelcom.project-drafts.v1`: recuperació després de
+recarregar i indicador que distingeix esborrany de canvi confirmat. Confirmar una
+prova no elimina un resultat pendent ni confirmar la fitxa elimina una decisió pendent.
+L'exportació incorpora `unsavedProjectForms` per conservar text no confirmat.
+El format d'exportació no implica importació automàtica disponible.
+
+Abans de confirmar es compara el contingut local amb la còpia llegida en obrir.
+Si una altra pestanya l'ha canviat, es bloqueja aquesta escriptura i es demana
+exportar/recarregar. És una detecció de conflictes, no una transacció multiusuari.
+Les altres pantalles antigues encara no implementen aquest control.
+Si falla el desat de recuperació, el navegador rep una petició d'avís en sortir;
+la seva presentació depèn del navegador. Els esborranys locals no substitueixen un backup.
+
+Nou CSS: acció destacada, formularis i botons tàctils de 44 px, distribució mòbil.
+QA visual i Safari/iOS real encara pendents; no es declara el mòbil verificat.

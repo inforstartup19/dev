@@ -12,5 +12,6 @@
  else throw Error('Acció no disponible.');
  p.live.updatedAt=at;p.history=Array.isArray(p.history)?p.history:[];p.history.push({at,stage:p.stage,title:p.title,description:p.description,action,before});return p;
  }
- const api={create,evolve,decisions};if(typeof module==='object'&&module.exports)module.exports=api;else root.QuelcomProject=api;
+ function nextAction(project){const v=project.live||{};if(['Pausat','Tancat'].includes(v.status))return {label:'Reprèn el projecte',tab:'resum',form:'pv-decision',help:'Conserves les proves i els aprenentatges. Tria Continuar per reprendre’l.'};if(v.active)return {label:'Registra què ha passat',tab:'investigar',form:'pv-result',help:'Tens una prova en curs. Recull el resultat i les evidències.'};const last=(v.experiments||[]).at(-1),decision=(v.decisions||[]).at(-1);if(last&&(!decision||last.completedAt>decision.at))return {label:'Decideix com continuar',tab:'resum',form:'pv-decision',help:'Ja tens un resultat. Valora què has après abans del següent pas.'};return {label:last?'Prepara la següent prova':'Prepara la primera prova',tab:'investigar',form:'pv-proof',help:'Tria una acció petita que t’ajudi a respondre la pregunta.'};}
+ const api={create,evolve,decisions,nextAction};if(typeof module==='object'&&module.exports)module.exports=api;else root.QuelcomProject=api;
 })(typeof window==='undefined'?globalThis:window);

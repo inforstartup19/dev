@@ -1,6 +1,6 @@
 # IncForStartUp / Quelcom — codi complet del Site
 
-Snapshot del Site publicat, origen `51d4a2fbc5c0efa4d2a0550f780b5f0d0189aaa5`.
+Snapshot del Site publicat, origen `4bb0a76fe9e0584117bc172b6dc4645a5aa45c5c`.
 IncForStartUp és el projecte mare; Quelcom és l’experiència de campus i projectes.
 Els assets de `public/` es conserven amb normalització d’espais finals, verificables al manifest
 `docs/site-source-manifest.json`. No es copia configuració privada de Sites ni dades del navegador.
@@ -53,3 +53,9 @@ Safari/iOS i proveïdors reals continuen pendents.
 `quelcom-preview/` conserva la previsualització anterior de #82; la versió completa
 actual és `public/`. `entrada-dev.html` conserva l’experiment anterior separat.
 La publicació a Sites segueix un flux propi: aquesta còpia no desplega Azure ni GitHub Pages.
+
+## Fiabilitat del Projecte Viu
+
+Propera acció segons estat, recuperació d’esborranys per formulari, indicador de desat,
+exportació de text pendent i detecció de canvis d’una altra pestanya abans de confirmar.
+Les vistes antigues no tenen encara la mateixa protecció. QA mòbil real pendent.
