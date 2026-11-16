@@ -2,3 +2,6 @@ body.qu-active{background:#030610!important}body.qu-active>aside,body.qu-active 
 
 /* The second scene contains only the four named spheres and the star field. */
 .qu-scene{grid-template-rows:1fr;min-height:520px}.qu-destinations{margin:auto}.qu-caption{display:none}@media(max-width:700px){.qu-scene{min-height:430px}.qu-destinations{gap:28px 6px}}
+
+/* Always-visible return to the four destinations, including mobile menus. */
+.qu-space-switch{max-width:1280px;margin:0 auto;padding:12px clamp(16px,3vw,40px);box-sizing:border-box;display:flex;align-items:center}.qu-space-switch a{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border:1px solid #8fcde344;border-radius:24px;color:#c7eaf5;background:#0b1729;font-size:13px;text-decoration:none!important}.qu-space-switch a:hover{color:#fff;box-shadow:0 0 18px #77d4ee40;border-color:#9bdfee}.qu-space-switch a:focus-visible{outline:2px solid #b5edff;outline-offset:4px}@media(max-width:700px){.qu-space-switch{padding:8px 16px}}
