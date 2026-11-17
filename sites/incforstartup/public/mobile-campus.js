@@ -7,8 +7,16 @@
  function disclosure(label,anchor){const d=document.createElement('details');d.className='mobile-campus-disclosure';const s=document.createElement('summary');s.textContent=label;d.append(s);anchor.before(d);undo.push(()=>d.remove());return d;}
  function adapt(){
   restore();if(!media.matches)return;
-  const shell=document.querySelector('.uc-shell'),menu=shell?.querySelector('.uc-mobile-menu>div');
-  if(!shell||!menu)return; // Academic workbench is addressed separately in #125/#126.
+  const shell=document.querySelector('.uc-shell');let menu=shell?.querySelector('.uc-mobile-menu>div');
+  if(!shell)return;
+  if(!menu&&shell.classList.contains('bf-daily')){
+   const header=shell.querySelector('.qd-header'),nav=header?.querySelector('nav');
+   if(!header||!nav)return;
+   const d=document.createElement('details');d.className='uc-mobile-menu';d.innerHTML='<summary>Menú</summary><div></div>';header.append(d);undo.push(()=>d.remove());menu=d.querySelector('div');move(nav,menu);
+   const heading=shell.querySelector('.qd-heading'),profile=heading?.querySelector('label'),notice=shell.querySelector(':scope > .qd-notice');
+   if(heading&&profile){const role=profile.querySelector('select')?.selectedOptions[0]?.textContent||'Perfil de prova';const info=disclosure('Demo local · '+role,heading);move(profile,info);if(notice)move(notice,info);const exportButton=shell.querySelector('[data-bb-export]');if(exportButton)move(exportButton,info);}
+  }
+  if(!menu)return;
   shell.classList.add('mobile-campus-light');undo.push(()=>shell.classList.remove('mobile-campus-light'));
   const switcher=document.querySelector('.qu-space-switch');if(switcher)move(switcher,menu);
   const demo=shell.querySelector('.uc-demo'),context=shell.querySelector('.portal-context');
