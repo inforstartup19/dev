@@ -5,7 +5,7 @@ Data: 17 de novembre de 2026. Supabase DEV: shnitfrpgzhwobsuotdl.
 
 ## Evidència actual
 
-- Backend: 36 taules SQLAlchemy i 13 revisions Alembic; head 0013.
+- Backend: 37 taules SQLAlchemy i 14 revisions Alembic; head 0014 (codi preparat; no aplicat a Supabase).
 - Supabase DEV: sis taules qc_*, totes amb RLS activat i polítiques. Comptes auth, projectes, membres i tasques: zero en la consulta d’aquest inventari. No extrapolar aquest recompte a altres entorns.
 - El backend genera users.id propi i associa auth_subject a issuer|subject. Les seves polítiques privades consulten app.actor_id.
 - Supabase qc_* referencia auth.users.id i consulta auth.uid(). No són identificadors intercanviables.
@@ -49,3 +49,28 @@ Sortida correcta d’inventari no autoritza migració: el camp cutover_status se
 7. Verificar circuits i permisos amb sessions reals; després planificar preproducció i producció.
 
 No s’han creat recursos Azure, canviat plans, mogut dades ni connectat la UI en aquest increment. #89 queda oberta. #86 conserva QA visual pendent; no s’ha tancat per avançar aquesta feina independent.
+
+## Correspondència d'identitats — increment 0014
+
+`user_identities.auth_subject` conserva exactament la clau verificada `issuer|sub`
+existent i la relaciona amb `users.id`. La migració copia els usuaris existents;
+no altera identificadors, pertinença a equips, projectes ni permisos. Els nous accessos
+creen l'usuari i la correspondència en una sola transacció. No es vincula per correu,
+nom, metadades de perfil o rols declarats al token.
+
+La taula és d'ús exclusiu del backend, com `users`: no té endpoint de consulta o
+edició, ni s'ha de publicar a la Data API. El desplegament a Supabase continua
+bloquejat fins a configurar l'esquema privat, privilegis i proves PostgreSQL amb
+el rol real. El rol API necessita SELECT i INSERT sobre user_identities, sense
+UPDATE ni DELETE; el rol de migració és diferent. L'esquema inc_core continua sent
+una proposta: aquesta migració utilitza l'esquema actual d'Alembic.
+
+Una identitat addicional només es podrà donar d'alta mitjançant un futur procés
+verificat i auditat que acrediti control dels comptes. Aquest increment no ofereix
+vinculació pública ni migració automàtica a Supabase Auth; la configuració JWT,
+revocació/desvinculació i MFA continuen pendents de #90. No s'ha modificat la
+validació de tokens existent. No s'han creat usuaris reals ni modificat Supabase.
+
+El downgrade 0014 refusa eliminar la taula si hi ha identitats addicionals: primer
+cal reconciliar-les amb un pla que preservi l'accés. Amb només les identitats
+originals es pot tornar a 0013 i tornar a pujar, mantenint els mateixos usuaris.

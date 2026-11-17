@@ -1,7 +1,7 @@
 {
   "target_project_id": "shnitfrpgzhwobsuotdl",
   "expected_alembic_heads": [
-    "0013"
+    "0014"
   ],
   "backend_tables": {
     "agreement_confirmations": {
@@ -180,6 +180,11 @@
       "migration_status": "not_applied"
     },
     "vault_memberships": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "user_identities": {
       "disposition": "retain_backend_contract",
       "target_schema_proposal": "inc_core",
       "migration_status": "not_applied"
