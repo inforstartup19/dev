@@ -1,0 +1,229 @@
+{
+  "target_project_id": "shnitfrpgzhwobsuotdl",
+  "expected_alembic_heads": [
+    "0013"
+  ],
+  "backend_tables": {
+    "agreement_confirmations": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "agreement_revisions": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "audit_events": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "collaboration_agreements": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "connect_events": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "connect_requests": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "document_scan_receipts": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "experiment_evidence": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "experiment_results": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "idea_drafts": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "identity_facets": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "invitations": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "knowledge_sources": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "need_publication_events": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "need_viewer_grants": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "project_decisions": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "project_experiments": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "project_lifecycle_events": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "project_resource_intents": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "project_suggestion_feedback": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "project_vaults": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "projects": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "proof_attestations": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "proof_contributions": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "proof_evidence": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "reviews": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "shareable_needs": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "space_memberships": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "spaces": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "submissions": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "team_memberships": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "teams": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "users": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "vault_documents": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "vault_events": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    },
+    "vault_memberships": {
+      "disposition": "retain_backend_contract",
+      "target_schema_proposal": "inc_core",
+      "migration_status": "not_applied"
+    }
+  },
+  "supabase_tables": {
+    "qc_projects": {
+      "disposition": "isolated_academic_dev_extension",
+      "source_of_truth": "Supabase DEV only",
+      "migration_status": "applied"
+    },
+    "qc_members": {
+      "disposition": "isolated_academic_dev_extension",
+      "source_of_truth": "Supabase DEV only",
+      "migration_status": "applied"
+    },
+    "qc_tasks": {
+      "disposition": "isolated_academic_dev_extension",
+      "source_of_truth": "Supabase DEV only",
+      "migration_status": "applied"
+    },
+    "qc_dependencies": {
+      "disposition": "isolated_academic_dev_extension",
+      "source_of_truth": "Supabase DEV only",
+      "migration_status": "applied"
+    },
+    "qc_task_events": {
+      "disposition": "isolated_academic_dev_extension",
+      "source_of_truth": "Supabase DEV only",
+      "migration_status": "applied"
+    },
+    "qc_submissions": {
+      "disposition": "isolated_academic_dev_extension",
+      "source_of_truth": "Supabase DEV only",
+      "migration_status": "applied"
+    }
+  },
+  "remaining_gates": [
+    "Explicit internal user ID to verified Supabase issuer/subject mapping; never merge by email.",
+    "Reconcile projects/project_vaults/qc_projects semantics and memberships.",
+    "Approve inc_core private schema relocation and adapt schema-qualified raw SQL.",
+    "Separate migrator owner and non-owner NOBYPASSRLS runtime roles; no privileged browser keys.",
+    "Validate Auth/API claims and cross-user RLS on the consolidated schema.",
+    "Document sources, counts, constraints and user-authorized local imports.",
+    "Restore rehearsal, cutover and rollback with writes made after cutover preserved."
+  ]
+}
