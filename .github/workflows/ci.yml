@@ -24,3 +24,9 @@ jobs:
           python-version: '3.12'
       - name: Check repository
         run: python3 scripts/check_repo.py
+      - name: Set up Node for static Site tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test static Site navigation and login scenarios
+        run: node --test sites/incforstartup/tests/*.test.cjs
