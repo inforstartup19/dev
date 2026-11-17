@@ -31,3 +31,38 @@ for(const k of ['TFG','TFM'])test(k+' review, return, correction and completion 
 test('large task lists keep every task reachable with correct state counts',()=>{
  let s=M.create('TFG');for(let i=0;i<75;i++)s=M.apply(s,{type:'save',task:{id:'task-'+i,title:'Una tasca llarga '+i,owner:'Equip',dependencies:[]}},'student');const b=boot({'quelcom.befirst-board.TFG.v1':JSON.stringify(s)});for(const f of ['prepare','active','review','done']){b.click({bbFilter:f});assert.equal((b.html().match(/data-bb-card=/g)||[]).length,75);}assert.match(b.html(),/Pendent<\/span><b>75/);
 });
+
+for(const k of ['TFG','TFM'])test(k+' enforces all five steps and unlocks only after teacher validation',()=>{
+ const b=boot();b.navigate(k);b.html();
+ for(let i=1;i<=5;i++){
+  if(i<5){const before=JSON.stringify(b.data);b.click({bbMove:'bf-'+(i+1),status:'active'});assert.equal(JSON.stringify(b.data),before);assert.match(b.html(),/Tasca bloquejada/);}
+  b.click({bbMove:'bf-'+i,status:'active'});assert.equal(b.state(k).tasks[i-1].status,'active');
+  b.fire('submit',{target:{id:'bb-task',dataset:{id:'bf-'+i},data:{...b.state(k).tasks[i-1],evidence:'Evidència del pas '+i}},preventDefault(){}});
+  b.click({bbMove:'bf-'+i,status:'review'});
+  if(i<5){const before=JSON.stringify(b.data);b.click({bbMove:'bf-'+(i+1),status:'active'});assert.equal(JSON.stringify(b.data),before);}
+  b.role('teacher');b.fire('submit',{target:{id:'bb-review',dataset:{id:'bf-'+i},data:{comment:'Criteris comprovats per al pas '+i}},submitter:{value:'done'},preventDefault(){}});b.role('student');
+  assert.equal(b.state(k).tasks[i-1].status,'done');
+ }
+ assert.match(b.html(),/Recorregut de prova completat/);assert.equal(b.state(k).submissions.length,5);assert.equal(b.state(k).tasks.every(t=>t.status==='done'),true);
+});
+test('future tasks cannot be edited or started by either demo role, including with removed dependencies',()=>{
+ const b=boot();b.html();b.click({bbMove:'bf-1',status:'active'});const original=b.state();
+ for(const role of ['student','teacher']){
+  b.role(role);b.click({bbOpen:'bf-3'});assert.match(b.html(),/Tasca bloquejada · només consulta/);assert.match(b.html(),/<fieldset disabled>/);assert.doesNotMatch(b.html(),/data-bb-move="bf-3"/);
+  assert.throws(()=>M.apply(original,{type:'save',task:{...original.tasks[2],dependencies:[],evidence:'Intent de salt'}},role),/bloquejada/);
+  assert.throws(()=>M.apply(original,{type:'move',id:'bf-3',status:'active'},role),/bloquejada/);
+ }
+ assert.deepEqual(b.state(),original);
+});
+test('reopening an earlier step freezes all later work without deleting evidence or snapshots',()=>{
+ let s=M.create('TFG');for(let i=1;i<=5;i++)s=M.apply(s,{type:'save',task:{id:'bf-'+i,title:'Pas '+i,deliverable:'Entrega',criteria:'Comprovable',requireEvidence:true,evidence:'Evidència '+i,dependencies:i>1?['bf-'+(i-1)]:[]}},'student');s.sequence=s.tasks.map(t=>t.id);
+ for(let i=1;i<=3;i++){s=M.apply(s,{type:'move',id:'bf-'+i,status:'active'},'student');s=M.apply(s,{type:'move',id:'bf-'+i,status:'review'},'student');s=M.apply(s,{type:'move',id:'bf-'+i,status:'done',comment:'Validat'},'teacher');}
+ s=M.apply(s,{type:'move',id:'bf-4',status:'active'},'student');const submissions=JSON.stringify(s.submissions),evidence=s.tasks[3].evidence;s=M.apply(s,{type:'move',id:'bf-1',status:'revise',comment:'Revisar l’abast'},'teacher');const original=JSON.stringify(s);
+ assert.deepEqual(M.blockedBy(s,'bf-4'),['bf-1']);assert.throws(()=>M.apply(s,{type:'save',task:{...s.tasks[3],evidence:'Canvi'}},'student'),/bloquejada/);assert.throws(()=>M.apply(s,{type:'move',id:'bf-4',status:'review'},'student'),/bloquejada/);
+ assert.equal(JSON.stringify(s),original);assert.equal(JSON.stringify(s.submissions),submissions);assert.equal(s.tasks[3].evidence,evidence);
+});
+test('legacy saved boards acquire the sequential policy without overwriting storage on read',()=>{
+ const b=boot();b.html();b.click({bbMove:'bf-1',status:'active'});const legacy=b.state();delete legacy.sequence;legacy.tasks[2].status='active';legacy.tasks[2].evidence='Treball antic que cal conservar';const key='quelcom.befirst-board.TFG.v1',raw=JSON.stringify(legacy),restored=boot({[key]:raw});
+ restored.html();restored.click({bbOpen:'bf-3'});assert.match(restored.html(),/Treball antic que cal conservar/);assert.match(restored.html(),/<fieldset disabled>/);restored.click({bbMove:'bf-3',status:'review'});assert.equal(restored.data[key],raw);
+ assert.throws(()=>M.valid({...legacy,sequence:['bf-1','bf-1']}),/Seqüència/);
+});
