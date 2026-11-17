@@ -1,0 +1,189 @@
+{
+  "version": 1,
+  "tracks": [
+    {
+      "id": "crea-i-creix",
+      "title": "Crea i creix",
+      "number": "01",
+      "eyebrow": "DE LA INTUÏCIÓ A LA PRIMERA PROVA",
+      "description": "Dona forma a la idea, escolta les persones i posa a prova un MVP.",
+      "audience": "Tens una idea o estàs preparant les primeres proves.",
+      "outcome": "Un MVP provat, evidències d’aprenentatge i una presentació clara.",
+      "steps": [
+        {
+          "id": "necessitat",
+          "title": "Entén la necessitat",
+          "learn": "Comença per una situació concreta i les persones que la viuen. Una entrevista serveix per entendre comportaments, no per aconseguir que et donin la raó.",
+          "task": "Parla amb persones del públic proposat i anota què fan avui, què els costa i quines alternatives utilitzen.",
+          "deliverable": "Fitxa de necessitat i síntesi de converses.",
+          "criteria": [
+            "Públic i context identificats",
+            "Observacions separades de les suposicions",
+            "Fonts anonimitzades o compartides amb permís"
+          ],
+          "mentor": "Quina evidència qüestiona més la teva idea?",
+          "example": "BeFirst · exemple fictici: contrastar què significa una peça única per a possibles compradors."
+        },
+        {
+          "id": "proposta",
+          "title": "Defineix la proposta de valor",
+          "learn": "Explica quin canvi útil ofereixes i per què algú escolliria aquesta alternativa. El valor no és una llista de funcionalitats.",
+          "task": "Formula una proposta de valor i contrasta-la amb alternatives existents.",
+          "deliverable": "Proposta de valor i comparació d’alternatives.",
+          "criteria": [
+            "Benefici comprensible",
+            "Alternatives identificades",
+            "Hipòtesi que es pot contrastar"
+          ],
+          "mentor": "Per què algú canviaria la manera com resol això avui?",
+          "example": "BeFirst · exemple fictici: explicar la singularitat i la traçabilitat d’una peça sense confondre-les amb escassetat artificial."
+        },
+        {
+          "id": "model",
+          "title": "Dibuixa un model sostenible",
+          "learn": "Relaciona qui rep valor, qui paga o aporta recursos i què costa oferir el servei. Les xifres inicials són hipòtesis, no ingressos assolits.",
+          "task": "Anota el model d’ingressos o sosteniment, els costos principals i les incògnites.",
+          "deliverable": "Esbós del model i supòsits de costos.",
+          "criteria": [
+            "Qui aporta recursos està identificat",
+            "Costos i incerteses visibles",
+            "Cap previsió presentada com un resultat real"
+          ],
+          "mentor": "Quina hipòtesi faria inviable aquest model si fos falsa?",
+          "example": "BeFirst · exemple fictici: estimar confecció, certificació, logística i temps de disseny d’una peça."
+        },
+        {
+          "id": "mvp",
+          "title": "Construeix i prova l’MVP",
+          "learn": "Un MVP és la versió mínima que et permet aprendre. Pot ser un prototip, un servei manual, una mostra física o una experiència simulada.",
+          "task": "Tria una hipòtesi, prepara una prova petita i defineix abans què observaràs.",
+          "deliverable": "MVP, protocol de prova i evidències.",
+          "criteria": [
+            "Hipòtesi i públic explícits",
+            "Criteri de contrast definit abans de provar",
+            "Resultat registrat sense maquillar les limitacions"
+          ],
+          "mentor": "Què pots eliminar de l’MVP sense perdre l’aprenentatge?",
+          "example": "BeFirst · exemple fictici: mostrar un prototip de fitxa i certificació per observar si s’entén la proposta."
+        },
+        {
+          "id": "aprenentatge",
+          "title": "Aprèn i explica el projecte",
+          "learn": "Una presentació útil connecta necessitat, evidència, solució i proper pas. Un resultat desfavorable també pot orientar una bona decisió.",
+          "task": "Resumeix què ha canviat després de la prova i prepara una presentació breu.",
+          "deliverable": "Síntesi d’aprenentatges, decisió i presentació.",
+          "criteria": [
+            "Resultats i limitacions visibles",
+            "Decisió justificada",
+            "Petició concreta, sense promeses no contrastades"
+          ],
+          "mentor": "Quina decisió prendràs a partir d’aquest resultat?",
+          "example": "BeFirst · exemple fictici: explicar per què es reformula el certificat després de la prova amb el prototip."
+        }
+      ]
+    },
+    {
+      "id": "enlaira",
+      "title": "Enlaira",
+      "number": "02",
+      "eyebrow": "DE LES PRIMERES EVIDÈNCIES AL CREIXEMENT",
+      "description": "Contrasta la tracció, prepara l’equip i decideix com créixer amb criteri.",
+      "audience": "Ja tens un MVP i evidències d’ús per revisar amb un mentor.",
+      "outcome": "Un pla de creixement amb indicadors, recursos i decisions contrastables.",
+      "steps": [
+        {
+          "id": "traccio",
+          "title": "Revisa la tracció",
+          "learn": "Diferencia interès, ús i compromís real. Els indicadors necessiten una font, un període i un punt de partida.",
+          "task": "Reuneix evidències de l’MVP i identifica què es repeteix i què encara depèn d’una prova puntual.",
+          "deliverable": "Diagnòstic de tracció amb fonts i limitacions.",
+          "criteria": [
+            "Indicadors amb font i període",
+            "Ús separat d’intencions",
+            "Revisió inicial de maduresa pendent o documentada"
+          ],
+          "mentor": "Què demostra que el valor es pot repetir?",
+          "example": "BeFirst · exemple fictici: distingir visites al catàleg, consultes i compromisos reals, sense inventar vendes."
+        },
+        {
+          "id": "clients",
+          "title": "Aprèn a captar i retenir",
+          "learn": "Un canal funciona quan connecta el públic adequat amb un valor útil. Més visites no sempre signifiquen més valor o continuïtat.",
+          "task": "Dissenya un experiment de captació o retenció amb pressupost, període i criteri de parada.",
+          "deliverable": "Experiment de canal i quadre d’indicadors.",
+          "criteria": [
+            "Públic i canal definits",
+            "Cost i criteri de parada explícits",
+            "Mesura comparable amb el punt de partida"
+          ],
+          "mentor": "Què explica que les persones tornin o recomanin el projecte?",
+          "example": "BeFirst · exemple fictici: comparar dues formes de presentar la història d’una peça a un públic definit."
+        },
+        {
+          "id": "operacions",
+          "title": "Prepara operacions i equip",
+          "learn": "Créixer exigeix poder repetir l’entrega de valor. Identifica dependències i capacitat abans d’assumir més compromisos.",
+          "task": "Mapeja el procés, els responsables i el principal límit de capacitat.",
+          "deliverable": "Mapa operatiu i necessitats d’equip.",
+          "criteria": [
+            "Responsabilitats acordades",
+            "Dependències i riscos visibles",
+            "Cap incorporació o invitació automàtica"
+          ],
+          "mentor": "On es trencaria el procés si augmentés la demanda?",
+          "example": "BeFirst · exemple fictici: revisar capacitat de producció i control de qualitat de peces úniques."
+        },
+        {
+          "id": "recursos",
+          "title": "Tria com sostenir el creixement",
+          "learn": "Finançar-se és una decisió del projecte. Pots combinar recursos propis, ingressos, ajuts o inversió; no és obligatori buscar inversors.",
+          "task": "Estima els recursos necessaris i compara vies de finançament amb les seves condicions.",
+          "deliverable": "Escenaris de recursos i via preferida, encara revisable.",
+          "criteria": [
+            "Necessitats i supòsits explícits",
+            "Alternatives comparades",
+            "Compartir un dossier requereix consentiment separat"
+          ],
+          "mentor": "Quina via encaixa amb el ritme i el control que voleu mantenir?",
+          "example": "BeFirst · exemple fictici: valorar una primera producció amb recursos propis abans de buscar inversió."
+        },
+        {
+          "id": "pla",
+          "title": "Acorda el següent horitzó",
+          "learn": "Un pla de creixement és una seqüència de decisions revisables. Inclou què faràs si els resultats no arriben.",
+          "task": "Prepara el següent cicle de treball amb fites, responsables, indicadors i condicions de revisió.",
+          "deliverable": "Pla de creixement i presentació opcional a inversors.",
+          "criteria": [
+            "Fites i responsables acordats",
+            "Indicadors amb objectiu i data",
+            "Criteris per continuar, reformular o pausar"
+          ],
+          "mentor": "Què us faria canviar aquest pla?",
+          "example": "BeFirst · exemple fictici: planificar un cicle petit amb criteris de continuïtat i límits de despesa."
+        }
+      ]
+    }
+  ],
+  "financing": [
+    {
+      "id": "pendent",
+      "label": "Encara no ho he decidit"
+    },
+    {
+      "id": "propis",
+      "label": "Recursos propis"
+    },
+    {
+      "id": "ingressos",
+      "label": "Ingressos del projecte"
+    },
+    {
+      "id": "ajuts",
+      "label": "Ajuts o subvencions"
+    },
+    {
+      "id": "inversio",
+      "label": "Inversió externa"
+    }
+  ]
+}
