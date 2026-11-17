@@ -282,3 +282,15 @@ test("proxy rejects anonymous requests, client bearer tokens and cross-origin mu
   ).toBe(401);
   await anonymous.close();
 });
+
+test("space entrance preserves an authenticated session and the private destination", async ({page})=>{
+  await page.goto("http://localhost:3400/idees");
+  await page.getByRole("button",{name:"Continua amb el teu compte",exact:true}).click();
+  await page.getByRole("link",{name:"Professor de proves",exact:true}).click();
+  await expect(page).toHaveURL(/\/idees$/);
+  await page.goto("http://localhost:3400/entrada?next=/idees");
+  await page.getByRole("link",{name:"Entra directament"}).click();
+  await expect(page).toHaveURL(/\/idees$/);
+  await expect(page.locator("main h1").first()).toBeFocused();
+  expect((await page.request.get("http://localhost:3400/api/private/idea-drafts")).status()).toBe(200);
+});

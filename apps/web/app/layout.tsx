@@ -1,3 +1,4 @@
+import { EntranceFocus } from "../components/entrance-focus";
 import type { Metadata } from "next";
 import "@fontsource-variable/dm-sans";
 import "@fontsource-variable/manrope";
@@ -15,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ca">
-      <body>{children}</body>
+      <body><EntranceFocus />{children}</body>
     </html>
   );
 }
