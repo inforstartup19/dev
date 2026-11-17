@@ -9,16 +9,19 @@
   if(!s||s.schema!==1||!['TFG','TFM'].includes(s.kind)||!Number.isInteger(s.revision)||s.revision<0||!Array.isArray(s.tasks)||!Array.isArray(s.history)||!Array.isArray(s.submissions))throw Error('Format de treball no reconegut. Conserva una còpia abans de recuperar-lo.');
   const ids=new Set();
   for(const t of s.tasks){text(t.id,100,true);if(ids.has(t.id))throw Error('Tasca duplicada.');ids.add(t.id);text(t.title,180,true);for(const f of ['why','how','deliverable','criteria','blocker'])text(t[f],3000);text(t.owner,180);if(t.evidence!==undefined)text(t.evidence,3000);if(t.requireEvidence!==undefined&&typeof t.requireEvidence!=='boolean')throw Error('Requisit d’evidència no vàlid.');if(!statuses.includes(t.status)||typeof t.milestone!=='boolean'||!Array.isArray(t.dependencies)||!/^$|^\d{4}-\d{2}-\d{2}$/.test(t.due))throw Error('Tasca no vàlida.');}
+  if(s.sequence!==undefined&&(!Array.isArray(s.sequence)||s.sequence.length!==s.tasks.length||new Set(s.sequence).size!==s.sequence.length||s.sequence.some(id=>!ids.has(id))))throw Error('Seqüència de tasques no vàlida.');
   for(const t of s.tasks)if(t.dependencies.some(id=>!ids.has(id)))throw Error('Dependència inexistent.');
   const visiting=new Set(),visited=new Set();function visit(id){if(visiting.has(id))throw Error('Les dependències formen un cercle.');if(visited.has(id))return;visiting.add(id);s.tasks.find(t=>t.id===id).dependencies.forEach(visit);visiting.delete(id);visited.add(id);}s.tasks.forEach(t=>visit(t.id));
   for(const h of s.history)if(!h||typeof h.message!=='string'||!['student','teacher'].includes(h.actor)||typeof h.at!=='string')throw Error('Historial no vàlid.');
   for(const sub of s.submissions)if(!sub||!ids.has(sub.taskId)||!Number.isInteger(sub.version)||!sub.snapshot||typeof sub.at!=='string')throw Error('Entrega no vàlida.');
   return s;
  }
+ function blockedBy(s,id){if(!s.sequence)return [];const index=s.sequence.indexOf(id);return s.sequence.slice(0,index<0?s.sequence.length:index).filter(previous=>s.tasks.find(t=>t.id===previous)?.status!=='done');}
  function create(kind){return valid({schema:1,kind,revision:0,tasks:[],history:[],submissions:[]});}
  function apply(current,action,actor,at=new Date().toISOString()){
   valid(current);if(!['student','teacher'].includes(actor))throw Error('Perfil desconegut.');
   const s=copy(current);let message;
+  if(s.sequence){const id=action.id||action.task?.id;if(!s.sequence.includes(id))throw Error('Aquest recorregut té una seqüència fixa de tasques.');const waiting=blockedBy(s,id);if(waiting.length)throw Error('Tasca bloquejada. Abans cal la validació docent de: '+waiting.map(id=>s.tasks.find(t=>t.id===id).title).join(', ')+'.');}
   if(action.type==='save'){
    const old=s.tasks.find(t=>t.id===action.task.id);const input=action.task;
    if(old&&['review','done'].includes(old.status))throw Error('Reobre la tasca abans de modificar-la.');
@@ -43,5 +46,5 @@
   s.revision++;s.history.push({actor,at,message,taskId:action.id||action.task?.id});return valid(s);
  }
  function save(storage,key,state,expected){valid(state);if(storage.getItem(key)!==expected)throw Error('Hi ha canvis en una altra pestanya. Exporta el que tens i recarrega abans de continuar.');const raw=JSON.stringify(state);storage.setItem(key,raw);return raw;}
- return {statuses,labels,create,valid,apply,save};
+ return {statuses,labels,create,valid,blockedBy,apply,save};
 });
