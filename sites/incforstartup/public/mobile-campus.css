@@ -1,0 +1,47 @@
+/* #124: mobile-only hierarchy. Desktop remains owned by Campus Studio. */
+@media(max-width:800px){
+ body.uc-active .uc-shell.mobile-campus-light{padding-inline:max(18px,env(safe-area-inset-left)) max(18px,env(safe-area-inset-right));}
+ .mobile-campus-light .qd-header{padding:14px 0;gap:12px}
+ .mobile-campus-light .qd-logo small{font-size:8px;letter-spacing:.6px}
+ .mobile-campus-light .uc-mobile-menu>div{max-height:70dvh;overflow:auto}
+ .mobile-campus-light .uc-mobile-menu .qu-space-switch{margin:0;padding:0;border:0;display:block}
+ .mobile-campus-light .uc-mobile-menu .qu-space-switch a{font-size:15px!important;min-height:48px;padding:0 12px!important}
+ .mobile-campus-disclosure{border-bottom:1px solid #8397bd33;margin:0 0 20px;padding:0}
+ .mobile-campus-disclosure>summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:48px;font-size:14px;color:#b9cada;list-style:none}
+ .mobile-campus-disclosure>summary::-webkit-details-marker{display:none}
+ .mobile-campus-disclosure>summary:after{content:'+';font-size:20px;color:#a8dfd8}
+ .mobile-campus-disclosure[open]>summary:after{content:'−'}
+ .mobile-campus-light .uc-demo{padding:12px 0;line-height:1.7}
+ .mobile-campus-light .portal-context{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0 20px}
+ .mobile-campus-light .portal-context a{display:flex;align-items:center;min-height:44px}
+ .mobile-campus-light .campus-hero{border:0;background:none;margin:8px 0 24px;padding:0!important;overflow:visible;display:block}
+ .mobile-campus-light .campus-hero:before{display:none}
+ .mobile-campus-light .campus-hero h1{font-size:30px!important;line-height:1.2;margin:8px 0 12px;letter-spacing:-.8px}
+ .mobile-campus-light .campus-hero p{font-size:15px!important;line-height:1.65;margin:0}
+ .mobile-campus-light .campus-hero .qd-kicker{display:none}
+ .mobile-campus-light .uc-academic-access{padding:20px;margin:0 0 24px;gap:18px;background:linear-gradient(135deg,#14313a,#132134);border-color:#88c6bd44}
+ .mobile-campus-light .uc-academic-access .qd-kicker{display:none}
+ .mobile-campus-light .uc-academic-access h2{font-size:24px;margin:0 0 8px}
+ .mobile-campus-light .uc-academic-access p{font-size:14px;margin:0;line-height:1.6}
+ .mobile-campus-light .uc-academic-links{gap:12px}
+ .mobile-campus-light .uc-academic-links a{padding:16px 12px;min-height:112px;gap:8px}
+ .mobile-campus-light .uc-academic-links strong{font-size:26px}
+ .mobile-campus-light .uc-academic-links span{font-size:14px;line-height:1.4}
+ .mobile-campus-light .uc-academic-links small{display:none}
+ .mobile-campus-light .uc-resume{padding:20px;gap:14px;margin-bottom:28px;background:#11232e;border-color:#8397bd26}
+ .mobile-campus-light .uc-resume h2{font-size:22px;margin:8px 0 12px;line-height:1.35}
+ .mobile-campus-light .campus-destinations{gap:0;margin-bottom:24px}
+ .mobile-campus-light .campus-destinations .uc-panel{border:0;border-bottom:1px solid #8397bd33;border-radius:0;background:none;padding:20px 0;box-shadow:none}
+ .mobile-campus-light .campus-destinations .campus-card-index{display:none}
+ .mobile-campus-light .campus-destinations h2{font-size:21px;margin:0 0 8px}
+ .mobile-campus-light .campus-destinations .uc-panel p{font-size:14px;line-height:1.6}
+ .mobile-campus-light .mobile-campus-disclosure .uc-tabs{display:flex!important;gap:8px!important;flex-wrap:wrap;padding:8px 0!important}
+ .mobile-campus-light .mobile-campus-disclosure .uc-tabs a{display:flex;align-items:center;min-height:44px;font-size:14px!important}
+ .mobile-campus-light .mobile-campus-disclosure .uc-context{background:none;border:0;padding:12px 0;margin:0}
+ .mobile-campus-light .uc-context summary,.mobile-campus-light .uc-note summary{min-height:44px;display:flex;align-items:center}
+ .mobile-campus-light .qd-footer{flex-wrap:wrap;gap:16px}
+ .mobile-campus-light .qd-footer a{display:flex;align-items:center;min-height:44px}
+ .mobile-campus-light :is(h1,h2,p,summary,a){overflow-wrap:anywhere}
+ .mobile-campus-light .uc-mobile-nav a{font-size:12px!important}
+}
+@media(max-width:800px){.mobile-campus-light .uc-demo-options>summary{display:none}.mobile-campus-light .uc-demo-options label{font-size:14px}}
