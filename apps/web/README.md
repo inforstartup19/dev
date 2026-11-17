@@ -54,3 +54,12 @@ La càrrega de documents al servidor queda pendent: els fitxers del prototip nom
 `/lab`: laboratori independent de validació (problema, públic, hipòtesi, experiment i aprenentatge). Esborrany en memòria amb exportació/importació JSON; no es desa al compte ni s’envia a una IA.
 
 `/private`: interfície de vaults/documents via BFF de cookie, amb step-up del proveïdor. `CAMPUS_PRIVATE_AUTH_CONTEXT` ha de coincidir amb `OIDC_PRIVATE_AUTH_CONTEXT` de l’API i una política MFA real d’Entra. Les proves de navegador simulen el proveïdor i Storage, sense configurar MFA real ni crear serveis Azure. Vegeu [validació del pilot](../../docs/product/private-pilot-validation.md).
+
+## Quelcom integrat (#84)
+
+`/entrada` obre la portada aprovada i `/univers` les quatre esferes. Les opcions
+Idea i Projecte comparteixen `/idees`, amb el Projecte Viu autenticat existent.
+`INC_SPACE_ENTRANCE=1` permet activar aquest recorregut a l'arrel després del QA.
+Les fitxes curtes locals tenen exportació i còpia privada explícita al compte;
+les exportacions acadèmiques amb historial encara no s'importen parcialment.
+[Abast, evidències i límits de la consolidació](../../docs/qa/84-quelcom-connected.md).

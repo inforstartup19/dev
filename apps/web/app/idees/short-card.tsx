@@ -1,16 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type FormEvent } from "react";
+import { useUnsavedChanges } from "../../lib/unsaved-changes";
+import { useEffect, useState, useRef, type FormEvent } from "react";
 import {
   IDEA_STORAGE_KEY, MAX_IDEA_DRAFTS, parseIdeaDrafts,
   pendingIdeaFields, validateIdea, type IdeaDraft, type IdeaInput,
 } from "../../lib/idea-drafts";
+import { downloadJson } from "../../lib/local-draft-transfer";
 import styles from "./short-card.module.css";
 
 const blank = (): IdeaInput => ({ question: "", intention: "", nextTest: "", name: "" });
 
 export function IdeaDraftEditor() {
+  const storageSnapshot = useRef<string | null>(null);
   const [drafts, setDrafts] = useState<IdeaDraft[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [fields, setFields] = useState<IdeaInput>(blank);
@@ -25,7 +28,9 @@ export function IdeaDraftEditor() {
 
   useEffect(() => {
     try {
-      setDrafts(parseIdeaDrafts(window.localStorage.getItem(IDEA_STORAGE_KEY)));
+      const raw = window.localStorage.getItem(IDEA_STORAGE_KEY);
+      setDrafts(parseIdeaDrafts(raw));
+      storageSnapshot.current = raw;
     } catch {
       setError("No es poden llegir els esborranys locals. No se n'ha modificat cap.");
       setStorageHealthy(false);
@@ -33,13 +38,7 @@ export function IdeaDraftEditor() {
       setReady(true);
     }
   }, []);
-  useEffect(() => {
-    function warn(event: BeforeUnloadEvent) {
-      if (dirty) event.preventDefault();
-    }
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+  useUnsavedChanges(dirty);
 
   function choose(draft: IdeaDraft | null) {
     if (dirty && !window.confirm("Hi ha canvis sense desar. Vols descartar-los?")) return;
@@ -73,7 +72,14 @@ export function IdeaDraftEditor() {
     };
     const updated = [next, ...drafts.filter((draft) => draft.id !== id)];
     try {
-      window.localStorage.setItem(IDEA_STORAGE_KEY, JSON.stringify(updated));
+      if (window.localStorage.getItem(IDEA_STORAGE_KEY) !== storageSnapshot.current) {
+        setStorageHealthy(false);
+        setError("Una altra pestanya ha canviat les fitxes. Exporta els camps pendents abans de recarregar; no s’ha sobreescrit res.");
+        return;
+      }
+      const raw = JSON.stringify(updated);
+      window.localStorage.setItem(IDEA_STORAGE_KEY, raw);
+      storageSnapshot.current = raw;
     } catch {
       setError("No s'ha pogut desar al navegador. Els camps continuen oberts per tornar-ho a provar.");
       return;
@@ -88,9 +94,9 @@ export function IdeaDraftEditor() {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <Link href="/demo" className={styles.back}>← Campus</Link>
+        <Link href="/demo" className={styles.back}>Campus</Link>
         <span className={styles.kicker}>INCFORSTARTUP · PRIMER PAS</span>
-        <h1>Una idea comença amb una pregunta.</h1>
+        <h1>Una idea, moltes possibilitats.</h1>
         <p>No necessites un equip, un pressupost ni una prova definida per començar.</p>
       </header>
       <section className={styles.layout}>
@@ -98,6 +104,7 @@ export function IdeaDraftEditor() {
           <h2>Els teus esborranys</h2>
           <p>Guardats només en aquest navegador, no al teu compte ni al servidor.</p>
           <button type="button" className={styles.secondary} onClick={() => choose(null)}>+ Nova idea</button>
+          <button type="button" className={styles.secondary} onClick={() => { try { downloadJson("quelcom-fitxes-locals.json", parseIdeaDrafts(localStorage.getItem(IDEA_STORAGE_KEY))); } catch { setError("No podem exportar les fitxes desades. Els camps pendents es poden exportar separadament."); } }}>Exporta les fitxes desades</button>
           {ready && drafts.length === 0 && <p>Encara no has desat cap idea.</p>}
           {drafts.map((draft) => (
             <button key={draft.id} type="button"
@@ -137,6 +144,7 @@ export function IdeaDraftEditor() {
             <strong>Estat: esborrany {pending.length ? "amb pendents" : "amb fitxa completa"}</strong>
             <p>{pending.length ? "Pots completar més endavant: " + pending.join(" · ") : "Ja tens els camps inicials preparats. Encara no s'ha publicat res."}</p>
           </section>
+          <button type="button" className={styles.secondary} onClick={() => downloadJson("quelcom-camps-pendents.json", { schema: "pending-fields-v1", draftId: selectedId, fields })}>Exporta una còpia dels camps</button>
           {dirty && <p className={styles.unsaved}>Tens canvis sense desar.</p>}
           {error && <p role="alert" className={styles.error}>{error}</p>}
           {notice && <p role="status" className={styles.notice}>{notice}</p>}

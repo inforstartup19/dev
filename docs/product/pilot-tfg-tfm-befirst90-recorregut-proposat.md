@@ -1,9 +1,9 @@
 # IncForStartUp Campus — Mostra acadèmica TFG/TFM: BeFirst90
 
-**Tipus:** simulació demostrativa, no matrícula ni encàrrec acadèmic oficial  
-**Projecte pilot:** BF / BeFirst90 (streetwear; cap dada comercial de producció)  
-**Estat de la mostra:** proposta carregada; **0/6 fites completades**  
-**Aprovació de tutor, universitat, rúbrica i calendari:** pendents d'acord  
+**Tipus:** simulació demostrativa, no matrícula ni encàrrec acadèmic oficial
+**Projecte pilot:** BF / BeFirst90 (streetwear; cap dada comercial de producció)
+**Estat de la mostra:** proposta carregada; **0/6 fites completades**
+**Aprovació de tutor, universitat, rúbrica i calendari:** pendents d'acord
 **Relacionat amb:** [#87 — Espai TFG/TFM](https://github.com/inforstartup19/dev/issues/87), [#60 — Taxonomia acadèmica](https://github.com/inforstartup19/dev/issues/60), [#84 — Portal Projecte Viu](https://github.com/inforstartup19/dev/issues/84)
 
 ## Recorregut proposat

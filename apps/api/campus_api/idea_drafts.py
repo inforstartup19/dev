@@ -2,11 +2,12 @@
 
 from datetime import datetime
 from typing import Annotated
-from uuid import UUID
+from uuid import NAMESPACE_URL, UUID, uuid5
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import Field, StringConstraints
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from campus_api.auth import DB, Actor, require_private_context
 from campus_api.models import IdeaDraft, now
@@ -64,6 +65,43 @@ def create_draft(payload: IdeaDraftIn, db: DB, actor: Actor):
     item = IdeaDraft(owner_id=actor.id, **payload.model_dump())
     db.add(item)
     db.commit()
+    db.refresh(item)
+    return item
+
+
+class LocalDraftImportIn(IdeaDraftIn):
+    source_id: Annotated[str, StringConstraints(min_length=1, max_length=100)]
+
+
+@router.post("/local-import", response_model=IdeaDraftOut)
+def import_local_draft(payload: LocalDraftImportIn, db: DB, actor: Actor):
+    """Explicit copy of a short draft; retry-safe and owner scoped, never overwrite."""
+    draft_id = str(
+        uuid5(NAMESPACE_URL, f"incforstartup:local-short-v1:{actor.id}:{payload.source_id}")
+    )
+    fields = payload.model_dump(exclude={"source_id"})
+
+    def existing():
+        item = owned(db, draft_id, actor)
+        if any(getattr(item, key) != value for key, value in fields.items()):
+            raise HTTPException(409, "Local draft was already copied with different content")
+        return item
+
+    if db.scalar(
+        select(IdeaDraft.id).where(IdeaDraft.id == draft_id, IdeaDraft.owner_id == actor.id)
+    ):
+        return existing()
+    item = IdeaDraft(id=draft_id, owner_id=actor.id, **fields)
+    db.add(item)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        # A concurrent retry may have inserted the same owner-scoped draft.
+        from campus_api.db import bind_actor
+
+        bind_actor(db, actor.id)
+        return existing()
     db.refresh(item)
     return item
 

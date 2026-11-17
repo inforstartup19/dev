@@ -26,6 +26,8 @@ export function privateRoute(
       (joined === "idea-drafts" || new RegExp("^idea-drafts/" + id + "$").test(joined)))
     return "json";
 
+  if (method === "POST" && joined === "idea-drafts/local-import") return "json";
+
   // #19–#20: no generic forwarding; only identity and independent need projections.
   if ((method === "GET" || method === "POST") && joined === "me/facets")
     return "json";
