@@ -10,7 +10,7 @@ test("approved entry opens four spheres, keyboard focus follows and workspaces c
   await expect(page.getByRole("heading", { name: "Tria el teu espai a Quelcom" })).toBeFocused();
   await expect(page.getByRole("navigation", { name: "Tria el teu espai", exact: true }).getByRole("link")).toHaveCount(4);
   await page.getByRole("link", { name: /^Startup:/ }).click();
-  await expect(page.getByRole("heading", { name: "Prepara el següent horitzó" })).toBeFocused();
+  await expect(page.getByRole("heading", { name: "Dona continuïtat al que has començat." })).toBeFocused();
   await page.getByRole("link", { name: "Els quatre espais" }).click();
   await page.getByRole("link", { name: /^Campus:/ }).click();
   await expect(page).toHaveURL(/\/login$/);

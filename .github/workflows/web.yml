@@ -2,9 +2,9 @@ name: Campus web
 
 on:
   push:
-    paths: ['apps/web/**', '.github/workflows/web.yml']
+    paths: ['apps/web/**', 'shared/**', '.github/workflows/web.yml']
   pull_request:
-    paths: ['apps/web/**', '.github/workflows/web.yml']
+    paths: ['apps/web/**', 'shared/**', '.github/workflows/web.yml']
   workflow_dispatch:
 
 permissions:
