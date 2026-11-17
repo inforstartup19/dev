@@ -122,7 +122,7 @@ def protected_api(api):
             text(f"CREATE ROLE {role} LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD '{password}'")
         )
         conn.execute(text(f"GRANT USAGE ON SCHEMA public TO {role}"))
-        conn.execute(text(f"GRANT SELECT, INSERT ON users TO {role}"))
+        conn.execute(text(f"GRANT SELECT, INSERT ON users, user_identities TO {role}"))
         # Extra UPDATE/DELETE permissions prove that policies, not missing SQL grants,
         # reject attempts to rewrite ownership or tamper with events.
         conn.execute(

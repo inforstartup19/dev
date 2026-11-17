@@ -11,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from campus_api.db import bind_actor, get_db
-from campus_api.models import User
+from campus_api.models import User, UserIdentity
 
 bearer = HTTPBearer(auto_error=False)
 DB = Annotated[Session, Depends(get_db)]
@@ -83,16 +83,28 @@ def get_principal(
 
 
 def get_actor(db: DB, principal: Annotated[Principal, Depends(get_principal)]) -> User:
-    user = db.scalar(select(User).where(User.auth_subject == principal.subject))
+    # Only a verified Principal reaches this lookup. Never infer links from email/name.
+    user = db.scalar(
+        select(User).join(UserIdentity).where(UserIdentity.auth_subject == principal.subject)
+    )
     if user is None:
-        user = User(auth_subject=principal.subject, display_name=principal.display_name)
-        db.add(user)
+        # Preserve pre-migration actors, including users created by trusted seed tools.
+        user = db.scalar(select(User).where(User.auth_subject == principal.subject))
         try:
+            if user is None:
+                user = User(auth_subject=principal.subject, display_name=principal.display_name)
+                db.add(user)
+                db.flush()
+            db.add(UserIdentity(auth_subject=principal.subject, user_id=user.id))
             db.commit()
         except IntegrityError:
-            # Two concurrent authenticated requests can provision the same account.
+            # Concurrent provisioning must resolve to the committed mapping, not a new actor.
             db.rollback()
-            user = db.scalar(select(User).where(User.auth_subject == principal.subject))
+            user = db.scalar(
+                select(User)
+                .join(UserIdentity)
+                .where(UserIdentity.auth_subject == principal.subject)
+            )
             if user is None:
                 raise
     bind_actor(db, user.id)

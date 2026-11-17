@@ -33,6 +33,15 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 
+class UserIdentity(Base):
+    """Verified provider subject mapped to a stable internal actor (backend only)."""
+
+    __tablename__ = "user_identities"
+    auth_subject: Mapped[str] = mapped_column(String(1024), primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
 class Space(Base):
     __tablename__ = "spaces"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)

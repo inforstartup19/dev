@@ -19,8 +19,8 @@ class AuditTests(unittest.TestCase):
     def test_known_inventory_does_not_authorize_cutover(self):
         result = MODULE.audit(ROOT, self.plan, self.snapshot)
         self.assertEqual(result['issues'], [])
-        self.assertEqual(result['backend_table_count'], 36)
-        self.assertEqual(result['alembic_heads'], ['0013'])
+        self.assertEqual(result['backend_table_count'], 37)
+        self.assertEqual(result['alembic_heads'], ['0014'])
         self.assertEqual(result['cutover_status'], 'not_authorized_by_this_audit')
         self.assertTrue(result['remaining_gates'])
 
