@@ -74,3 +74,13 @@ recuperació #86, permisos/invitacions A/B/C, consentiment de publicació i cite
 protegides han de passar pel recorregut integrat. Supabase Auth #90 i proveïdors
 #83 continuen pendents d'activació; aquesta PR usa l'OIDC/API existent i no els simula.
 Cap canvi Azure, secrets, configuració de Supabase o desplegament del Site.
+
+### Resultats CI del primer increment
+
+Commit `a7817fed`: circuit connectat OIDC/API amb **10 proves E2E superades**
+[execució 44125794333](https://github.com/inforstartup19/dev/actions/runs/44125794333).
+L'API supera PostgreSQL i SQLite
+[execució 44125794121](https://github.com/inforstartup19/dev/actions/runs/44125794121).
+El primer test web detecta un selector ambigu entre l'alerta de conflicte i
+l'anunciador intern de Next: s'acota a l'alerta amb el text del conflicte, mantenint
+la mateixa comprovació de comportament. Entrada, focus, fallback i amplades ja passen.

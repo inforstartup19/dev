@@ -37,7 +37,7 @@ test("local drafts refuse stale writes and allow exporting pending fields", asyn
   await second.getByLabel("Pregunta o necessitat").fill("Idea desada des de la segona pestanya");
   await second.getByRole("button", { name: "Desa l'esborrany", exact: true }).click();
   await page.getByRole("button", { name: "Desa l'esborrany", exact: true }).click();
-  await expect(page.getByRole("alert")).toContainText("Una altra pestanya");
+  await expect(page.getByRole("alert").filter({ hasText: "Una altra pestanya" })).toBeVisible();
   await expect(page.getByLabel("Pregunta o necessitat")).toHaveValue("Text pendent de la primera pestanya");
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Exporta una còpia dels camps" }).click();
