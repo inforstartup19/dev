@@ -1,0 +1,43 @@
+{
+  "project_id": "shnitfrpgzhwobsuotdl",
+  "observed_at": "2026-11-17",
+  "source": "Supabase read-only pg_class/pg_policy metadata query",
+  "tables": [
+    {
+      "name": "qc_projects",
+      "rls": true,
+      "policies": 3
+    },
+    {
+      "name": "qc_members",
+      "rls": true,
+      "policies": 1
+    },
+    {
+      "name": "qc_tasks",
+      "rls": true,
+      "policies": 3
+    },
+    {
+      "name": "qc_dependencies",
+      "rls": true,
+      "policies": 3
+    },
+    {
+      "name": "qc_task_events",
+      "rls": true,
+      "policies": 1
+    },
+    {
+      "name": "qc_submissions",
+      "rls": true,
+      "policies": 1
+    }
+  ],
+  "observed_counts": {
+    "projects": 0,
+    "members": 0,
+    "tasks": 0,
+    "auth_users": 0
+  }
+}
