@@ -24,3 +24,11 @@ jobs:
           python-version: '3.12'
       - name: Check repository
         run: python3 scripts/check_repo.py
+      - name: Set up Node for static portal tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check static entrance
+        run: |
+          node --check sites/incforstartup/public/space-entry.js
+          node --test sites/incforstartup/tests/*.test.cjs

@@ -50,3 +50,9 @@ En cada increment del Site, actualitzar aquesta carpeta i la documentació en un
 amb PR. GitHub i Sites tenen repositoris separats: no hi ha sincronització automàtica.
 La publicació a Sites manté el seu flux propi i no es dispara des d’aquesta còpia.
 Els dissenys de Canva i el brief visual es documenten a `docs/design/incforstartup-canva.md`.
+
+## Portada principal 0.3
+
+La portada aprovada és ara l’entrada per defecte de `public/index.html`.
+Vegeu [la versió 0.3](docs/portada-0.3.md) per a procedència, comportament i límits.
+La marca global continua sent IncForStartUp; Quelcom encara s’està valorant.

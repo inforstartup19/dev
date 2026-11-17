@@ -1,0 +1,52 @@
+body.space-entry-active{background:#030610!important;overflow-x:hidden;overflow-y:auto}body.space-entry-active>aside,body.space-entry-active main>header,body.space-entry-active main>footer{display:none!important}body.space-entry-active main{margin:0!important}body.space-entry-active #view{padding:0!important;max-width:none!important;margin:0!important}.space-scene{position:relative;isolation:isolate;width:100%;height:115svh;min-height:760px;background:#030610;color:#e9f1ff;overflow:hidden}.space-scene canvas{position:absolute;inset:0;z-index:-1;pointer-events:none}.space-top{position:absolute;top:32px;left:45px;right:45px;display:flex;align-items:center;justify-content:space-between;gap:20px}.space-brand{font-size:42px;letter-spacing:-3px;font-weight:700}.space-brand span{color:#a4dbea}.space-top>span{font-size:9px;letter-spacing:3px;color:#8d9cb4}.space-skip{font-size:11px;color:#b3c3da}.space-heading{position:absolute;top:15%;left:0;right:0;text-align:center;pointer-events:none}.space-heading>p:first-child{font-size:9px;letter-spacing:3.6px;color:#95b8d9}.space-heading h1{font-size:clamp(34px,4.2vw,62px);font-weight:400;letter-spacing:-2px;line-height:1.15;margin:18px 0}.space-heading h1 em{font-style:normal;color:#b8d6f6}.space-subtitle{font-size:12px;color:#8b9bb4}.space-entry-active #space-orb{position:absolute;left:50%;top:59%;transform:translate(-50%,-50%);width:clamp(270px,30.375vw,393.75px);height:clamp(270px,30.375vw,393.75px);border-radius:50%;border:0!important;background:transparent!important;padding:0!important;box-shadow:none;color:white!important;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}.space-entry-active #space-orb:hover{background:transparent!important}.orb-label{font-size:48px;font-weight:600;letter-spacing:-4px;color:white;text-shadow:0 2px 25px #000;opacity:.88;transform:translateY(-3px)}.orb-action{position:absolute;top:103%;width:270px;font-size:9px;letter-spacing:2.7px;color:#b7d5f2;white-space:nowrap}.orb-action b{font-size:16px;margin-left:10px}.space-concepts .concept{position:absolute;font-size:9px;letter-spacing:2.2px;color:#7f93b0;border-bottom:1px solid #607b9d33;padding:10px 0;animation:space-drift 9s ease-in-out infinite alternate;pointer-events:none}.concept-0{left:23%;top:44%}.concept-1{right:20%;top:46%;animation-delay:-3s!important}.concept-2{left:10%;top:61%;animation-delay:-5s!important}.concept-3{right:11%;top:64%;animation-delay:-2s!important}.concept-4{left:20%;top:78%;animation-delay:-6s!important}.concept-5{right:22%;top:79%;animation-delay:-1s!important}.concept-6{left:8%;top:35%;animation-delay:-4s!important}.concept-7{right:7%;top:31%;animation-delay:-7s!important}.space-bottom{position:absolute;bottom:28px;left:45px;right:45px;display:flex;align-items:center;justify-content:space-between;gap:20px;color:#72849f;font-size:8px;letter-spacing:1.8px}.space-entry-active #space-pause{background:transparent!important;border:1px solid #52668166!important;font-size:10px;letter-spacing:0;font-weight:400;color:#a7b8cf!important;padding:8px 12px}.space-hint{font-size:11px;letter-spacing:.5px}.space-travelling .space-heading,.space-travelling .space-concepts,.space-travelling #space-orb,.space-travelling .space-bottom,.space-travelling .space-top{opacity:0;transition:opacity .3s}.space-still .concept{animation:none}@keyframes space-drift{from{transform:translateY(-6px)}to{transform:translateY(8px)}}@media(prefers-reduced-motion:reduce){.space-concepts .concept{animation:none}.space-scene *{transition:none!important}}@media(max-width:700px){.space-top{top:20px;left:22px;right:22px}.space-brand{font-size:35px}.space-top>span{display:none}.space-heading{top:16%}.space-heading h1{font-size:38px}.space-subtitle{max-width:260px;margin:0 auto}.space-entry-active #space-orb{top:61%;width:292.5px;height:292.5px}.space-concepts .concept{font-size:7px;letter-spacing:1px}.concept-0{left:7%;top:42%}.concept-1{right:6%;top:45%}.concept-2,.concept-3,.concept-6,.concept-7{display:none}.concept-4{left:7%;top:80%}.concept-5{right:7%;top:82%}.space-bottom{left:22px;right:22px;bottom:20px}.space-bottom>span:first-child{display:none}.orb-label{font-size:42px}.space-hint{font-size:9px}}@media(max-height:650px) and (min-width:701px){.space-heading{top:12%}.space-heading h1{font-size:34px}.space-subtitle{display:none}.space-entry-active #space-orb{top:60%;width:258.75px;height:258.75px}.space-scene{min-height:480px}}
+
+@media(max-height:650px){body.space-entry-active{overflow:auto}.space-scene{min-height:650px}}
+
+/* The canvas, orb, label and captions share one document-space scene. */
+@media(max-height:650px){.space-scene{min-height:760px}}
+
+/* Keep the longer centre word readable inside the sphere on every screen. */
+.space-entry-active .orb-label{font-size:clamp(30px,3.2vw,44px);letter-spacing:-1.5px}
+
+/* Reference composition: only sphere, concepts, entry caption and footer. */
+.space-scene{height:100svh;min-height:760px}
+.space-entry-active #space-orb{top:45%}
+.space-entry-active .orb-label{font-size:clamp(42px,3.4vw,60px);letter-spacing:-2px}
+.orb-action{font-weight:700}
+.concept-0{left:23%;top:25%}.concept-1{right:20%;top:27%}
+.concept-2{left:9%;top:47%}.concept-3{right:10%;top:53%}
+.concept-4{left:20%;top:71%}.concept-5{right:21%;top:75%}
+.concept-6{left:7%;top:10%}.concept-7{right:6%;top:4%}
+.space-bottom{display:grid;grid-template-columns:1fr 1fr 1fr}
+.space-hint{text-align:center}
+@media(max-width:700px){.space-entry-active #space-orb{top:45%}.space-entry-active .orb-label{font-size:44px}.concept-0{left:7%;top:16%}.concept-1{right:7%;top:19%}.concept-4{left:7%;top:72%}.concept-5{right:7%;top:76%}.space-bottom{display:flex;justify-content:center}.space-hint{font-size:12px}}
+
+/* A single viewport: satellite spheres orbit, the three captions remain stationary. */
+body.space-entry-active{overflow:hidden}
+body.space-entry-active .space-scene{height:100svh;min-height:0;max-height:100svh}
+.space-entry-active #space-orb{top:46%;z-index:2}
+.space-concepts .concept{display:flex;align-items:center;justify-content:center;text-align:center;box-sizing:border-box;padding:12px;border-radius:50%;border:1px solid #9edcff66;background:radial-gradient(circle at 28% 24%,#8dd6ef44 0%,#17324bd9 32%,#080f23ed 68%,#69c5df66 100%);box-shadow:inset -5px -7px 16px #02071399,inset 3px 3px 12px #9adefa22,0 0 24px #4f9ac31a;color:#c4d9ed;font-size:10px;line-height:1.4;letter-spacing:1.3px;animation:none!important;pointer-events:none;z-index:1}
+.space-bottom{bottom:22px;z-index:4;pointer-events:none}
+.space-hint{font-size:11px}
+.orb-action{animation:none;transition:none}
+@media(max-width:700px){.space-concepts .concept{display:flex;font-size:9px;letter-spacing:.6px;padding:8px}.space-entry-active #space-orb{top:46%}.space-bottom{left:12px;right:12px;bottom:16px;display:flex;flex-direction:column;gap:7px}.space-bottom>span:first-child{display:block;font-size:7px}.space-hint{font-size:10px}}
+@media(max-height:480px) and (min-width:701px){.space-bottom{bottom:10px}.orb-action{top:98%}}
+
+.space-scene .space-bottom{display:flex;justify-content:center;align-items:center;text-align:center}.space-scene .space-bottom>span:first-child{display:block}
+/* 0.2: preserve legibility and keyboard focus without adding visible controls. */
+.space-concepts .concept{color:#d4e6f5;text-shadow:0 1px 3px #020713;line-height:1.45}
+.space-entry-active #space-orb:focus-visible{outline:2px solid #d8edff;outline-offset:8px}
+.space-scene .space-bottom>span:first-child{font-size:9px;letter-spacing:1.7px}
+@media(max-width:700px){.space-scene .space-bottom>span:first-child{font-size:9px;letter-spacing:1px}}
+
+/* 3D satellites are depth-sorted in the canvas, not constrained in a flat DOM plane. */
+.space-scene .space-concepts{display:none}
+
+/* Canvas label participates in occlusion, accessible button retains its name. */
+.space-scene.has-canvas #space-orb .orb-label{visibility:hidden}
+
+/* Desktop sphere: 137.5% of the baseline diameter; mobile stays unchanged. */
+@media(min-width:701px){.space-entry-active #space-orb{width:clamp(371.25px,41.765625vw,541.40625px);height:clamp(371.25px,41.765625vw,541.40625px)}}
+@media(max-height:650px) and (min-width:701px){.space-entry-active #space-orb{width:355.78125px;height:355.78125px}}
+
+.space-scene .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
