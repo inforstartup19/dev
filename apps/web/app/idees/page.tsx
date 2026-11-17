@@ -25,5 +25,5 @@ export default async function IdeasPage() {
   }
   const session = await auth();
   if (!session?.user || session.error) redirect("/login?next=/idees");
-  return <ConnectedIdeaDrafts />;
+  return <ConnectedIdeaDrafts account={session.user.email || session.user.name || "actual"} />;
 }

@@ -15,7 +15,7 @@ async function signIn(page: Page, account: "Professor" | "Alumne") {
     .click();
   await expect(page).toHaveURL(/\/idees$/);
   await expect(
-    page.getByRole("heading", { name: "Una idea comença amb una pregunta." }),
+    page.getByRole("heading", { name: "Una idea, moltes possibilitats." }),
   ).toBeVisible();
 }
 
@@ -69,4 +69,30 @@ test("personal ideas persist across reload and remain invisible to another accou
   expect(forbidden.status()).toBe(404);
   await ownerContext.close();
   await otherContext.close();
+});
+
+test("local short drafts are previewed and explicitly copied once without deleting the original", async ({ browser }) => {
+  const context = await browser.newContext({ ignoreHTTPSErrors: true });
+  const page = await context.newPage();
+  try {
+    await signIn(page, "Alumne");
+    const sample = [{ id: "local-copy-84", question: "Una idea local per al Campus", intention: "", name: "Còpia privada #84", nextTest: "", scope: "personal-local", updatedAt: "2026-11-17T10:00:00Z" }];
+    await page.evaluate(data => localStorage.setItem("incforstartup-idea-drafts-v1", JSON.stringify(data)), sample);
+    await page.getByText("Porta una fitxa local al teu compte", { exact: true }).click();
+    await page.getByRole("button", { name: "Revisa fitxes d’aquest navegador" }).click();
+    await page.getByLabel("Fitxa a copiar").selectOption("local-copy-84");
+    const copy = page.getByRole("button", { name: "Copia la fitxa al compte privat" });
+    await expect(copy).toBeDisabled();
+    const rows = async () => (await (await page.request.get("/api/private/idea-drafts")).json()).filter((x: { name: string }) => x.name === "Còpia privada #84");
+    expect(await rows()).toHaveLength(0);
+    await page.getByRole("checkbox", { name: /Confirmo la còpia privada/ }).check();
+    await copy.click();
+    await expect(page.getByText("Fitxa copiada al compte privat. L’original local es conserva sense canvis.")).toBeVisible();
+    expect(await rows()).toHaveLength(1);
+    await page.getByRole("checkbox", { name: /Confirmo la còpia privada/ }).check();
+    await copy.click();
+    await expect(copy).toBeDisabled();
+    expect(await rows()).toHaveLength(1);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem("incforstartup-idea-drafts-v1")!))).toEqual(sample);
+  } finally { await context.close(); }
 });

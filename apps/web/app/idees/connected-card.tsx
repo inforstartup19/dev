@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useUnsavedChanges } from "../../lib/unsaved-changes";
+import { LocalDraftTransfer } from "./local-draft-transfer";
+import { downloadJson } from "../../lib/local-draft-transfer";
 import { useEffect, useState, type FormEvent } from "react";
 import { PrivateError, privateJson } from "../../lib/private-api";
 import { pendingIdeaFields, validateIdea, type IdeaInput } from "../../lib/idea-drafts";
@@ -23,7 +26,7 @@ const toFields = (draft: ServerDraft): IdeaInput => ({
   question: draft.question, intention: draft.intention,
   nextTest: draft.next_test, name: draft.name,
 });
-export function ConnectedIdeaDrafts() {
+export function ConnectedIdeaDrafts({ account = "actual" }: { account?: string }) {
   const [drafts, setDrafts] = useState<ServerDraft[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [fields, setFields] = useState<IdeaInput>(blank);
@@ -49,13 +52,8 @@ export function ConnectedIdeaDrafts() {
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
-  useEffect(() => {
-    function warn(event: BeforeUnloadEvent) {
-      if (dirty) event.preventDefault();
-    }
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+  useUnsavedChanges(dirty);
+
   function choose(draft: ServerDraft | null) {
     if (dirty && !window.confirm("Hi ha canvis sense desar. Vols descartar-los?")) return;
     const next = draft ? toFields(draft) : blank();
@@ -97,11 +95,12 @@ export function ConnectedIdeaDrafts() {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <Link href="/campus" className={styles.back}>← Campus</Link>
+        <Link href="/campus" className={styles.back}>Campus</Link>
         <span className={styles.kicker}>INCFORSTARTUP · IDEES PRIVADES</span>
-        <h1>Una idea comença amb una pregunta.</h1>
+        <h1>Una idea, moltes possibilitats.</h1>
         <p>Desa la teva idea al teu compte. Sense equip, finançament ni primera prova obligatòria.</p>
       </header>
+      {!loading && !loadFailed && <LocalDraftTransfer account={account} onImported={async () => { setDrafts(await privateJson<ServerDraft[]>("idea-drafts")); }} />}
       <section className={styles.layout}>
         <aside className={styles.sidebar}>
           <h2>Els teus esborranys</h2>
@@ -148,6 +147,7 @@ export function ConnectedIdeaDrafts() {
               "Pendent: " + pendingIdeaFields(fields).join(" · ") :
               "La fitxa és completa, però no s'ha publicat."}</p>
           </section>
+          <button type="button" className={styles.secondary} onClick={() => downloadJson("quelcom-camps-pendents.json", { schema: "pending-fields-v1", draftId: selectedId, fields })}>Exporta una còpia dels camps</button>
           {dirty && <p className={styles.unsaved}>Tens canvis sense desar.</p>}
           {error && <p role="alert" className={styles.error}>{error}</p>}
           {needsStepUp && (

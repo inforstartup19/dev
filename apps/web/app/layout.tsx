@@ -1,3 +1,6 @@
+import { EntranceFocus } from "../components/entrance-focus";
+import { SpaceNavigation } from "../components/space-navigation";
+import "../components/quelcom-entry.css";
 import type { Metadata } from "next";
 import "@fontsource-variable/dm-sans";
 import "@fontsource-variable/manrope";
@@ -15,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ca">
-      <body>{children}</body>
+      <body><EntranceFocus /><SpaceNavigation />{children}</body>
     </html>
   );
 }

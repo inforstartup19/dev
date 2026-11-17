@@ -25,6 +25,7 @@ export class PrivateError extends Error {
           : "La sessió ha caducat. Torna a iniciar sessió.",
       403: "No tens permís per fer aquesta acció.",
       404: "No trobem el document o no hi tens accés.",
+      409: "La fitxa ja existeix amb canvis. No s’ha sobreescrit ni duplicat; revisa la versió del compte.",
       413: "El fitxer supera els 10 MiB.",
       415: "Selecciona un document PDF o TXT vàlid.",
       422: "Revisa el nom, el format i els camps del document.",
