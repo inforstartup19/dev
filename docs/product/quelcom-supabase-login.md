@@ -30,3 +30,7 @@ No s’ha modificat l’autenticació Campus OIDC de l’app Next.js: els seus t
 Navegador Chrome: login, enllaç Demo TFM, «El meu compte» amb retorn a BF i persistència del destí després de reload. Callback cancel·lat: error segur i URL neta. Vista iframe de 393 × 852 revisada; pendent Safari/iPhone físic. No s’han iniciat sessions externes ni enviat missatges.
 
 Fonts: https://supabase.com/docs/guides/auth/sessions/pkce-flow ; https://supabase.com/docs/guides/auth/auth-email-passwordless ; https://supabase.com/docs/guides/auth/social-sign-in/auth-google .
+
+## Activació del pilot GitHub
+
+El 18 de novembre, la consulta de configuració pública confirma `github:true`; Google, Microsoft i Apple continuen desactivats. Omar confirma que ha desat la URL de retorn del portal. S’activa `redirectReady` per permetre la prova real amb GitHub; `emailReady` continua desactivat. La configuració i el botó estan habilitats, però la validació OAuth completa (consentiment, intercanvi i retorn al projecte) queda pendent de la prova de l’usuari. Aquesta actualització substitueix l’estat inicial de GitHub descrit més amunt.
