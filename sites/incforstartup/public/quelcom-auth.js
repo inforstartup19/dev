@@ -26,15 +26,16 @@
    const {error}=await clientFor().auth.signInWithOtp({email:address,options:{emailRedirectTo:callback(),shouldCreateUser:false}});
    if(error)throw Error('unavailable');
   }
-  async function user(){const {data,error}=await clientFor().auth.getUser();return !error&&data?.user?{email:data.user.email||'Compte verificat'}:null;}
+  async function user(){const {data,error}=await clientFor().auth.getUser();return !error&&data?.user&&!data.user.is_anonymous?{id:data.user.id,email:data.user.email||'Compte verificat'}:null;}
   async function finish(code){
    if(typeof code!=='string'||!code||code.length>4096)throw Error('callback');
    const {error}=await clientFor().auth.exchangeCodeForSession(code);
    if(error||!await user())throw Error('callback');
    return target();
   }
+  async function accessToken(){const {data,error}=await clientFor().auth.getSession();return !error?data?.session?.access_token||null:null;}
   async function logout(){const {error}=await clientFor().auth.signOut({scope:'local'});if(error)throw Error('unavailable');}
-  return {settings,remember,target,oauth,email,user,finish,logout};
+  return {settings,remember,target,oauth,email,user,finish,logout,accessToken,storageClient:()=>clientFor().storage};
  }
  root.QuelcomAuth={create,destination,providers};
  if(typeof module!=='undefined')module.exports=root.QuelcomAuth;

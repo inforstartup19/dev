@@ -37,7 +37,7 @@ test('email is invite-only and does not expose provider failures',async()=>{
 test('login includes four providers and no unauthenticated demo bypass',()=>{
  const routes={campus:['Campus',()=>{}]},handlers={};
  const c={routes,QuelcomAuth:require('../public/quelcom-auth.js'),workspaceHome:()=>'',render(){},location:{hash:'#campus'},document:{body:{classList:{toggle(){}}},addEventListener:(n,f)=>handlers[n]=f}};
- vm.createContext(c);vm.runInContext(fs.readFileSync('public/quelcom-login.js','utf8'),c);
+ vm.createContext(c);vm.runInContext(fs.readFileSync('sites/incforstartup/public/quelcom-login.js','utf8'),c);
  const html=routes.login[1]();for(const name of ['Google','GitHub','Microsoft','Apple'])assert.ok(html.includes(name));
- assert.equal((html.match(/data-ql-provider="[a-z]+" disabled/g)||[]).length,4);assert.ok(!html.includes('type="password"'));assert.ok(html.includes('no els sincronitza'));assert.ok(!html.includes('ql-demo-path'));assert.ok(!html.includes('sense iniciar sessió'));
+ assert.equal((html.match(/data-ql-provider="[a-z]+" disabled/g)||[]).length,4);assert.ok(!html.includes('type="password"'));assert.ok(html.includes('treballs reals es desen a Supabase'));assert.ok(!html.includes('ql-demo-path'));assert.ok(!html.includes('sense iniciar sessió'));
 });

@@ -15,5 +15,42 @@
     "security_advisors": 0,
     "performance_unused_indexes": 6,
     "browser_auth_storage": "pending"
+  },
+  "pilot": {
+    "applied_on": "2026-11-18",
+    "migrations": [
+      {
+        "version": "20261118180900",
+        "name": "campus_real_pilot",
+        "source": "supabase/schema/campus-real-pilot.sql",
+        "sha256": "65e515f351156792ef4a109745b09127980e89806de811221ea9141a93336a29"
+      },
+      {
+        "version": "20261118181412",
+        "name": "campus_pilot_project_insert_visibility",
+        "source": "supabase/schema/campus-pilot-project-insert-visibility.sql",
+        "sha256": "edc343fd892bddc12d581a123723924bdae82e1e35c122c4bef2b720ccd10a57"
+      },
+      {
+        "version": "20261118181932",
+        "name": "campus_private_documents",
+        "source": "supabase/schema/campus-private-documents.sql",
+        "sha256": "1976d2387a9e0fbaac9e88a36c62bbf7eed1510eaca1eae9f0311ebb09a70e30"
+      }
+    ],
+    "enrollment": "pending_authorized_emails",
+    "validation": {
+      "node_tests": 95,
+      "sql_pilot_rls": "passed_rollback",
+      "sql_academic_regression": "passed_rollback",
+      "anonymous_rest": "denied_401",
+      "browser": "local_synthetic_only_desktop_and_393x852",
+      "real_participant_auth_storage": "pending",
+      "security_advisors": {
+        "info_rls_no_policy": 3,
+        "warning_leaked_password_protection_disabled": 1
+      },
+      "github_node_tests": 117
+    }
   }
 }

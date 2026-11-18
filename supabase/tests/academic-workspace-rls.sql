@@ -6,7 +6,12 @@ select set_config('test.student',gen_random_uuid()::text,true),
        set_config('test.project',gen_random_uuid()::text,true),
        set_config('test.task',gen_random_uuid()::text,true),
        set_config('test.other_task',gen_random_uuid()::text,true);
-insert into auth.users(id) values(current_setting('test.student')::uuid),(current_setting('test.teacher')::uuid),(current_setting('test.outsider')::uuid);
+insert into auth.users(id,email,email_confirmed_at) select current_setting('test.'||k)::uuid,current_setting('test.'||k)||'@example.test',now() from unnest(array['student','teacher','outsider']) k;
+insert into qc_private.pilot_invites(email,role) values(current_setting('test.student')||'@example.test','student'),(current_setting('test.teacher')||'@example.test','teacher');
+select set_config('request.jwt.claim.sub',current_setting('test.teacher'),true);
+select public.qc_accept_pilot();
+select set_config('request.jwt.claim.sub',current_setting('test.student'),true);
+select public.qc_accept_pilot();
 insert into public.qc_projects(id,owner_id,kind,title) values(current_setting('test.project')::uuid,current_setting('test.student')::uuid,'TFG','Transient RLS test');
 insert into public.qc_members(project_id,user_id,role) values(current_setting('test.project')::uuid,current_setting('test.teacher')::uuid,'teacher');
 set local role authenticated;

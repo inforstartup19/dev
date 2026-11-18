@@ -8,8 +8,8 @@ test('Campus aliases, academic subpages and fallback require authentication',()=
 function page(user){
  const data=new Map(),view={},redirects=[],listeners={};let renders=0;
  const auth={user:async()=>user};
- const context={supabase:{},QuelcomAuth:{create:()=>auth,destination:r=>r},QuelcomAuthConfig:{},sessionStorage:{setItem:(k,v)=>data.set(k,v)},fetch(){},location:{hash:'#befirst-tfm-tauler',origin:'https://example.test',replace:x=>redirects.push(x)},document:{hidden:false,addEventListener:(n,f)=>listeners[n]=f,querySelector:()=>view},render(){renders++}};
- vm.createContext(context);vm.runInContext(fs.readFileSync('public/campus-access.js','utf8'),context);
+ const context={Event,supabase:{},QuelcomAuth:{create:()=>auth,destination:r=>r},QuelcomAuthConfig:{},sessionStorage:{setItem:(k,v)=>data.set(k,v)},fetch(){},location:{hash:'#befirst-tfm-tauler',origin:'https://example.test',replace:x=>redirects.push(x)},document:{hidden:false,dispatchEvent(){},addEventListener:(n,f)=>listeners[n]=f,querySelector:()=>view},render(){renders++}};
+ vm.createContext(context);vm.runInContext(fs.readFileSync('sites/incforstartup/public/campus-access.js','utf8'),context);
  return {context,data,view,redirects,get renders(){return renders}};
 }
 test('anonymous direct URL never renders Campus and preserves requested destination',async()=>{
