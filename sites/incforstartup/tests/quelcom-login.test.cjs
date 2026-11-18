@@ -34,10 +34,10 @@ test('email is invite-only and does not expose provider failures',async()=>{
  const {adapter,calls}=setup();await adapter.email('student@example.test');assert.equal(calls[1].options.shouldCreateUser,false);
  const failing=setup({auth:{signInWithOAuth:async()=>({error:{message:'private detail'}})}});await assert.rejects(failing.adapter.oauth('google'),/^Error: unavailable$/);
 });
-test('login includes four providers, explicit demo and no active controls before checks',()=>{
+test('login includes four providers and no unauthenticated demo bypass',()=>{
  const routes={campus:['Campus',()=>{}]},handlers={};
  const c={routes,QuelcomAuth:require('../public/quelcom-auth.js'),workspaceHome:()=>'',render(){},location:{hash:'#campus'},document:{body:{classList:{toggle(){}}},addEventListener:(n,f)=>handlers[n]=f}};
- vm.createContext(c);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../public/quelcom-login.js'),'utf8'),c);
- const html=routes.login[1]();for(const name of ['Google','GitHub','Microsoft','Apple','Demo TFG','Demo TFM'])assert.ok(html.includes(name));
- assert.equal((html.match(/data-ql-provider="[a-z]+" disabled/g)||[]).length,4);assert.ok(!html.includes('type="password"'));assert.ok(html.includes('no els sincronitza'));
+ vm.createContext(c);vm.runInContext(fs.readFileSync('public/quelcom-login.js','utf8'),c);
+ const html=routes.login[1]();for(const name of ['Google','GitHub','Microsoft','Apple'])assert.ok(html.includes(name));
+ assert.equal((html.match(/data-ql-provider="[a-z]+" disabled/g)||[]).length,4);assert.ok(!html.includes('type="password"'));assert.ok(html.includes('no els sincronitza'));assert.ok(!html.includes('ql-demo-path'));assert.ok(!html.includes('sense iniciar sessió'));
 });
