@@ -38,6 +38,10 @@ test('login includes four providers and no unauthenticated demo bypass',()=>{
  const routes={campus:['Campus',()=>{}]},handlers={};
  const c={routes,QuelcomAuth:require('../public/quelcom-auth.js'),workspaceHome:()=>'',render(){},location:{hash:'#campus'},document:{body:{classList:{toggle(){}}},addEventListener:(n,f)=>handlers[n]=f}};
  vm.createContext(c);vm.runInContext(fs.readFileSync('sites/incforstartup/public/quelcom-login.js','utf8'),c);
- const html=routes.login[1]();for(const name of ['Google','GitHub','Microsoft','Apple'])assert.ok(html.includes(name));
- assert.equal((html.match(/data-ql-provider="[a-z]+" disabled/g)||[]).length,4);assert.ok(!html.includes('type="password"'));assert.ok(html.includes('treballs reals es desen a Supabase'));assert.ok(!html.includes('ql-demo-path'));assert.ok(!html.includes('sense iniciar sessió'));
+ const html=routes.login[1]();
+ for(const name of ['Google','GitHub','Microsoft','Apple'])assert.ok(html.includes('alt="'+name+'"'));
+ const visible=html.replace(/<[^>]*>/g,' ');
+ for(const label of ['Correu i serveis en línia','Compte de desenvolupament','Correu i ofimàtica','Serveis del dispositiu'])assert.ok(visible.includes(label));
+ assert.doesNotMatch(visible,/Supabase|Google|GitHub|Microsoft|Apple/i);
+ assert.equal((html.match(/data-ql-provider="[a-z]+" disabled/g)||[]).length,4);assert.ok(!html.includes('type="password"'));assert.ok(html.includes('treballs es desen a Quelcom'));assert.ok(!html.includes('ql-demo-path'));assert.ok(!html.includes('sense iniciar sessió'));
 });

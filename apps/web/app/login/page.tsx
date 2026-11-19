@@ -44,7 +44,8 @@ export default async function Login({
               <input type="hidden" name="next" value={loginDestination(params.next)} />
               <input type="hidden" name="method" value={method.id} />
               <button className="button primary" disabled={!available} style={{ width: "100%" }}>
-                Continua amb {method.label} {available ? <ArrowRight size={17} /> : <LockKeyhole size={17} />}
+                {"provider" in method && <img width={20} height={20} src={`/providers/${method.id}.svg`} alt={method.provider} />}
+                {"provider" in method ? method.label : `Continua amb ${method.label}`} {available ? <ArrowRight size={17} /> : <LockKeyhole size={17} />}
               </button>
               {!available && <small className="muted">Pendent de connexió</small>}
             </form>;

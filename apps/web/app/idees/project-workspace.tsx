@@ -1,5 +1,6 @@
 "use client";
 
+import { RequiredCaption } from "../../components/required-caption";
 import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { PrivateError, privateJson } from "../../lib/private-api";
@@ -189,7 +190,7 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
         result = await privateJson<Experiment>(root, payload);
       }
       setSelected(result.id);
-    }, "Prova desada de manera privada al backend.");
+    }, "Prova desada en privat a Quelcom.");
   }
 
   async function activate() {
@@ -322,16 +323,17 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
           ))}
           <form onSubmit={saveExperiment} className={styles.form}>
             <h3>{chosen?.status === "draft" ? "Completar prova" : "Preparar prova"}</h3>
-            <label>Pregunta de la prova
-              <textarea value={fields.question} maxLength={2000}
+            <p id="experiment-activation-fields">Pots desar l’esborrany en qualsevol moment. Per activar la prova cal completar els tres camps.</p>
+            <label><RequiredCaption>Pregunta de la prova</RequiredCaption>
+              <textarea aria-describedby="experiment-activation-fields" value={fields.question} maxLength={2000}
                 onChange={(e) => setFields((s) => ({ ...s, question: e.target.value }))} />
             </label>
-            <label>Mètode
-              <textarea value={fields.method} maxLength={3000}
+            <label><RequiredCaption>Mètode</RequiredCaption>
+              <textarea aria-describedby="experiment-activation-fields" value={fields.method} maxLength={3000}
                 onChange={(e) => setFields((s) => ({ ...s, method: e.target.value }))} />
             </label>
-            <label>Criteri de contrast
-              <textarea value={fields.success_criterion} maxLength={3000}
+            <label><RequiredCaption>Criteri de contrast</RequiredCaption>
+              <textarea aria-describedby="experiment-activation-fields" value={fields.success_criterion} maxLength={3000}
                 onChange={(e) => setFields((s) => ({ ...s, success_criterion: e.target.value }))} />
             </label>
             <button disabled={busy || !writable || Boolean(chosen && chosen.status !== "draft")} type="submit">
@@ -366,7 +368,7 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
                   <option key={key} value={key}>{label}</option>)}
               </select>
             </label>
-            <label>Observacions
+            <label><RequiredCaption>Observacions</RequiredCaption>
               <textarea required maxLength={5000} value={observations}
                 onChange={(e) => setObservations(e.target.value)} />
             </label>
@@ -385,8 +387,8 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
       </div>}
       {!loading && <ProjectLifecycle draftId={draftId} onChanged={refresh} />}
       {!loading && <ProjectNeeds draftId={draftId} active={writable} />}
-      {!loading && guidance && <section className={styles.panel} aria-label="Inc AI Project Assistant" data-testid="project-guidance">
-        <h3>Inc AI · Assistent de projecte</h3>
+      {!loading && guidance && <section className={styles.panel} aria-label="Assistent de projecte" data-testid="project-guidance">
+        <h3>Assistent de projecte</h3>
         <p>Orientacions explicables a partir de proves i decisions privades desades. No executa accions.</p>
         <p><strong>Situació orientativa:</strong> {{
           undecided: "Sense decisió", active: "En desenvolupament",
@@ -437,7 +439,7 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
                   {Object.entries(choices).map(([key, label]) =>
                     <option key={key} value={key}>{label}</option>)}
                 </select>
-              <label>Motiu i proper pas
+              <label><RequiredCaption>Motiu i proper pas</RequiredCaption>
                 <textarea required maxLength={3000} value={rationale}
                   onChange={(e) => setRationale(e.target.value)} />
               </label>
@@ -467,7 +469,7 @@ export function ProjectWorkspace({ draftId }: { draftId: string }) {
                   <option value="funding">Finançament</option>
                 </select>
               </label>
-              <label>Descripció
+              <label><RequiredCaption>Descripció</RequiredCaption>
                 <textarea required maxLength={3000} value={description}
                   onChange={(e) => setDescription(e.target.value)} />
               </label>

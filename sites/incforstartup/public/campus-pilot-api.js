@@ -29,10 +29,16 @@
    if(!response.ok){
     if(response.status===401)throw Error('La sessió ha caducat. Torna a iniciar sessió.');
     if(response.status===403)throw Error('No tens accés a l’anàlisi d’aquest treball.');
-    if(data.error==='not_configured')throw Error('La IA de documents està pendent de configuració. Els adjunts continuen desats i disponibles.');
+    if(data.error==='not_configured')throw Error('La revisió assistida està pendent de configuració. Els adjunts continuen desats i disponibles.');
     if(response.status===429)throw Error('Has arribat al límit temporal d’anàlisis. Prova-ho més endavant.');
     if(response.status===409)throw Error('Ja hi ha una anàlisi en curs o la petició ha canviat. Actualitza els resultats abans de reintentar.');
-    throw Error(typeof data.message==='string'?data.message:'No s’ha completat l’anàlisi. Conservem la pregunta; revisa el fitxer i reintenta.');
+    if(data.error==='ai_file_too_large')throw Error('La revisió assistida admet documents de fins a 10 MB. Adjunta un extracte o una versió reduïda.');
+    if(data.error==='invalid_request')throw Error('Revisa el document, la pregunta i el consentiment d’anàlisi.');
+    if(data.error==='provider_failed')throw Error('El servei de revisió no ha pogut completar l’anàlisi. El document continua desat. Torna-ho a provar més endavant.');
+    if(data.error==='invalid_document')throw Error('No s’ha pogut llegir el document. Comprova el format o prova una versió en PDF.');
+    if(data.error==='invalid_analysis')throw Error('No s’ha pogut validar el resultat de l’anàlisi. El document continua desat.');
+    if(response.status===503)throw Error('El servei no respon. Conservem la pregunta. Actualitza els resultats abans de reintentar.');
+    throw Error('No s’ha completat l’anàlisi. Conservem la pregunta. Revisa el fitxer i torna-ho a provar.');
    }
    return data;
   }
@@ -52,7 +58,10 @@
      ({error}=await bucket().upload(path,file,{contentType:mime,upsert:false}));
     }
     if(error){
-     if(!['400','409'].includes(String(error.statusCode)))throw error.code?error:Error('No hem pogut confirmar la càrrega. Conserva el fitxer i reintenta amb la mateixa selecció.');
+     if(!['400','409'].includes(String(error.statusCode))){
+      if(resumable?.isUploadError?.(error))throw error;
+      throw Error('No hem pogut confirmar la càrrega. Conserva el fitxer i reintenta amb la mateixa selecció.');
+     }
      const {data,error:readError}=await bucket().list(uuid(project),{search:uuid(id)+'--',limit:10});
      if(readError||!data?.some(x=>x.name===path.split('/')[1]&&Number(x.metadata?.size)===file.size&&x.metadata?.mimetype===mime))throw Error('No hem pogut confirmar la versió del document. Conserva la selecció i comprova els documents desats.');
     }
@@ -64,7 +73,7 @@
    documentReviews:project=>request('qc_document_reviews?project_id=eq.'+uuid(project)+'&select=*&order=created_at.desc&limit=30'),
    async analyzeDocument(project,storageName,requestId,question='',consent=false){
     filePath(project,storageName);uuid(requestId);
-    if(consent!==true)throw Error('Cal autoritzar l’enviament d’aquest document a OpenAI per analitzar-lo.');
+    if(consent!==true)throw Error('Cal autoritzar l’enviament d’aquest document al proveïdor extern per analitzar-lo.');
     if(typeof question!=='string'||question.length>2000)throw Error('La pregunta ha de tenir com a màxim 2.000 caràcters.');
     const data=await aiRequest({projectId:project,storageName,requestId,question,consent:true});
     if(!data.review||!['processing','completed','failed'].includes(data.review.status))throw Error('No hem pogut confirmar el resultat. Actualitza l’historial abans de reintentar.');

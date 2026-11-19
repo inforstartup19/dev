@@ -1,5 +1,6 @@
 "use client";
 
+import { RequiredCaption } from "../../components/required-caption";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { PrivateError, privateJson } from "../../lib/private-api";
@@ -122,7 +123,7 @@ export function ConnectedIdeaDrafts() {
             <div><span className={styles.kicker}>FITXA CURTA</span><h2>{selectedId ? "Edita la teva idea" : "Nova idea"}</h2></div>
             <span className={styles.private}>Privat · compte</span>
           </div>
-          <label>Pregunta o necessitat *
+          <label><RequiredCaption>Pregunta o necessitat</RequiredCaption>
             <textarea required maxLength={2000} rows={3} value={fields.question}
               onChange={(event) => update("question", event.target.value)}
               placeholder="Quin problema vols entendre o resoldre?" />

@@ -24,7 +24,7 @@
   function extensionOf(name) {
     const match = typeof name === 'string' && /\.([a-z0-9]+)$/i.exec(name);
     const extension = match && match[1].toLowerCase();
-    if (!Object.prototype.hasOwnProperty.call(formats, extension)) fail('UNSUPPORTED_FORMAT', 'Adjunta un PDF, Word (.doc o .docx), Excel (.xls o .xlsx) o PowerPoint (.ppt o .pptx).');
+    if (!Object.prototype.hasOwnProperty.call(formats, extension)) fail('UNSUPPORTED_FORMAT', 'Adjunta un PDF, un document de text (.doc o .docx), un full de càlcul (.xls o .xlsx) o una presentació (.ppt o .pptx).');
     return extension;
   }
   function safeFilename(name) {
@@ -47,7 +47,7 @@
   // One structural parser is driven either by in-memory bytes (server) or
   // bounded Blob slices (browser). Payloads are never fully loaded or decompressed.
   function* inspectZip(size, format) {
-    const invalid = () => fail('INVALID_ZIP', 'El document Office està incomplet o té una estructura ZIP no admesa.');
+    const invalid = () => fail('INVALID_ZIP', 'El document està incomplet o té una estructura ZIP no admesa.');
     const viewOf = bytes => new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     if (size < 22) invalid();
     const first = viewOf(yield [0, 4]);
@@ -60,8 +60,8 @@
     if (end < 0) invalid();
     const count = tailView.getUint16(end + 10, true), centralSize = tailView.getUint32(end + 12, true), centralStart = tailView.getUint32(end + 16, true);
     if (tailView.getUint16(end + 4, true) || tailView.getUint16(end + 6, true) || tailView.getUint16(end + 8, true) !== count || count === 65535 || centralStart === 0xffffffff || centralSize === 0xffffffff || centralStart + centralSize !== tailStart + end) invalid();
-    if (!count || count > zipLimits.entries) fail('ZIP_LIMIT', 'El document Office conté massa fitxers interns.');
-    if (centralSize > zipLimits.directoryBytes) fail('ZIP_LIMIT', 'El directori intern del document Office és massa gran.');
+    if (!count || count > zipLimits.entries) fail('ZIP_LIMIT', 'El document conté massa fitxers interns.');
+    if (centralSize > zipLimits.directoryBytes) fail('ZIP_LIMIT', 'El directori intern del document és massa gran.');
     const directory = yield [centralStart, centralSize], view = viewOf(directory);
     const u16 = n => view.getUint16(n, true), u32 = n => view.getUint32(n, true);
     let cursor = 0, expanded = 0, packed = 0, localMetadata = 0;
@@ -70,8 +70,8 @@
     function readName(bytes) {
       let name;
       try { name = decoder.decode(bytes); } catch (_) { invalid(); }
-      if (!name || /[\u0000-\u001f\u007f\\:]/.test(name) || name.startsWith('/') || name.split('/').some(part => part === '..' || part === '.') || name.includes('//')) fail('ZIP_PATH', 'El document Office conté una ruta interna no admesa.');
-      if (/(^|\/)(vbaProject(?:Signature)?\.bin|vbaData\.xml|macros?)(\/|$)/i.test(name)) fail('ZIP_MACROS', 'No s’admeten documents Office amb components de macros.');
+      if (!name || /[\u0000-\u001f\u007f\\:]/.test(name) || name.startsWith('/') || name.split('/').some(part => part === '..' || part === '.') || name.includes('//')) fail('ZIP_PATH', 'El document conté una ruta interna no admesa.');
+      if (/(^|\/)(vbaProject(?:Signature)?\.bin|vbaData\.xml|macros?)(\/|$)/i.test(name)) fail('ZIP_MACROS', 'No s’admeten documents amb components de macros.');
       return name;
     }
     function checkExtra(bytes) {
@@ -90,16 +90,16 @@
       const compressed = u32(cursor + 20), uncompressed = u32(cursor + 24);
       const nameLength = u16(cursor + 28), extraLength = u16(cursor + 30), commentLength = u16(cursor + 32);
       const local = u32(cursor + 42), next = cursor + 46 + nameLength + extraLength + commentLength;
-      if (flags & 0x2041) fail('ZIP_ENCRYPTED', 'Desprotegeix el document Office abans d’adjuntar-lo.');
+      if (flags & 0x2041) fail('ZIP_ENCRYPTED', 'Desprotegeix el document abans d’adjuntar-lo.');
       if (next > directory.length || !nameLength || u16(cursor + 34) || ![0, 8].includes(method) || local === 0xffffffff || compressed === 0xffffffff || uncompressed === 0xffffffff) invalid();
       const name = readName(directory.subarray(cursor + 46, cursor + 46 + nameLength));
       if (names.has(name.toLowerCase())) invalid();
       names.add(name.toLowerCase());
       if (uncompressed) nonemptyParts.add(name.toLowerCase());
       checkExtra(directory.subarray(cursor + 46 + nameLength, cursor + 46 + nameLength + extraLength));
-      if ((u32(cursor + 38) >>> 16 & 0xf000) === 0xa000) fail('ZIP_PATH', 'El document Office conté un enllaç intern no admès.');
+      if ((u32(cursor + 38) >>> 16 & 0xf000) === 0xa000) fail('ZIP_PATH', 'El document conté un enllaç intern no admès.');
       expanded += uncompressed; packed += compressed;
-      if (uncompressed > zipLimits.entryBytes || expanded > zipLimits.expandedBytes || (uncompressed > 65536 && uncompressed / Math.max(1, compressed) > zipLimits.ratio)) fail('ZIP_LIMIT', 'El document Office supera els límits de descompressió.');
+      if (uncompressed > zipLimits.entryBytes || expanded > zipLimits.expandedBytes || (uncompressed > 65536 && uncompressed / Math.max(1, compressed) > zipLimits.ratio)) fail('ZIP_LIMIT', 'El document supera els límits de descompressió.');
       if (method === 0 && compressed !== uncompressed) invalid();
       if (local + 30 > centralStart) invalid();
       const header = viewOf(yield [local, 30]);
@@ -108,7 +108,7 @@
       const dataStart = local + 30 + localNameLength + localExtraLength, dataEnd = dataStart + compressed;
       if (dataEnd > centralStart || header.getUint16(6, true) !== flags || header.getUint16(8, true) !== method || localNameLength !== nameLength) invalid();
       localMetadata += 30 + localNameLength + localExtraLength;
-      if (localMetadata > zipLimits.directoryBytes) fail('ZIP_LIMIT', 'Les metadades internes del document Office són massa grans.');
+      if (localMetadata > zipLimits.directoryBytes) fail('ZIP_LIMIT', 'Les metadades internes del document són massa grans.');
       const localFields = yield [local + 30, localNameLength + localExtraLength];
       if (readName(localFields.subarray(0, localNameLength)) !== name) invalid();
       checkExtra(localFields.subarray(localNameLength));
@@ -131,9 +131,9 @@
       previous = stop;
     }
     if (previous !== centralStart) invalid();
-    if (expanded > 65536 && expanded / Math.max(1, packed) > zipLimits.ratio) fail('ZIP_LIMIT', 'El document Office supera els límits de descompressió.');
-    if (!nonemptyParts.has('[content_types].xml') || !nonemptyParts.has('_rels/.rels') || !nonemptyParts.has(format.part)) fail('ZIP_FORMAT', 'El contingut del document no correspon al format Office indicat.');
-    for (const part of ['word/document.xml', 'xl/workbook.xml', 'ppt/presentation.xml']) if (part !== format.part && names.has(part)) fail('ZIP_FORMAT', 'El document barreja estructures Office incompatibles.');
+    if (expanded > 65536 && expanded / Math.max(1, packed) > zipLimits.ratio) fail('ZIP_LIMIT', 'El document supera els límits de descompressió.');
+    if (!nonemptyParts.has('[content_types].xml') || !nonemptyParts.has('_rels/.rels') || !nonemptyParts.has(format.part)) fail('ZIP_FORMAT', 'El contingut del document no correspon al format indicat.');
+    for (const part of ['word/document.xml', 'xl/workbook.xml', 'ppt/presentation.xml']) if (part !== format.part && names.has(part)) fail('ZIP_FORMAT', 'El fitxer combina formats de document incompatibles.');
   }
   function checkZip(bytes, format) {
     const parser = inspectZip(bytes.length, format); let step = parser.next();
@@ -147,7 +147,7 @@
     } else if (format.kind === 'ole') {
       const magic = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1];
       // OLE signature does not distinguish Word/Excel/PowerPoint or detect macros.
-      if (bytes.length < 512 || magic.some((value, i) => bytes[i] !== value)) fail('INVALID_HEADER', 'El fitxer no té una capçalera Office clàssica vàlida.');
+      if (bytes.length < 512 || magic.some((value, i) => bytes[i] !== value)) fail('INVALID_HEADER', 'El fitxer no té una capçalera vàlida per a aquest format.');
     } else checkZip(bytes, format);
     return { extension, mime: format.mime, filename: safeFilename(name) };
   }
@@ -164,7 +164,7 @@
       if (smallBytes.length !== file.size) fail('FILE_SIZE', 'El document està incomplet; torna a seleccionar-lo.');
     }
     async function read(offset, length) {
-      if (!Number.isSafeInteger(offset) || !Number.isSafeInteger(length) || offset < 0 || length < 0 || offset + length > file.size) fail('INVALID_ZIP', 'El document Office està incomplet.');
+      if (!Number.isSafeInteger(offset) || !Number.isSafeInteger(length) || offset < 0 || length < 0 || offset + length > file.size) fail('INVALID_ZIP', 'El document està incomplet.');
       const bytes = smallBytes ? smallBytes.subarray(offset, offset + length) : bytesOf(await file.slice(offset, offset + length).arrayBuffer());
       if (bytes.length !== length) fail('FILE_SIZE', 'El document està incomplet; torna a seleccionar-lo.');
       return bytes;

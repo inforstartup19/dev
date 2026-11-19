@@ -1,4 +1,4 @@
-.workspace{margin-top:24px;border:1px solid #375665;border-radius:22px;padding:clamp(18px,3vw,32px);background:#101b29;display:grid;gap:22px;color:#edf6f6}
+.workspace{--required-color:#ff949d;margin-top:24px;border:1px solid #375665;border-radius:22px;padding:clamp(18px,3vw,32px);background:#101b29;display:grid;gap:22px;color:#edf6f6}
 .heading{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}
 .heading h2{font-size:clamp(1.4rem,3vw,2rem);margin:7px 0}.heading p,.panel p{color:#bfd0d8;line-height:1.5}
 .kicker{font-size:11px;letter-spacing:.15em;color:#9fdbcc;font-weight:700}

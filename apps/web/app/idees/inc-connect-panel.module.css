@@ -1,4 +1,4 @@
-.section{border:1px solid #375665;border-radius:22px;background:#101b29;color:#edf6f6;padding:clamp(16px,3vw,28px);margin:24px 0;display:grid;gap:18px}
+.section{--required-color:#ff949d;border:1px solid #375665;border-radius:22px;background:#101b29;color:#edf6f6;padding:clamp(16px,3vw,28px);margin:24px 0;display:grid;gap:18px}
 .header{display:flex;justify-content:space-between;align-items:start;gap:18px;flex-wrap:wrap}
 .header h2{font-size:clamp(1.35rem,3vw,2rem);margin:8px 0}
 .header p,.panel p{color:#bdd0d9;line-height:1.55}

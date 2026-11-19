@@ -34,7 +34,7 @@ test("BF Projecte Viu persists evidence and decisions without exposing another a
     await owner.getByLabel("Mètode").fill("Prova sintètica amb tres conceptes.");
     await owner.getByLabel("Criteri de contrast").fill("Registrar objeccions.");
     await owner.getByRole("button", { name: "Desar prova privada" }).click();
-    await expect(owner.getByText("Prova desada de manera privada al backend.")).toBeVisible();
+    await expect(owner.getByText("Prova desada en privat a Quelcom.")).toBeVisible();
     await owner.getByLabel("Observacions", { exact: true }).fill("Resposta de prova inconcloent.");
     await owner.getByLabel("Referència d'evidència (opcional)").fill("BF-UX-EVIDENCE-001");
     await owner.getByRole("button", { name: "Registrar resultat" }).click();

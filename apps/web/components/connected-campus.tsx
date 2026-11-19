@@ -1,5 +1,6 @@
 "use client";
 
+import { RequiredCaption } from "./required-caption";
 import {
   useEffect,
   useRef,
@@ -611,7 +612,7 @@ export function ConnectedCampus() {
                           {rubric.map((criterion, i) => (
                             <label className="rubric-row" key={criterion.label}>
                               <span>
-                                {criterion.label}
+                                <RequiredCaption>{criterion.label}</RequiredCaption>
                                 <small>{criterion.weight}%</small>
                               </span>
                               <span className="number-wrap">
@@ -647,7 +648,7 @@ export function ConnectedCampus() {
                             </strong>
                           </div>
                           <label>
-                            Comentari per a l’equip
+                            <RequiredCaption>Comentari per a l’equip</RequiredCaption>
                             <textarea
                               required
                               minLength={5}
@@ -908,11 +909,11 @@ export function ConnectedCampus() {
             {form === "space" && (
               <>
                 <label>
-                  Nom de l’espai
+                  <RequiredCaption>Nom de l’espai</RequiredCaption>
                   <input name="title" required maxLength={100} />
                 </label>
                 <label>
-                  Assignatura o àmbit
+                  <RequiredCaption>Assignatura o àmbit</RequiredCaption>
                   <input name="subject" required maxLength={150} />
                 </label>
                 <label>
@@ -928,7 +929,7 @@ export function ConnectedCampus() {
                   companys que ja siguin alumnes d’aquest espai.
                 </p>
                 <label>
-                  Nom de l’equip
+                  <RequiredCaption>Nom de l’equip</RequiredCaption>
                   <input name="name" required maxLength={100} />
                 </label>
               </>
@@ -936,12 +937,12 @@ export function ConnectedCampus() {
             {form === "project" && (
               <>
                 <label>
-                  Nom del projecte
+                  <RequiredCaption>Nom del projecte</RequiredCaption>
                   <input name="title" required maxLength={100} />
                 </label>
                 <label>
-                  Equip
-                  <select name="team" aria-label="Equip del projecte">
+                  <RequiredCaption>Equip</RequiredCaption>
+                  <select required name="team" aria-label="Equip del projecte">
                     {teams.map((t) => (
                       <option value={t.id} key={t.id}>
                         {t.name}
@@ -950,7 +951,7 @@ export function ConnectedCampus() {
                   </select>
                 </label>
                 <label>
-                  Quin problema voleu resoldre?
+                  <RequiredCaption>Quin problema voleu resoldre?</RequiredCaption>
                   <textarea
                     name="description"
                     required
@@ -960,7 +961,7 @@ export function ConnectedCampus() {
                   />
                 </label>
                 <label>
-                  Àmbit
+                  <RequiredCaption>Àmbit</RequiredCaption>
                   <input
                     name="category"
                     required
@@ -977,7 +978,7 @@ export function ConnectedCampus() {
                   disponible per al professor.
                 </p>
                 <label>
-                  Què heu treballat?
+                  <RequiredCaption>Què heu treballat?</RequiredCaption>
                   <textarea
                     name="note"
                     required
