@@ -29,4 +29,4 @@ jobs:
         with:
           node-version: '22'
       - name: Test static Site navigation and login scenarios
-        run: node --test sites/incforstartup/tests/*.test.cjs
+        run: node --test sites/incforstartup/tests/*.test.cjs supabase/tests/campus-document-review.test.mjs
