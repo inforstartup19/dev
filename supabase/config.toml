@@ -1,0 +1,3 @@
+# User JWT required at the gateway, then checked against Auth and project RLS.
+[functions.campus-document-review]
+verify_jwt = true

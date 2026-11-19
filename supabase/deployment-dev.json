@@ -52,5 +52,29 @@
       },
       "github_node_tests": 117
     }
+  },
+  "document_ai": {
+    "applied_on": "2026-11-19",
+    "migration": {
+      "version": "20261119143346",
+      "name": "campus_document_ai",
+      "source": "supabase/schema/campus-document-ai.sql",
+      "sha256": "78a5d4570baebfbb174e0c6b8e5cce4ee09547dfdf04e966cb3c591ec33eee21"
+    },
+    "function": {
+      "name": "campus-document-review",
+      "version": 1,
+      "verify_jwt": true
+    },
+    "provider_activation": "requires_OPENAI_API_KEY_and_INC_AI_MODEL_in_edge_secrets",
+    "validation": {
+      "node_tests": 150,
+      "sql_permissions": "passed_rollback",
+      "live_provider": "pending_provider_configuration_and_authenticated_test",
+      "security_advisors": "no_new_findings",
+      "site_tests": 115,
+      "anonymous_edge": "denied_401",
+      "browser": "synthetic_rendered_component_PC_and_393x852_no_horizontal_overflow"
+    }
   }
 }

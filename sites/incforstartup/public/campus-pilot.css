@@ -23,3 +23,40 @@ body.cp-active #view{padding:0!important;max-width:none!important;margin:0!impor
 #cp-root button.cp-primary{background:#bcebf0!important;color:#09222c!important;border-color:#bcebf0!important}
 #cp-root .cp-brand span{display:block;font-size:10px;letter-spacing:.24em;color:#85cad4}
 #cp-root .cp-form :is(input,textarea,select),#cp-root #cp-file{background:#081626!important;color:#eff7ff!important;border:1px solid #37556b!important}
+
+/* Document workspace: generous touch targets, clear source versions, reviewable AI. */
+#cp-root .cp-document-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+#cp-root .cp-document-heading h2{margin:8px 0 0}
+#cp-root .cp-document-limit{border:1px solid #35576e;border-radius:99px;padding:7px 12px;color:#b6d4e6;font-size:14px}
+#cp-root .cp-upload{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:22px;border:1px dashed #43657c;border-radius:18px;background:#0c1b2b;margin:22px 0}
+#cp-root .cp-upload label{font-size:16px;font-weight:600}
+#cp-root #cp-file{width:100%;max-width:100%;box-sizing:border-box;padding:12px;border-radius:10px;font:inherit;font-size:16px}
+#cp-root #cp-file::file-selector-button{background:#203e51;color:#e8f5fa;border:0;border-radius:7px;padding:10px 12px;margin-right:12px;cursor:pointer}
+#cp-root .cp-hint{font-size:14px;line-height:1.65;color:#adc3d4;margin:8px 0}
+#cp-root .cp-document-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+#cp-root .cp-document-list .cp-card{margin:0;min-width:0}
+#cp-root .cp-file-type{font-size:14px;font-weight:650;letter-spacing:.09em;color:#b5eff2;background:#173c49;border:1px solid #2c5e6a;border-radius:8px;padding:7px 11px}
+#cp-root .cp-document h3{font-size:18px;line-height:1.5;margin:18px 0 8px}
+#cp-root .cp-document .cp-date{font-size:14px}
+#cp-root .cp-document .cp-actions{margin-bottom:0}
+#cp-root .cp-ai-intro{margin-top:36px;padding:26px;border:1px solid #34616d;border-radius:20px;background:radial-gradient(ellipse at 0 0,#173848 0,transparent 70%),#0d1c2d}
+#cp-root .cp-ai-label{font-size:14px;color:#9ce5e9;letter-spacing:.1em;font-weight:600}
+#cp-root .cp-ai-intro h2{margin:12px 0}
+#cp-root .cp-ai-intro p,#cp-root .cp-documents>p{font-size:16px;line-height:1.7;color:#b7cbdc}
+#cp-root .cp-ai-form{max-width:none;border-color:#40727d}
+#cp-root .cp-ai-result>h3{font-size:21px;line-height:1.4}
+#cp-root .cp-ai-result h4{font-size:16px;margin:20px 0 10px}
+#cp-root .cp-ai-result li{font-size:16px;line-height:1.7;color:#bed2e1;margin:8px 0}
+#cp-root .cp-ai-suggestion{border-left:2px solid #619aa9;padding:2px 0 10px 18px;margin:18px 0}
+#cp-root .cp-ai-suggestion h4{margin-top:10px}
+#cp-root .cp-fingerprint{font-size:13px;overflow-wrap:anywhere;word-break:break-all}
+#cp-root .cp-ai-result summary,#cp-root .cp-ai-intro summary{font-size:16px;line-height:1.5;min-height:44px}
+@media(max-width:700px){
+ #cp-root .cp-document-list{grid-template-columns:1fr}
+ #cp-root .cp-upload,#cp-root .cp-ai-intro{padding:18px}
+ #cp-root .cp-documents button{min-height:46px;font-size:16px;max-width:100%;white-space:normal;text-align:left}
+ #cp-root .cp-upload>button{width:100%;text-align:center}
+ #cp-root .cp-document .cp-actions{gap:8px}
+ #cp-root .cp-document .cp-actions button{flex:1 1 135px;text-align:center;padding:11px 12px}
+ #cp-root .cp-ai-result .cp-date{font-size:14px}
+}
