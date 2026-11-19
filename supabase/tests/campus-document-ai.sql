@@ -23,6 +23,7 @@ select set_config('request.jwt.claim.sub',current_setting('test.ai_s'),true);
 select public.qc_accept_pilot();
 insert into public.qc_projects(id,owner_id,kind,title)
  values(current_setting('test.ai_p')::uuid,auth.uid(),'TFG','Synthetic document AI test');
+select public.qc_confirm_orientation(current_setting('test.ai_p')::uuid,'empirical','Document the first analysis',0);
 insert into storage.objects(bucket_id,name,owner_id,metadata) values
  ('qc-campus-documents',current_setting('test.ai_p')||'/'||current_setting('test.ai_file'),auth.uid()::text,'{"mimetype":"application/pdf","size":100}');
 -- The Storage metadata permission contract admits all seven formats.
@@ -57,6 +58,7 @@ select set_config('request.jwt.claim.sub',current_setting('test.ai_o'),true);
 select public.qc_accept_pilot();
 insert into public.qc_projects(id,owner_id,kind,title)
  values(current_setting('test.ai_p2')::uuid,auth.uid(),'TFM','Synthetic second project');
+select public.qc_confirm_orientation(current_setting('test.ai_p2')::uuid,'empirical','Document the first analysis',0);
 insert into storage.objects(bucket_id,name,owner_id,metadata) values
  ('qc-campus-documents',current_setting('test.ai_p2')||'/'||current_setting('test.ai_file'),auth.uid()::text,'{"mimetype":"application/pdf","size":100}');
 select set_config('request.jwt.claim.sub',current_setting('test.ai_t'),true);

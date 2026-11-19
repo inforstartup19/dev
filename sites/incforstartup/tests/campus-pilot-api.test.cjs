@@ -81,3 +81,26 @@ test('existing-object retries require matching exact private name, size and MIME
   if(metadata.size===file.size&&metadata.mimetype==='application/pdf')assert.equal(await api.uploadDocument(id,file,id),id+'/'+name);else await assert.rejects(api.uploadDocument(id,file,id),/confirmar la versió/);
  }
 });
+
+test('orientation is confirmed for one project with the signed-in session and expected revision',async()=>{
+ const response={id,orientation_route:'empirical',orientation_task_id:'ad052127-499d-43bb-bcbc-deeea224a585',revision:5};
+ const {api,calls}=setup([{status:200,body:response}]);
+ const updated=await api.confirmOrientation(id,'empirical','Compara dues fonts',4);
+ assert.equal(updated.id,id);
+ assert.equal(updated.orientation_route,'empirical');
+ assert.equal(calls.length,1);
+ assert.match(calls[0].url,/\/rpc\/qc_confirm_orientation$/);
+ assert.equal(calls[0].headers.Authorization,'Bearer test-token');
+ assert.deepEqual(JSON.parse(calls[0].body),{
+  p_project_id:id,p_route:'empirical',p_first_step:'Compara dues fonts',p_expected_revision:4
+ });
+});
+
+test('a partial or mismatched RPC response cannot confirm a student upload',async()=>{
+ const otherId='67a99b98-f06e-44b5-84cd-e41ae7a77586';
+ for(const response of [null,{id,orientation_route:'prototype',orientation_task_id:null},
+                         {id:otherId,orientation_route:'prototype',orientation_task_id:otherId}]){
+  const {api}=setup([{status:200,body:response}]);
+  await assert.rejects(api.confirmOrientation(id,'prototype','Prova dos casos',0),/confirmar/);
+ }
+});
