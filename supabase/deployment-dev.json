@@ -15,5 +15,87 @@
     "security_advisors": 0,
     "performance_unused_indexes": 6,
     "browser_auth_storage": "pending"
+  },
+  "pilot": {
+    "applied_on": "2026-11-18",
+    "migrations": [
+      {
+        "version": "20261118180900",
+        "name": "campus_real_pilot",
+        "source": "supabase/schema/campus-real-pilot.sql",
+        "sha256": "65e515f351156792ef4a109745b09127980e89806de811221ea9141a93336a29"
+      },
+      {
+        "version": "20261118181412",
+        "name": "campus_pilot_project_insert_visibility",
+        "source": "supabase/schema/campus-pilot-project-insert-visibility.sql",
+        "sha256": "edc343fd892bddc12d581a123723924bdae82e1e35c122c4bef2b720ccd10a57"
+      },
+      {
+        "version": "20261118181932",
+        "name": "campus_private_documents",
+        "source": "supabase/schema/campus-private-documents.sql",
+        "sha256": "1976d2387a9e0fbaac9e88a36c62bbf7eed1510eaca1eae9f0311ebb09a70e30"
+      }
+    ],
+    "enrollment": "pending_authorized_emails",
+    "validation": {
+      "node_tests": 95,
+      "sql_pilot_rls": "passed_rollback",
+      "sql_academic_regression": "passed_rollback",
+      "anonymous_rest": "denied_401",
+      "browser": "local_synthetic_only_desktop_and_393x852",
+      "real_participant_auth_storage": "pending",
+      "security_advisors": {
+        "info_rls_no_policy": 3,
+        "warning_leaked_password_protection_disabled": 1
+      },
+      "github_node_tests": 117
+    }
+  },
+  "document_ai": {
+    "applied_on": "2026-11-19",
+    "migration": {
+      "version": "20261119143346",
+      "name": "campus_document_ai",
+      "source": "supabase/schema/campus-document-ai.sql",
+      "sha256": "78a5d4570baebfbb174e0c6b8e5cce4ee09547dfdf04e966cb3c591ec33eee21"
+    },
+    "function": {
+      "name": "campus-document-review",
+      "version": 2,
+      "verify_jwt": true
+    },
+    "provider_activation": "requires_OPENAI_API_KEY_and_INC_AI_MODEL_in_edge_secrets",
+    "validation": {
+      "node_tests": 150,
+      "sql_permissions": "passed_rollback",
+      "live_provider": "pending_provider_configuration_and_authenticated_test",
+      "security_advisors": "no_new_findings",
+      "site_tests": 115,
+      "anonymous_edge": "denied_401",
+      "browser": "synthetic_rendered_component_PC_and_393x852_no_horizontal_overflow"
+    }
+  },
+  "large_documents": {
+    "applied_on": "2026-11-19",
+    "migration": {
+      "version": "20261119151455",
+      "name": "campus_document_limit_50mb",
+      "source": "supabase/schema/campus-document-limit-50mb.sql",
+      "sha256": "0e8088e020f448dbc2af595a12c4160801b8df33d452ae380ca936b16d9dd11b"
+    },
+    "bucket": "qc-campus-documents",
+    "private": true,
+    "file_size_limit": 52428800,
+    "ai_file_size_limit": 10485760,
+    "upload_protocol": "TUS above 6 MiB; private immutable versions",
+    "validation": {
+      "node_tests": 174,
+      "live_bucket_limit": "verified_52428800",
+      "real_authenticated_tus": "pending_participant_test",
+      "provider_activation": "pending_secret_configuration_dashboard_sign_in_required",
+      "site_tests": 136
+    }
   }
 }

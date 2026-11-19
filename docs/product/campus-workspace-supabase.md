@@ -1,3 +1,7 @@
+# Actualització del pilot real — 18/11/2026
+
+El nou Campus connectat, les invitacions, els TR i els PDF privats es descriuen a [Campus real](campus-pilot-access.md). El contingut següent documenta l’increment anterior i les seves demos locals.
+
 # TFG/TFM: espai de treball i Supabase DEV
 
 ## Increment preparat el 16 de novembre de 2026
