@@ -11,7 +11,7 @@ test('network failure does not claim a successful save',async()=>{const api=crea
 test('PDF uploads are bounded, checked and immutable',async()=>{
  const calls=[];const bucket={upload:async(...args)=>{calls.push(args);return{};}};
  const api=create({config:{},token:async()=>'test',storage:{from:()=>bucket}});
- await assert.rejects(api.uploadDocument(id,{size:10485761,name:'big.pdf'},id),/10 MB/);
+ await assert.rejects(api.uploadDocument(id,{size:52428801,name:'big.pdf'},id),/50 MB/);
  await assert.rejects(api.uploadDocument(id,new File(['WRONG'], 'fake.pdf'),id),/PDF|capçalera/);
  const file=new File(['%PDF-1.7 test'],'Treball de recerca.pdf',{type:'application/pdf'});
  const path=await api.uploadDocument(id,file,id);assert.equal(path,id+'/'+id+'--Treball_de_recerca.pdf');assert.equal(calls[0][2].upsert,false);
@@ -66,4 +66,18 @@ test('Office uploads keep private immutable paths and explicit MIME types',async
  }
  for(const extension of ['docx','xlsx','pptx'])assert.equal(await api.downloadDocument(id,id+'--work.'+extension),id+'/'+id+'--work.'+extension);
  await assert.rejects(api.downloadDocument(id,id+'--../work.docx'),/Document no vàlid/);
+});
+
+test('large Campus uploads use authenticated resumable chunks rather than SDK whole-file upload',async()=>{
+ const user='22222222-2222-4222-8222-222222222222',token='head.'+Buffer.from(JSON.stringify({sub:user})).toString('base64url')+'.sig';
+ const file=new File(['%PDF-1.7',new Uint8Array(7*1024*1024)],'large.pdf',{type:'application/pdf'});let offset=0;const calls=[],progress=[];
+ const api=create({config:{url:'https://test.supabase.co',publishableKey:'public'},userId:user,token:async()=>token,storage:{from:()=>({upload(){throw Error('Whole-file upload must not run')}})},fetcher:async(url,options)=>{calls.push({url,...options});if(options.method==='POST')return new Response(null,{status:201,headers:{Location:url+'/id'}});if(options.method==='HEAD')return new Response(null,{status:200,headers:{'Upload-Length':String(file.size),'Upload-Offset':String(offset)}});offset+=options.body.size;return new Response(null,{status:204,headers:{'Upload-Offset':String(offset)}});}});
+ assert.equal(await api.uploadDocument(id,file,id,p=>progress.push(p)),id+'/'+id+'--large.pdf');assert.deepEqual(calls.map(c=>c.method),['POST','HEAD','PATCH','PATCH']);assert.equal(calls[2].body.size,6*1024*1024);assert.equal(progress.at(-1).percent,100);
+});
+test('existing-object retries require matching exact private name, size and MIME',async()=>{
+ const file=new File(['%PDF-1.7 small'],'small.pdf',{type:'application/pdf'}),name=id+'--small.pdf';
+ for(const metadata of [{size:file.size,mimetype:'application/pdf'},{size:file.size+1,mimetype:'application/pdf'},{size:file.size,mimetype:'text/html'}]){
+  const api=create({config:{},token:async()=>'test',storage:{from:()=>({upload:async()=>({error:{statusCode:409}}),list:async()=>({data:[{name,metadata}]})})}});
+  if(metadata.size===file.size&&metadata.mimetype==='application/pdf')assert.equal(await api.uploadDocument(id,file,id),id+'/'+name);else await assert.rejects(api.uploadDocument(id,file,id),/confirmar la versió/);
+ }
 });

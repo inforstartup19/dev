@@ -109,9 +109,9 @@ test('encrypted Office, macro components, path traversal and symlinks are reject
 
 test('ZIP entry count, expansion sizes and suspicious compression ratios are bounded', () => {
   rejects(office('docx', Array.from({ length: 2046 }, (_, i) => ({ name: `word/item${i}.xml` }))), 'many.docx', 'ZIP_LIMIT');
-  rejects(office('docx', [{ name: 'word/huge.xml', method: 8, packed: Buffer.alloc(300000), expanded: 33 * 1024 * 1024 }]), 'huge.docx', 'ZIP_LIMIT');
+  rejects(office('docx', [{ name: 'word/huge.xml', method: 8, packed: Buffer.alloc(300000), expanded: 65 * 1024 * 1024 }]), 'huge.docx', 'ZIP_LIMIT');
   rejects(office('docx', [{ name: 'word/bomb.xml', method: 8, packed: Buffer.alloc(32), expanded: 1024 * 1024 }]), 'bomb.docx', 'ZIP_LIMIT');
-  rejects(office('docx', Array.from({ length: 4 }, (_, i) => ({ name: `word/large${i}.xml`, method: 8, packed: Buffer.alloc(512 * 1024), expanded: 30 * 1024 * 1024 }))), 'total.docx', 'ZIP_LIMIT');
+  rejects(office('docx', Array.from({ length: 7 }, (_, i) => ({ name: `word/large${i}.xml`, method: 8, packed: Buffer.alloc(512 * 1024), expanded: 30 * 1024 * 1024 }))), 'total.docx', 'ZIP_LIMIT');
 });
 
 test('truncation, tampered directory/local records, overlapping payloads and ZIP64 are rejected', () => {
@@ -137,10 +137,82 @@ test('truncation, tampered directory/local records, overlapping payloads and ZIP
 test('upload validates actual bytes, ignores unreliable browser MIME and stops oversized reads', async () => {
   const file = new File([office('xlsx')], 'Budget.XLSX', { type: 'application/octet-stream' });
   assert.equal((await formats.validate(file)).mime, formats.formats.xlsx.mime);
-  await assert.rejects(formats.validate({ name: 'big.pdf', size: 10485761, arrayBuffer() { throw Error('must not read'); } }), error => error.code === 'FILE_SIZE');
+  await assert.rejects(formats.validate({ name: 'big.pdf', size: formats.maxFileSize + 1, arrayBuffer() { throw Error('must not read'); } }), error => error.code === 'FILE_SIZE');
   await assert.rejects(formats.validate(new File([], 'empty.pdf')), error => error.code === 'FILE_SIZE');
   await assert.rejects(formats.validate({ name: 'cut.pdf', size: 20, arrayBuffer: async () => Buffer.from('%PDF-1.7') }), error => error.code === 'FILE_SIZE');
   await assert.rejects(formats.validate(new File(['not a PDF'], 'fake.pdf')), error => error.code === 'INVALID_HEADER');
   const backing = Buffer.concat([Buffer.from('prefix'), Buffer.from('%PDF-1.7\n%%EOF'), Buffer.from('suffix')]);
   assert.equal(formats.validateBytes(backing.subarray(6, -6), 'view.pdf').extension, 'pdf');
+});
+
+function sparseFile(name, size, segments) {
+  const reads = [];
+  return {
+    name, size, reads,
+    arrayBuffer() { throw Error('Whole-file read is forbidden'); },
+    slice(start, end) {
+      reads.push([start, end]);
+      const bytes = Buffer.alloc(end - start);
+      for (const [offset, data] of segments) {
+        const from = Math.max(start, offset), to = Math.min(end, offset + data.length);
+        if (from < to) data.copy(bytes, from - start, from - offset, to - offset);
+      }
+      return { arrayBuffer: async () => bytes };
+    }
+  };
+}
+test('exact 50 MiB PDF and legacy Office use only header slices; +1 byte never reads', async () => {
+  assert.equal(formats.maxFileSize, 50 * 1024 * 1024);
+  const pdf = sparseFile('large.pdf', formats.maxFileSize, [[0, Buffer.from('%PDF-1.7')]]);
+  assert.equal((await formats.validate(pdf)).extension, 'pdf');
+  assert.deepEqual(pdf.reads, [[0, 8]]);
+  const ole = sparseFile('large.doc', formats.maxFileSize, [[0, Buffer.from('d0cf11e0a1b11ae1', 'hex')]]);
+  assert.equal((await formats.validate(ole)).extension, 'doc');
+  assert.deepEqual(ole.reads, [[0, 512]]);
+  const over = sparseFile('over.pdf', formats.maxFileSize + 1, []);
+  await assert.rejects(formats.validate(over), error => error.code === 'FILE_SIZE');
+  assert.equal(over.reads.length, 0);
+});
+
+// Model a large stored media payload as a sparse region. Header/directory CRC
+// fields agree; payload checksum verification belongs to full parsing, not these
+// structural admission checks. No 50 MiB allocation is needed for this test.
+function sparseOffice(extension, totalSize) {
+  const bytes = office(extension, [{ name: 'media/large.bin', data: 'x' }]);
+  const oldCentral = bytes.readUInt32LE(bytes.length - 6);
+  let cursor = oldCentral;
+  for (let i = 0; i < 3; i++) cursor += 46 + bytes.readUInt16LE(cursor + 28);
+  const local = bytes.readUInt32LE(cursor + 42), payload = local + 30 + bytes.readUInt16LE(local + 26);
+  const delta = totalSize - bytes.length, expanded = delta + 1;
+  bytes.writeUInt32LE(expanded, local + 18); bytes.writeUInt32LE(expanded, local + 22);
+  bytes.writeUInt32LE(expanded, cursor + 20); bytes.writeUInt32LE(expanded, cursor + 24);
+  bytes.writeUInt32LE(oldCentral + delta, bytes.length - 6);
+  return sparseFile('large.' + extension, totalSize, [[0, bytes.subarray(0, payload)], [payload + expanded, bytes.subarray(payload + 1)]]);
+}
+test('50 MiB Office checks directory/local records with bounded slices, never payload buffers', async () => {
+  for (const extension of ['docx', 'xlsx', 'pptx']) {
+    const file = sparseOffice(extension, formats.maxFileSize);
+    assert.equal((await formats.validate(file)).extension, extension);
+    assert.ok(Math.max(...file.reads.map(([a, b]) => b - a)) <= 65557);
+    assert.ok(file.reads.reduce((total, [a, b]) => total + b - a, 0) < 70000);
+    assert.ok(file.reads.every(([a, b]) => a >= 0 && b <= file.size));
+  }
+});
+test('sliced browser ZIP validation rejects the same malicious structures as byte validation', async () => {
+  for (const [bytes, code] of [
+    [office('docx', [], { flags: 1 }), 'ZIP_ENCRYPTED'],
+    [office('docx', [{ name: 'word/vbaProject.bin' }]), 'ZIP_MACROS'],
+    [office('docx', [{ name: '../outside' }]), 'ZIP_PATH'],
+    [office('docx', [{ name: 'word/bomb.xml', method: 8, packed: Buffer.alloc(32), expanded: 1024 * 1024 }]), 'ZIP_LIMIT'],
+    [office('docx').subarray(0, -1), 'INVALID_ZIP']
+  ]) await assert.rejects(formats.validate(new File([bytes], 'hostile.docx')), error => error.code === code);
+});
+test('declared central directory allocation is bounded before any large slice read', async () => {
+  const size = formats.maxFileSize, end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50); end.writeUInt16LE(1, 8); end.writeUInt16LE(1, 10);
+  end.writeUInt32LE(formats.zipLimits.directoryBytes + 1, 12);
+  end.writeUInt32LE(size - 22 - formats.zipLimits.directoryBytes - 1, 16);
+  const file = sparseFile('directory.docx', size, [[0, Buffer.from('504b0304', 'hex')], [size - 22, end]]);
+  await assert.rejects(formats.validate(file), error => error.code === 'ZIP_LIMIT');
+  assert.ok(file.reads.every(([a, b]) => b - a <= 65557));
 });

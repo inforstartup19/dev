@@ -63,7 +63,7 @@
     },
     "function": {
       "name": "campus-document-review",
-      "version": 1,
+      "version": 2,
       "verify_jwt": true
     },
     "provider_activation": "requires_OPENAI_API_KEY_and_INC_AI_MODEL_in_edge_secrets",
@@ -75,6 +75,27 @@
       "site_tests": 115,
       "anonymous_edge": "denied_401",
       "browser": "synthetic_rendered_component_PC_and_393x852_no_horizontal_overflow"
+    }
+  },
+  "large_documents": {
+    "applied_on": "2026-11-19",
+    "migration": {
+      "version": "20261119151455",
+      "name": "campus_document_limit_50mb",
+      "source": "supabase/schema/campus-document-limit-50mb.sql",
+      "sha256": "0e8088e020f448dbc2af595a12c4160801b8df33d452ae380ca936b16d9dd11b"
+    },
+    "bucket": "qc-campus-documents",
+    "private": true,
+    "file_size_limit": 52428800,
+    "ai_file_size_limit": 10485760,
+    "upload_protocol": "TUS above 6 MiB; private immutable versions",
+    "validation": {
+      "node_tests": 174,
+      "live_bucket_limit": "verified_52428800",
+      "real_authenticated_tus": "pending_participant_test",
+      "provider_activation": "pending_secret_configuration_dashboard_sign_in_required",
+      "site_tests": 136
     }
   }
 }

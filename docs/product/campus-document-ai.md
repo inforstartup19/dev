@@ -1,11 +1,11 @@
 # Documents privats i Inc AI al Campus
 
-El pilot admet PDF, Word (DOC/DOCX), Excel (XLS/XLSX) i PowerPoint (PPT/PPTX), fins a 10 MiB per fitxer. Cada càrrega crea una versió immutable al bucket privat `qc-campus-documents`. L'estudiant i el docent assignat poden consultar el document; cap original ni anàlisi es publica automàticament a la biblioteca.
+El pilot admet PDF, Word (DOC/DOCX), Excel (XLS/XLSX) i PowerPoint (PPT/PPTX), fins a 50 MiB per fitxer (52.428.800 bytes; la interfície mostra 50 MB). Cada càrrega crea una versió immutable al bucket privat `qc-campus-documents`. L'estudiant i el docent assignat poden consultar el document; cap original ni anàlisi es publica automàticament a la biblioteca.
 
 ## Experiència
 
 1. Adjunta el document dins del treball TFG, TFM o TR.
-2. Selecciona «Analitza amb Inc AI», escriu opcionalment una pregunta i autoritza expressament enviar aquest fitxer a OpenAI per analitzar-lo.
+2. Per a un document de fins a 10 MiB, selecciona «Analitza amb Inc AI», escriu opcionalment una pregunta i autoritza expressament enviar aquest fitxer a OpenAI per analitzar-lo.
 3. L'anàlisi privada conté resum, millores, idees, preguntes i limitacions. Conserva nom, versió, SHA-256, model i data. La referència és al fitxer original: no es prometen cites de pàgina o cel·la verificades.
 4. «Prepara una tasca» transforma una proposta en un esborrany editable. L'usuari decideix si el desa. La IA no aprova treballs, modifica notes ni publica aprenentatges.
 
@@ -14,7 +14,7 @@ El pilot admet PDF, Word (DOC/DOCX), Excel (XLS/XLSX) i PowerPoint (PPT/PPTX), f
 La funció `campus-document-review` usa secrets exclusivament de servidor, a **Supabase → Edge Functions → Secrets**:
 
 - `OPENAI_API_KEY`: clau d'un projecte API d'OpenAI amb pressupost i límits del pilot.
-- `INC_AI_MODEL`: identificador d'un model d'aquest compte compatible amb Responses API, fitxers PDF/visió i Structured Outputs. No s'assumeix un model ni s'inicia despesa si no està configurat.
+- `INC_AI_MODEL`: `gpt-4.1-mini` és una opció compatible per al pilot; cal habilitar-lo al compte API. És l’identificador d'un model d'aquest compte compatible amb Responses API, fitxers PDF/visió i Structured Outputs. No s'assumeix un model ni s'inicia despesa si no està configurat.
 
 Les variables estàndard `SUPABASE_URL`, `SUPABASE_ANON_KEY` i `SUPABASE_SERVICE_ROLE_KEY` les proporciona Supabase. No s'han de copiar secrets al frontend, al repositori ni al xat. Una subscripció de ChatGPT o un canvi de pla de Supabase no configura aquesta integració.
 
@@ -31,6 +31,14 @@ Sense les dues variables de proveïdor, l'endpoint autenticat retorna `available
 - OpenAI Responses API rep el fitxer en base64, `store:false`, sense eines, URLs públiques ni fitxers persistits a Files API. `store:false` no equival a una garantia de retenció zero; s'aplica la política de dades del compte API.
 - El contingut del document és entrada no fiable: no pot instruir el servidor ni activar eines. Sortida JSON limitada i validada; renderització escapada; cap acció automàtica sobre el projecte.
 
+## Càrregues de fins a 50 MB
+
+A partir de 6 MiB s’utilitza TUS al domini directe de Storage, amb fragments de 6 MiB i progrés accessible. Els reintents consulten l’offset del servidor; el JWT es renova a cada petició i ha de correspondre al compte verificat. No s’activa upsert. La URL de càrrega ha de pertànyer al mateix endpoint de Storage.
+
+La recuperació es manté només en memòria: després d’una interrupció, conserva la mateixa selecció i la pàgina oberta, i torna a prémer el botó. Recarregar la pàgina, canviar de compte o seleccionar un altre fitxer inicia un intent nou. No es desen documents ni tokens de càrrega a localStorage.
+
+La validació del navegador llegeix només les capçaleres i les estructures ZIP necessàries, sense carregar l’original sencer. Els originals poden arribar a 50 MiB; l’anàlisi síncrona continua limitada a 10 MiB per document. Per analitzar-ne un de més gran, prepara un extracte o una versió reduïda; el document complet continua disponible per als membres del treball.
+
 ## Límits coneguts
 
 La inspecció estructural no és un antivirus. La signatura OLE dels formats antics no permet distingir DOC/XLS/PPT ni descartar macros incrustades; l'aplicació no les executa. No s'admeten extensions DOCM/XLSM/PPTM. Els OOXML tenen límits de mida expandida declarada, nombre d'entrades i proporció de compressió, sense descompressió local.
@@ -41,7 +49,7 @@ Aquesta primera integració analitza un document cada vegada. Una futura fase po
 
 ## Desplegament i comprovació
 
-Aplicar `supabase/schema/campus-document-ai.sql` després de les migracions del pilot. Desplegar `supabase/functions/campus-document-review/index.ts` amb `verify_jwt=true`, incloent `handler.mjs` i el mòdul compartit `sites/incforstartup/public/campus-document-formats.js` (mateixa ruta relativa). Publicar el frontend després de la migració i la funció.
+Aplicar `supabase/schema/campus-document-ai.sql` després de les migracions del pilot. Desplegar `supabase/functions/campus-document-review/index.ts` amb `verify_jwt=true`, incloent `handler.mjs` i el mòdul compartit `sites/incforstartup/public/campus-document-formats.js` (mateixa ruta relativa). Aplicar després `supabase/schema/campus-document-limit-50mb.sql` per ampliar només el bucket privat a 50 MiB. Publicar el frontend després de la migració i la funció.
 
 Proves locals: `node --test sites/incforstartup/tests/*.test.cjs supabase/tests/campus-document-review.test.mjs`. Proves SQL: `supabase/tests/campus-document-ai.sql`, fixtures sintètiques dins de transacció amb ROLLBACK. Validació real pendent de credencials/model i d'un participant autenticat: pujar els set formats, anàlisi, canvi de permisos, reintent, historial i esborrany de tasca.
 
@@ -50,3 +58,7 @@ Referències primàries verificades el 19/11/2026:
 - https://developers.openai.com/api/docs/guides/your-data
 - https://supabase.com/docs/guides/functions/auth-headers
 - https://supabase.com/docs/guides/functions/secrets
+
+- https://supabase.com/docs/guides/storage/uploads/resumable-uploads
+- https://supabase.com/docs/guides/storage/uploads/file-limits
+- https://developers.openai.com/api/docs/models/gpt-4.1-mini

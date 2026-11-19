@@ -60,3 +60,13 @@ body.cp-active #view{padding:0!important;max-width:none!important;margin:0!impor
  #cp-root .cp-document .cp-actions button{flex:1 1 135px;text-align:center;padding:11px 12px}
  #cp-root .cp-ai-result .cp-date{font-size:14px}
 }
+
+#cp-root .cp-upload-progress{width:100%;padding-top:8px}
+#cp-root .cp-upload-progress label{display:block;font-size:15px;font-weight:500;line-height:1.6;margin-bottom:10px;color:#c8e8ee}
+#cp-root .cp-upload-progress progress{display:block;appearance:none;width:100%;height:9px;border:0;border-radius:99px;overflow:hidden;background:#233c4d;accent-color:#98e6e9}
+#cp-root .cp-upload-progress progress::-webkit-progress-bar{background:#233c4d;border-radius:99px}
+#cp-root .cp-upload-progress progress::-webkit-progress-value{background:#98e6e9;border-radius:99px}
+#cp-root .cp-upload-progress progress::-moz-progress-bar{background:#98e6e9;border-radius:99px}
+#cp-root .cp-ai-intro .cp-ai-size-note{font-size:14px;color:#a7e2e7;font-weight:600}
+#cp-root .cp-document .cp-ai-limit{padding-top:10px;border-top:1px solid #294359;margin-top:18px}
+#cp-root .cp-document button:disabled{cursor:not-allowed}

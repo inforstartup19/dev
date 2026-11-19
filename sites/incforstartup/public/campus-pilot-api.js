@@ -1,8 +1,10 @@
 (function(root){
  'use strict';
  const formats=root.CampusDocumentFormats||(typeof module!=='undefined'?require('./campus-document-formats.js'):null);
+ const resumable=root.CampusResumableUpload||(typeof module!=='undefined'?require('./campus-resumable-upload.js'):null);
  const uuid=value=>{if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value))throw Error('Identificador no vàlid.');return value;};
- function create({config,token,storage,fetcher=fetch}){
+ function create({config,token,storage,userId,fetcher=fetch}){
+  let resumableClient;
   async function request(path,{method='GET',body}={}){
    const access=await token();if(!access)throw Error('La sessió ha caducat. Torna a iniciar sessió.');
    let response;try{response=await fetcher(config.url+'/rest/v1/'+path,{method,headers:{apikey:config.publishableKey,Authorization:'Bearer '+access,'Content-Type':'application/json',Prefer:'return=representation'},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(15000)});}catch{throw Error('No hem pogut confirmar el desament. Conservem el text; comprova la connexió abans de reintentar.');}
@@ -35,12 +37,25 @@
   }
   return {
    async documents(project){const {data,error}=await bucket().list(uuid(project),{limit:100,sortBy:{column:'created_at',order:'desc'}});if(error)throw Error('No hem pogut recuperar els documents.');return data.filter(x=>x.id);},
-   async uploadDocument(project,file,id){
+   async uploadDocument(project,file,id,onProgress=()=>{}){
     if(!formats)throw Error('No hem pogut carregar el validador de documents. Recarrega la pàgina.');
     const {filename,mime}=await formats.validate(file);
     const path=filePath(project,uuid(id)+'--'+filename);
-    const {error}=await bucket().upload(path,file,{contentType:mime,upsert:false});
-    if(error){if(String(error.statusCode)!=='409')throw Error('No hem pogut confirmar la càrrega. Conserva el fitxer i reintenta amb la mateixa selecció.');const {data,error:readError}=await bucket().list(uuid(project),{search:uuid(id)+'--',limit:10});if(readError||!data.some(x=>x.name===path.split('/')[1]))throw Error('No hem pogut confirmar la versió del document.');}
+    let error;
+    if(file.size>6*1024*1024){
+     if(!resumable)throw Error('No hem pogut carregar el servei de càrrega recuperable. Recarrega la pàgina.');
+     resumableClient??=resumable.create({config,token,userId,fetcher});
+     try{await resumableClient.upload({file,path,mime,onProgress});}catch(err){error=err;}
+    }else{
+     onProgress({loaded:0,total:file.size,percent:0});
+     ({error}=await bucket().upload(path,file,{contentType:mime,upsert:false}));
+    }
+    if(error){
+     if(!['400','409'].includes(String(error.statusCode)))throw error.code?error:Error('No hem pogut confirmar la càrrega. Conserva el fitxer i reintenta amb la mateixa selecció.');
+     const {data,error:readError}=await bucket().list(uuid(project),{search:uuid(id)+'--',limit:10});
+     if(readError||!data?.some(x=>x.name===path.split('/')[1]&&Number(x.metadata?.size)===file.size&&x.metadata?.mimetype===mime))throw Error('No hem pogut confirmar la versió del document. Conserva la selecció i comprova els documents desats.');
+    }
+    onProgress({loaded:file.size,total:file.size,percent:100});
     return path;
    },
    async downloadDocument(project,name){const {data,error}=await bucket().download(filePath(project,name));if(error)throw Error('No tens accés al document o la sessió ha caducat.');return data;},
