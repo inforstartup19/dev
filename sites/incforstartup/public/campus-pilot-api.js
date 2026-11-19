@@ -11,6 +11,7 @@
    if(!response.ok){let detail={};try{detail=await response.json();}catch{}
     if(response.status===401)throw Error('La sessió ha caducat. Torna a iniciar sessió.');
     if(response.status===403)throw Error('No tens accés a aquesta acció. Revisa la invitació i l’assignació docent.');
+    if(detail.code==='40001')throw Error('La fitxa ha canviat. Recupera la darrera versió, revisa la proposta i torna-la a confirmar.');
     if(detail.message?.includes('Teacher review required'))throw Error('Aquesta acció requereix el docent assignat.');
     if(detail.message?.includes('Reopen before editing'))throw Error('Cal demanar al docent que reobri la tasca abans d’editar-la.');
     throw Error('No s’han desat els canvis. Revisa els camps, els permisos i l’estat de la tasca.');
@@ -74,6 +75,13 @@
    project:async id=>(await request('qc_projects?id=eq.'+uuid(id)+'&select=*'))[0],
    createProject:row=>insert('qc_projects',row),
    saveProject:(id,revision,row)=>patch('qc_projects',id,revision,row),
+   async confirmOrientation(id,route,firstStep,revision){
+    const saved=await request('rpc/qc_confirm_orientation',{method:'POST',body:{
+     p_project_id:uuid(id),p_route:route,p_first_step:firstStep,p_expected_revision:revision
+    }});
+    if(saved?.id!==id||saved.orientation_route!==route||!saved.orientation_task_id)throw Error('No hem pogut confirmar l’orientació. Recupera la darrera versió abans de tornar-ho a provar.');
+    return saved;
+   },
    tasks:id=>request('qc_tasks?project_id=eq.'+uuid(id)+'&select=*&order=id'),
    createTask:row=>insert('qc_tasks',row),saveTask:(id,revision,row)=>patch('qc_tasks',id,revision,row),
    history:id=>request('qc_task_events?project_id=eq.'+uuid(id)+'&select=*&order=id.desc&limit=50'),

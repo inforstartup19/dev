@@ -1,0 +1,75 @@
+#cp-root .cp-orient {
+  box-sizing: border-box;
+  max-width: 48rem;
+  margin: 1.25rem 0;
+  padding: clamp(1.1rem, 3vw, 2rem);
+  border: 1px solid #35546a;
+  border-radius: 18px;
+  background: linear-gradient(140deg, #112739, #0d1929);
+  color: #eef7ff;
+}
+#cp-root .cp-orient-label {
+  color: #9adfe4;
+  font-size: .9rem;
+  font-weight: 650;
+}
+#cp-root .cp-orient h2 {
+  margin: .5rem 0 .65rem;
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  line-height: 1.22;
+  color: #eef7ff;
+}
+#cp-root .cp-orient p {
+  margin: .5rem 0 1rem;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: #bfd2e1;
+}
+#cp-root .cp-orient-choices {
+  display: grid;
+  gap: .6rem;
+}
+#cp-root button.cp-orient-option {
+  display: grid;
+  gap: .22rem;
+  width: 100%;
+  min-width: 0;
+  padding: .78rem 1rem;
+  text-align: start;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+#cp-root .cp-orient-option strong { font-size: 1rem; line-height: 1.4; }
+#cp-root .cp-orient-option span { font-size: .94rem; color: #bed2e2; line-height: 1.45; }
+#cp-root .cp-orient-option:focus-visible, #cp-root .cp-orient-option:hover {
+  border-color: #88cfda!important;
+}
+#cp-root .cp-orient-field {
+  display: grid;
+  gap: .45rem;
+  margin: 1rem 0 .45rem;
+  font-size: .95rem;
+  color: #cee2ef;
+}
+#cp-root .cp-orient-field :is(select,textarea) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  padding: .68rem .8rem;
+  border: 1px solid #54738a;
+  border-radius: 9px;
+  background: #091726!important;
+  color: #eff8ff!important;
+  font: inherit;
+  font-size: 1rem;
+}
+#cp-root .cp-orient-field textarea { line-height: 1.5; resize: vertical; }
+#cp-root .cp-orient-evidence strong { display: block; color: #dceaf4; font-size: .95rem; }
+#cp-root .cp-orient-actions { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: 1rem; }
+#cp-root .cp-orient-actions button { min-height: 44px; white-space: normal; }
+@media(max-width: 480px) {
+  #cp-root .cp-orient { padding: 1rem; }
+  #cp-root .cp-orient-actions { align-items: stretch; flex-direction: column; }
+}
