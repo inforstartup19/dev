@@ -1,5 +1,6 @@
 "use client";
 
+import { RequiredCaption } from "../../components/required-caption";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { privateJson } from "../../lib/private-api";
 import styles from "./project-workspace.module.css";
@@ -115,11 +116,11 @@ export function ProjectNeeds({ draftId, active }: { draftId: string; active: boo
       {error && <p role="alert">{error}</p>}
       {info && <p role="status">{info}</p>}
       <form className={styles.form} onSubmit={create}>
-        <label>Títol de la necessitat
+        <label><RequiredCaption>Títol de la necessitat</RequiredCaption>
           <input required maxLength={120} value={title}
             onChange={(event) => setTitle(event.target.value)} />
         </label>
-        <label>Text que podria veure un altre compte
+        <label><RequiredCaption>Text que podria veure un altre compte</RequiredCaption>
           <textarea required maxLength={1200} value={description}
             onChange={(event) => setDescription(event.target.value)} />
         </label>
@@ -153,7 +154,7 @@ export function ProjectNeeds({ draftId, active }: { draftId: string; active: boo
             </select>
           </label>
           {audienceChoice === "selected" && <form className={styles.form} onSubmit={addViewer}>
-            <label>Identificador del destinatari autoritzat
+            <label><RequiredCaption>Identificador del destinatari autoritzat</RequiredCaption>
               <input required pattern="[0-9a-fA-F-]{36}" value={viewerId}
                 onChange={(event) => setViewerId(event.target.value)}
                 placeholder="Identificador del compte amb consentiment" />
@@ -165,14 +166,14 @@ export function ProjectNeeds({ draftId, active }: { draftId: string; active: boo
         </>}
         <p>No s'hi inclou cap dada de la fitxa mare, pressupost, resultat ni evidència.</p>
         {(item.state === "draft" || item.state === "published") && <>
-          <label>Motiu de {item.state === "draft" ? "publicació" : "revocació"}
-            <textarea maxLength={500} value={reason}
+          <label><RequiredCaption>Motiu de {item.state === "draft" ? "publicació" : "revocació"}</RequiredCaption>
+            <textarea required maxLength={500} value={reason}
               onChange={(event) => setReason(event.target.value)} />
           </label>
           <label>
-            <input type="checkbox" checked={ack}
+            <input type="checkbox" required checked={ack}
               onChange={(event) => setAck(event.target.checked)} />
-            Confirmo l'audiència i les conseqüències d'aquesta acció.
+            <RequiredCaption>Confirmo l'audiència i les conseqüències d'aquesta acció.</RequiredCaption>
           </label>
           <button type="button" disabled={busy || !ack || !reason.trim() ||
             (item.state === "draft" && (!active ||

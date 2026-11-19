@@ -1,5 +1,6 @@
 "use client";
 
+import { RequiredCaption } from "../../components/required-caption";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import {
@@ -113,7 +114,7 @@ export function IdeaDraftEditor() {
             <div><span className={styles.kicker}>FITXA CURTA</span><h2>{selected ? "Edita la teva idea" : "Comença des de zero"}</h2></div>
             <span className={styles.private}>Personal · local</span>
           </div>
-          <label>Pregunta o necessitat <span aria-hidden="true">*</span>
+          <label><RequiredCaption>Pregunta o necessitat</RequiredCaption>
             <textarea required maxLength={2000} rows={3} value={fields.question}
               onChange={(event) => update("question", event.target.value)}
               placeholder="Quin problema vols entendre o resoldre?" />

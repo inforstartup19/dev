@@ -6,20 +6,20 @@ async function harness(options={}){
  const {
   reviews=[],reviewError=false,analysisError=false,available=true,analysisWait=null,
   uploadImpl=null,documentSize=1024,role='student',route='research_plan',confirmImpl=null,
-  startAt='#campus-treball/'+id, extraProjects=[]
+  startAt='#campus-treball/'+id, extraProjects=[], taskStatus='prepare', pilotProposals=[], feedbackImpl=null
  }=options;
  const project={id,owner_id:'student',title:'Treball privat',kind:'TFM',revision:0,updated_at:'2026-11-19T12:00:00Z',
   orientation_route:route,orientation_first_step:route?'Primera tasca de prova':null,orientation_task_id:route?firstTaskId:null};
  const stored=new Map([project,...extraProjects].map(p=>[p.id,p]));
  const cards=new Map();
- if(route)cards.set(project.id,[{id:firstTaskId,project_id:id,status:'prepare',title:'Primera tasca de prova',revision:0}]);
+ if(route)cards.set(project.id,[{id:firstTaskId,project_id:id,status:taskStatus,title:'Primera tasca de prova',revision:0}]);
  let user=role;
  const handlers={},calls=[],createOptions=[];
  const originalFile={id,name,created_at:'2026-11-19T12:00:00Z',metadata:{size:documentSize}};
  const api={
   enroll:async()=>({role:user,university:'Centre de prova'}),projects:async()=>[...stored.values()],library:async()=>[],
   project:async key=>stored.has(key)?{...stored.get(key)}:null,
-  tasks:async key=>(cards.get(key)||[]).map(x=>({...x})),history:async()=>[],projectHistory:async()=>[],proposals:async()=>[],
+  tasks:async key=>(cards.get(key)||[]).map(x=>({...x})),history:async()=>[],projectHistory:async()=>[],proposals:async()=>pilotProposals,
   documents:async key=>key===id?[originalFile]:[],
   createProject:async row=>{
    calls.push({method:'createProject',args:[row]});
@@ -41,6 +41,14 @@ async function harness(options={}){
    calls.push({method:'analyze',args});if(analysisWait)await analysisWait;if(analysisError)throw Error('Conservem la pregunta');
    return {id,created_at:'2026-11-19T12:00:00Z',storage_name:name,status:'completed',
     result:{summary:'Resum privat',improvements:[],newIdeas:[],questions:[],limitations:[]}};
+  },
+  saveTask:async(...args)=>{
+   calls.push({method:'saveTask',args});if(feedbackImpl)await feedbackImpl();
+   const [key,,fields]=args;Object.assign(cards.get(id).find(row=>row.id===key),fields);
+  },
+  review:async(...args)=>{
+   calls.push({method:'review',args});if(feedbackImpl)await feedbackImpl();
+   const [key,,fields]=args;Object.assign(pilotProposals.find(row=>row.id===key),fields);
   },
   createTask:async()=>{calls.push({method:'saveTask'});throw Error('Not expected without explicit submission');}
  };
@@ -87,6 +95,41 @@ async function harness(options={}){
   input(formId,values){fire('input',{closest:selector=>selector.includes('#'+formId)?{id:formId,values}:null});}
  };
 }
+function formMarkup(html,id){
+ const form=html.match(new RegExp('<form id="'+id+'"[^>]*>[\\s\\S]*?</form>'));
+ assert.ok(form,'Expected the rendered '+id+' form');
+ return form[0];
+}
+const requiredMark=/<span class="required-mark" aria-hidden="true">\*<\/span>/;
+test('project title alone is visibly and semantically required and saving is branded Quelcom',async()=>{
+ const h=await harness();
+ h.click({cp:'edit-project'});
+ const form=formMarkup(h.html(),'cp-project');
+ assert.match(form,/>Desa a Quelcom<\/button>/);
+ assert.doesNotMatch(form.replace(/<[^>]+>/g,''),/Supabase|OpenAI|Inc AI/i);
+ const labels=form.match(/<label\b[^>]*>[\s\S]*?<\/label>/g);
+ assert.ok(labels.length>1);
+ for(const label of labels){
+  const title=label.includes('name="title"');
+  assert.equal(requiredMark.test(label),title,label);
+  assert.equal(/<(?:input|textarea)\b[^>]*\srequired\b/.test(label),title,label);
+ }
+});
+test('analysis requires explicit external transfer consent and the question stays optional',async()=>{
+ const h=await harness();
+ h.click({cpAnalyze:name});
+ const form=formMarkup(h.html(),'cp-analysis');
+ const labels=form.match(/<label\b[^>]*>[\s\S]*?<\/label>/g);
+ const consent=labels.find(label=>label.includes('name="consent"'));
+ const question=labels.find(label=>label.includes('name="question"'));
+ assert.match(consent,/type="checkbox"[^>]*\srequired\b/);
+ assert.doesNotMatch(consent,/\schecked\b/);
+ assert.match(consent,requiredMark);
+ assert.match(consent,/enviar aquest document[\s\S]*proveïdor extern/i);
+ assert.doesNotMatch(question,requiredMark);
+ assert.doesNotMatch(form.replace(/<[^>]+>/g,''),/Supabase|OpenAI|Inc AI/i);
+ assert.equal(h.calls.length,0);
+});
 test('unavailable AI and review-list failures keep the real workspace and upload form visible',async()=>{
  const h=await harness({reviewError:true,available:false});assert.match(h.html(),/Treball privat/);assert.match(h.html(),/Desa el document privat/);assert.match(h.html(),/pendent de configuració/);assert.match(h.html(),/No hem pogut recuperar les anàlisis/);
 });
@@ -114,8 +157,14 @@ test('50 MB attachment limit is visibly separate from the 10 MB AI limit',async(
 test('upload progress is accessible and a failed upload retains the same file and id for retry',async()=>{
  let callback,rejectUpload;const waiting=new Promise((_,reject)=>rejectUpload=reject);let attempt=0;
  const h=await harness({uploadImpl:async(project,file,uploadId,onProgress)=>{callback=onProgress;if(++attempt===1)return waiting;}});
+ const freshUpload=formMarkup(h.html(),'cp-upload');
+ assert.match(freshUpload,/id="cp-file"[^>]*\srequired\b/);
+ assert.match(freshUpload,requiredMark);
  const file={name:'Large.docx',size:20*1048576};h.changeFile(file);h.submit('cp-upload',{});callback({loaded:5*1048576,total:file.size,percent:25});assert.match(h.html(),/id="cp-upload-meter" max="100" value="25"/);assert.match(h.html(),/role="status" aria-live="polite"/);assert.match(h.html(),/Carregant: 25%/);
  rejectUpload(Error('Connexió interrompuda'));await flush();assert.match(h.html(),/Càrrega interrompuda al 25%/);assert.match(h.html(),/Selecció pendent: Large.docx/);assert.match(h.html(),/Reintenta la càrrega/);
+ const retryUpload=formMarkup(h.html(),'cp-upload');
+ assert.doesNotMatch(retryUpload,/id="cp-file"[^>]*\srequired\b/);
+ assert.doesNotMatch(retryUpload,requiredMark);
  h.submit('cp-upload',{});await flush();const uploads=h.calls.filter(x=>x.method==='upload');assert.equal(uploads.length,2);assert.equal(uploads[0].args[1],file);assert.equal(uploads[1].args[1],file);assert.equal(uploads[0].args[2],uploads[1].args[2]);assert.doesNotMatch(h.html(),/Selecció pendent: Large.docx/);assert.match(h.html(),/Document privat desat/);
 });
 test('late upload progress and completion are ignored after account change',async()=>{
@@ -262,4 +311,55 @@ test('a pending orientation completion never reveals the old account’s draft o
  h.setWizard({orientTask:''},'Tasca de demostració del compte anterior');
  orient(h,'confirm');h.changeAccount('another-student');finish();await flush();
  assert.doesNotMatch(h.html(),/Tasca de demostració del compte anterior|Orientació desada|id="cp-upload"/);
+});
+
+test('teacher task review waits for a required comment and keeps it available after a failed save',async()=>{
+ let attempts=0;
+ const teacher=await harness({role:'teacher',taskStatus:'review',feedbackImpl:async()=>{
+  if(++attempts===1)throw Error('Connexió interrompuda');
+ }});
+ teacher.click({cpMove:firstTaskId,status:'revise'});
+ const form=formMarkup(teacher.html(),'cp-feedback');
+ assert.match(form,requiredMark);
+ assert.match(form,/<textarea name="comment"[^>]* required/);
+ assert.equal(teacher.calls.length,0);
+ teacher.submit('cp-feedback',{comment:'  '});
+ assert.equal(teacher.calls.length,0);
+ teacher.submit('cp-feedback',{comment:'Concreta el mostreig.'});
+ await flush();
+ assert.match(formMarkup(teacher.html(),'cp-feedback'),/>Concreta el mostreig\.<\/textarea>/);
+ teacher.submit('cp-feedback',{comment:'Concreta el mostreig.'});
+ await flush();
+ assert.equal(teacher.calls.length,2);
+ const [task,revision,fields]=teacher.calls[1].args;
+ assert.equal(task,firstTaskId);assert.equal(revision,0);
+ assert.equal(fields.status,'revise');assert.equal(fields.review_comment,'Concreta el mostreig.');
+ assert.doesNotMatch(teacher.html(),/id="cp-feedback"/);
+});
+
+test('teacher excerpt review can be cancelled and saves its required comment on confirmation',async()=>{
+ const row={id,status:'pending',revision:2,title:'Aprenentatge',summary:'Context',learning:'Resultat'};
+ const teacher=await harness({role:'teacher',pilotProposals:[row]});
+ teacher.click({cpReview:id,status:'published'});
+ assert.match(formMarkup(teacher.html(),'cp-feedback'),requiredMark);
+ teacher.click({cp:'cancel-feedback'});
+ assert.equal(teacher.calls.length,0);
+ assert.doesNotMatch(teacher.html(),/id="cp-feedback"/);
+ teacher.click({cpReview:id,status:'changes'});
+ teacher.submit('cp-feedback',{comment:'  Aclareix el resultat.  '});
+ await flush();
+ assert.equal(teacher.calls.length,1);
+ assert.equal(teacher.calls[0].method,'review');
+ const [proposal,revision,fields]=teacher.calls[0].args;
+ assert.equal(proposal,id);assert.equal(revision,2);
+ assert.equal(fields.status,'changes');assert.equal(fields.review_comment,'Aclareix el resultat.');
+});
+
+test('starting a task does not ask the student for a teacher review comment',async()=>{
+ const student=await harness();
+ student.click({cpMove:firstTaskId,status:'active'});
+ await flush();
+ assert.equal(student.calls[0].args[2].status,'active');
+ assert.equal(Object.hasOwn(student.calls[0].args[2],'review_comment'),false);
+ assert.doesNotMatch(student.html(),/id="cp-feedback"/);
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import { RequiredCaption } from "../../components/required-caption";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { privateJson } from "../../lib/private-api";
 import styles from "./project-workspace.module.css";
@@ -185,7 +186,7 @@ export function ProjectLifecycle({
             </select>
           </label>
           <label>
-            Justificació
+            <RequiredCaption>Justificació</RequiredCaption>
             <textarea
               aria-label="Justificació operativa"
               required
@@ -200,6 +201,7 @@ export function ProjectLifecycle({
               <label key={item} className={styles.checkLabel}>
                 <input
                   type="checkbox"
+                  required
                   checked={checked.includes(item)}
                   onChange={(event) => setChecked((previous) =>
                     event.target.checked
@@ -207,12 +209,12 @@ export function ProjectLifecycle({
                       : previous.filter((value) => value !== item)
                   )}
                 />
-                {items[item]}
+                <RequiredCaption>{items[item]}</RequiredCaption>
               </label>
             ))}
           </fieldset>
           <label>
-            Observacions de la revisió humana
+            <RequiredCaption>Observacions de la revisió humana</RequiredCaption>
             <textarea
               aria-label="Observacions de la revisió"
               required
@@ -223,7 +225,7 @@ export function ProjectLifecycle({
           </label>
           {action !== "close" && (
             <label>
-              {action === "pause" ? "Condicions per reprendre" : "Condicions verificades per reprendre"}
+              <RequiredCaption>{action === "pause" ? "Condicions per reprendre" : "Condicions verificades per reprendre"}</RequiredCaption>
               <textarea
                 aria-label="Condicions de represa"
                 required
@@ -236,11 +238,12 @@ export function ProjectLifecycle({
           <label className={styles.checkLabel}>
             <input
               type="checkbox"
+              required
               checked={confirm}
               onChange={(event) => setConfirm(event.target.checked)}
             />
-            Confirmo l'efecte intern i que els compromisos externs no es
-            consideren resolts per aquest registre.
+            <RequiredCaption>Confirmo l'efecte intern i que els compromisos externs no es
+            consideren resolts per aquest registre.</RequiredCaption>
           </label>
           <button type="submit" disabled={!ready}>{labels[action]}</button>
         </form>

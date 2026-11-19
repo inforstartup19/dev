@@ -1,7 +1,8 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.CampusResumableUpload=api;})(globalThis,function(){
  'use strict';
  const chunkSize=6*1024*1024,maxFileSize=50*1024*1024;
- const error=(code,message,status)=>Object.assign(new Error(message),{code,...(status?{statusCode:String(status)}:{})});
+ class UploadError extends Error {}
+ const error=(code,message,status)=>Object.assign(new UploadError(message),{code,...(status?{statusCode:String(status)}:{})});
  const metadata=value=>btoa(String.fromCharCode(...new TextEncoder().encode(value)));
  function create({config,token,userId,fetcher=fetch,wait=ms=>new Promise(resolve=>setTimeout(resolve,ms))}){
   const match=/^https:\/\/([a-z0-9-]+)\.supabase\.co\/?$/.exec(config.url||'');
@@ -78,5 +79,5 @@
   }
   return {upload};
  }
- return Object.freeze({create,chunkSize,maxFileSize});
+ return Object.freeze({create,chunkSize,maxFileSize,isUploadError:value=>value instanceof UploadError});
 });

@@ -1,9 +1,9 @@
 /** All methods federate through the existing Campus issuer, preserving API audience/subject. */
 export const loginMethods = [
   { id: "university", label: "la teva universitat" },
-  { id: "microsoft", label: "Microsoft" },
-  { id: "google", label: "Google" },
-  { id: "apple", label: "Apple" },
+  { id: "microsoft", label: "Correu i ofimàtica", provider: "Microsoft" },
+  { id: "google", label: "Correu i serveis en línia", provider: "Google" },
+  { id: "apple", label: "Serveis del dispositiu", provider: "Apple" },
   { id: "email", label: "correu electrònic" },
 ] as const;
 export type LoginMethod = typeof loginMethods[number]["id"];

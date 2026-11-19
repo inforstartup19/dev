@@ -1,5 +1,6 @@
 "use client";
 
+import { RequiredCaption } from "./required-caption";
 import {
   useEffect,
   useRef,
@@ -163,7 +164,7 @@ function ReviewForm({
       {rubric.map((criterion, i) => (
         <label className="rubric-row" key={criterion.label}>
           <span>
-            {criterion.label}
+            <RequiredCaption>{criterion.label}</RequiredCaption>
             <small>{criterion.weight}% de la valoració</small>
           </span>
           <span className="number-wrap">
@@ -191,7 +192,7 @@ function ReviewForm({
         </strong>
       </div>
       <label>
-        Comentari per a l’equip
+        <RequiredCaption>Comentari per a l’equip</RequiredCaption>
         <textarea
           required
           minLength={5}
@@ -1126,7 +1127,7 @@ export default function Campus() {
                 demostració, sense invitacions reals.
               </p>
               <label>
-                Nom de l’espai
+                <RequiredCaption>Nom de l’espai</RequiredCaption>
                 <input
                   name="title"
                   required
@@ -1135,7 +1136,7 @@ export default function Campus() {
                 />
               </label>
               <label>
-                Assignatura o àmbit
+                <RequiredCaption>Assignatura o àmbit</RequiredCaption>
                 <input
                   name="subject"
                   required
@@ -1144,7 +1145,7 @@ export default function Campus() {
                 />
               </label>
               <label>
-                Data d’entrega
+                <RequiredCaption>Data d’entrega</RequiredCaption>
                 <input
                   type="date"
                   name="due"
@@ -1171,7 +1172,7 @@ export default function Campus() {
                 privat en aquesta demostració.
               </p>
               <label>
-                Nom del projecte
+                <RequiredCaption>Nom del projecte</RequiredCaption>
                 <input
                   name="title"
                   maxLength={100}
@@ -1180,8 +1181,9 @@ export default function Campus() {
                 />
               </label>
               <label>
-                Espai docent
+                <RequiredCaption>Espai docent</RequiredCaption>
                 <select
+                  required
                   name="space"
                   defaultValue={
                     spaceId === "all" ? store.spaces[0]?.id : spaceId
@@ -1195,7 +1197,7 @@ export default function Campus() {
                 </select>
               </label>
               <label>
-                Quin problema voleu resoldre?
+                <RequiredCaption>Quin problema voleu resoldre?</RequiredCaption>
                 <textarea
                   name="description"
                   required
@@ -1246,7 +1248,7 @@ export default function Campus() {
                 anterior.
               </p>
               <label>
-                Què heu treballat?
+                <RequiredCaption>Què heu treballat?</RequiredCaption>
                 <textarea
                   name="note"
                   required
@@ -1305,7 +1307,7 @@ export default function Campus() {
                 No es creen permisos ni membresies reals.
               </p>
               <label>
-                Codi de mostra
+                <RequiredCaption>Codi de mostra</RequiredCaption>
                 <input name="code" required />
               </label>
               <div className="form-actions">
@@ -1324,9 +1326,9 @@ export default function Campus() {
                 <li>
                   Projectes i revisions: emmagatzematge local del navegador.
                 </li>
-                <li>Fitxers: guardats localment amb IndexedDB.</li>
+                <li>Els fitxers es conserven en aquest navegador.</li>
                 <li>
-                  Sense autenticació real, backend compartit ni IA connectada.
+                  La demostració funciona sense compte i les dades es desen en aquest dispositiu.
                 </li>
                 <li>
                   La guia de projecte és editorial; no consulta cap model d’IA.

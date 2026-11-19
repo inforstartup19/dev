@@ -8,6 +8,10 @@
   --font-sans: "DM Sans Variable", sans-serif;
   --font-display: "Manrope Variable", sans-serif;
 }
+.required-mark {
+  color: var(--required-color, #b91c3f);
+  font-weight: 700;
+}
 * {
   box-sizing: border-box;
 }
@@ -2070,6 +2074,12 @@ textarea {
 }
 .login-card .button {
   font-size: 13px;
+}
+.login-card .button img {
+  box-sizing: content-box;
+  padding: 3px;
+  border-radius: 5px;
+  background: white;
 }
 .login-card .waiting {
   margin: 0;

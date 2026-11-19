@@ -1,4 +1,5 @@
 "use client";
+import { RequiredCaption } from "./required-caption";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -309,7 +310,7 @@ export function PrivateDocuments({
               </div>
               {!vaults.length && <p>Encara no tens cap projecte privat.</p>}
               <form className="private-create" onSubmit={create}>
-                <label htmlFor="private-name">Nom del nou projecte</label>
+                <label htmlFor="private-name"><RequiredCaption>Nom del nou projecte</RequiredCaption></label>
                 <input
                   id="private-name"
                   maxLength={100}
@@ -349,11 +350,12 @@ export function PrivateDocuments({
                   {selected.role !== "reader" && (
                     <form className="private-upload" onSubmit={upload}>
                       <label htmlFor="private-file">
-                        Document del projecte
+                        <RequiredCaption>Document del projecte</RequiredCaption>
                       </label>
                       <input
                         key={selected.id}
                         id="private-file"
+                        required
                         type="file"
                         accept=".pdf,.txt,application/pdf,text/plain"
                         disabled={

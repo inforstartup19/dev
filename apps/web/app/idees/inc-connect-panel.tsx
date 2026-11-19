@@ -1,5 +1,6 @@
 "use client";
 
+import { RequiredCaption } from "../../components/required-caption";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { privateJson } from "../../lib/private-api";
 import styles from "./inc-connect-panel.module.css";
@@ -68,7 +69,7 @@ export function IncConnectPanel() {
   useEffect(() => {
     let active = true;
     reload().catch((err) => {
-      if (active) setError(err instanceof Error ? err.message : "No hem pogut carregar Inc Connect.");
+      if (active) setError(err instanceof Error ? err.message : "No hem pogut carregar les connexions.");
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [reload]);
@@ -177,10 +178,10 @@ export function IncConnectPanel() {
   }
 
   return (
-    <section className={styles.section} data-testid="inc-connect-panel" aria-label="Inc Connect i Agreements">
+    <section className={styles.section} data-testid="inc-connect-panel" aria-label="Connexions i acords">
       <div className={styles.header}>
         <div>
-          <span className={styles.kicker}>INC CONNECT · PROJECTE VIU</span>
+          <span className={styles.kicker}>CONNEXIONS · PROJECTE VIU</span>
           <h2>Connectar sense exposar el projecte</h2>
           <p>Només es mostren necessitats que pots consultar i interaccions on participes. No hi ha missatgeria ni accés implícit a fitxers.</p>
         </div>
@@ -206,7 +207,7 @@ export function IncConnectPanel() {
             </article>
           ))}
           {interestNeed && <form className={styles.form} onSubmit={requestInterest}>
-            <label>Missatge breu d'interès, enviat voluntàriament
+            <label><RequiredCaption>Missatge breu d'interès, enviat voluntàriament</RequiredCaption>
               <textarea aria-label="Nota d'interès" required maxLength={500}
                 value={interestNote} onChange={(event) => setInterestNote(event.target.value)} />
             </label>
@@ -241,7 +242,7 @@ export function IncConnectPanel() {
             className={styles.form} onSubmit={createAgreement}>
             <h3>Proposta bilateral · v1</h3>
             {(Object.keys(labels) as (keyof Terms)[]).map((key) => (
-              <label key={key}>{labels[key]}
+              <label key={key}><RequiredCaption>{labels[key]}</RequiredCaption>
                 <textarea required maxLength={key === "commitment" || key === "access_scope" ? 500 : 1200}
                   value={terms[key]} onChange={(event) => changeTerm(key, event.target.value)} />
               </label>
@@ -265,8 +266,8 @@ export function IncConnectPanel() {
             <small>Hash: {agreement.terms_sha256}</small>
             <p>Part A: {agreement.owner_confirmed ? "Confirmada" : "Pendent"} · Part B: {agreement.requester_confirmed ? "Confirmada" : "Pendent"}</p>
             {(Object.keys(labels) as (keyof Terms)[]).map((key) => (
-              <label key={key}>{labels[key]}
-                <textarea value={terms[key]} disabled={busy || agreement.status !== "active"}
+              <label key={key}>{agreement.status === "active" ? <RequiredCaption>{labels[key]}</RequiredCaption> : labels[key]}
+                <textarea required={agreement.status === "active"} value={terms[key]} disabled={busy || agreement.status !== "active"}
                   maxLength={key === "commitment" || key === "access_scope" ? 500 : 1200}
                   onChange={(event) => changeTerm(key, event.target.value)} />
               </label>
@@ -280,8 +281,8 @@ export function IncConnectPanel() {
               </button>
               <button type="button" disabled={busy || agreement.acceptance_expired || Boolean(versionEdited)}
                 onClick={confirmAgreement}>Confirmar exactament aquesta versió</button>
-              <label>Motiu de cancel·lació
-                <input maxLength={500} value={reason} onChange={(event) => setReason(event.target.value)} />
+              <label><RequiredCaption>Motiu de cancel·lació</RequiredCaption>
+                <input required maxLength={500} value={reason} onChange={(event) => setReason(event.target.value)} />
               </label>
               <button type="button" disabled={busy || !reason.trim()} onClick={cancelAgreement}>
                 Cancel·lar la proposta

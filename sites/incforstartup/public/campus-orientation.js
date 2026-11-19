@@ -154,12 +154,12 @@
     const options = Object.entries(routes).map(([key, item]) =>
       `<option value="${key}"${flow.route === key ? ' selected' : ''}>${item.title}</option>`).join('');
     return `<h2 data-orient-heading tabindex="-1">Començaré per aquí</h2>
-      <label class="cp-orient-field">Enfocament del treball
-        <select data-orient-route${disabled}><option value="" disabled${route ? '' : ' selected'}>Tria un enfocament</option>${options}</select>
+      <label class="cp-orient-field"><span>Enfocament del treball<span class="required-mark" aria-hidden="true">*</span></span>
+        <select required data-orient-route${disabled}><option value="" disabled${route ? '' : ' selected'}>Tria un enfocament</option>${options}</select>
       </label>
       ${route ? `<p>${route.reason}</p>
-        <label class="cp-orient-field">Primera tasca del tauler
-          <textarea data-orient-task maxlength="180" rows="3" placeholder="Què faràs primer?"${disabled}>${escape(flow.firstStep)}</textarea>
+        <label class="cp-orient-field"><span>Primera tasca del tauler<span class="required-mark" aria-hidden="true">*</span></span>
+          <textarea required data-orient-task maxlength="180" rows="3" placeholder="Què faràs primer?"${disabled}>${escape(flow.firstStep)}</textarea>
         </label>
         <p class="cp-orient-evidence"><strong>Per a la tutoria</strong> ${route.evidence}</p>` : ''}
       ${flow.error ? `<p role="alert" class="cp-alert">${escape(flow.error)}</p>` : ''}`;
