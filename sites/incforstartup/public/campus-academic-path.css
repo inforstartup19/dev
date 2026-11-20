@@ -1,0 +1,26 @@
+#cp-root .cp-academic-path {
+  max-width: 54rem;
+  margin: 1rem 0;
+  background: #101f30;
+  color: #e7f2f5;
+  border: 1px solid #304859;
+  border-radius: 1rem;
+}
+#cp-root .cp-academic-path summary { padding: .85rem 1rem; cursor: pointer; }
+#cp-root .cp-academic-path summary::marker { color: #8edbdf; }
+#cp-root .cp-academic-path summary strong { font-size: 1rem; }
+#cp-root .cp-academic-path summary small {
+  color: #b8cdd9; font-size: .86rem; margin-inline-start: .8rem;
+}
+#cp-root .cp-academic-path summary:focus-visible { outline-offset: 2px; }
+#cp-root .cp-path-content { padding: 0 1.15rem 1rem; }
+#cp-root .cp-path-content > p, #cp-root .cp-path-content li p {
+  color: #c4d8e2; font-size: .96rem; line-height: 1.5;
+}
+#cp-root .cp-path-content ol { padding-inline-start: 1.5rem; margin: 1rem 0; }
+#cp-root .cp-path-content li { margin: .8rem 0; padding-inline-start: .25rem; }
+#cp-root .cp-path-content li::marker { color: #8edbdf; font-weight: 650; }
+#cp-root .cp-path-content li p { margin: .15rem 0; }
+@media (max-width: 520px) {
+  #cp-root .cp-academic-path summary small { display: block; margin: .28rem 0 0 1rem; }
+}

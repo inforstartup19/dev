@@ -6,9 +6,21 @@
  function create({config,token,storage,userId,fetcher=fetch}){
   let resumableClient;
   async function request(path,{method='GET',body}={}){
-   const access=await token();if(!access)throw Error('La sessió ha caducat. Torna a iniciar sessió.');
+   const access=await token();
+   if(!access){const error=new Error('La sessió ha caducat. Torna a iniciar sessió.');error.code='denied';throw error;}
    let response;try{response=await fetcher(config.url+'/rest/v1/'+path,{method,headers:{apikey:config.publishableKey,Authorization:'Bearer '+access,'Content-Type':'application/json',Prefer:'return=representation'},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(15000)});}catch{throw Error('No hem pogut confirmar el desament. Conservem el text; comprova la connexió abans de reintentar.');}
    if(!response.ok){let detail={};try{detail=await response.json();}catch{}
+    if(path==='rpc/qc_defense_get'||path==='rpc/qc_defense_save'){
+     const denied=[401,403].includes(response.status)||detail.code==='42501';
+     const conflict=detail.code==='40001';
+     const message=denied?'No tens accés a l’assaig amb aquest compte.':
+      conflict?'L’assaig ha canviat. Recupera la versió desada abans de continuar.':
+      detail.code==='22023'?'Revisa els camps, el fitxer i l’estat de l’assaig.':
+      path.endsWith('_get')?'No hem pogut recuperar l’assaig. Torna-ho a provar.':'No hem pogut confirmar el desament. Actualitza l’assaig abans de reintentar.';
+     const error=new Error(message);
+     error.code=denied?'denied':conflict?'conflict':detail.code==='22023'?'invalid':'unknown';
+     throw error;
+    }
     if(response.status===401)throw Error('La sessió ha caducat. Torna a iniciar sessió.');
     if(response.status===403)throw Error('No tens accés a aquesta acció. Revisa la invitació i l’assignació docent.');
     if(detail.code==='40001')throw Error('La fitxa ha canviat. Recupera la darrera versió, revisa la proposta i torna-la a confirmar.');
@@ -17,6 +29,14 @@
     throw Error('No s’han desat els canvis. Revisa els camps, els permisos i l’estat de la tasca.');
    }
    return response.status===204?null:response.json();
+  }
+  function defenseRecord(project,row,allowEmpty=false){
+   if(allowEmpty&&row===null)return null;
+   if(!row||row.project_id!==project||!Number.isInteger(row.revision)||row.revision<1||
+    !['draft','submitted','changes_requested','rehearsed'].includes(row.status)){
+    throw Error('No hem pogut confirmar la versió de l’assaig. Recupera-la abans de continuar.');
+   }
+   return row;
   }
   async function patch(table,id,revision,fields){if(!Number.isInteger(revision)||revision<0)throw Error('Versió no vàlida.');const rows=await request(table+'?id=eq.'+uuid(id)+'&revision=eq.'+revision,{method:'PATCH',body:fields});if(rows.length!==1)throw Error('Hi ha una versió més recent o l’accés ha canviat. El text es conserva; exporta’l abans de recarregar.');return rows[0];}
   async function insert(table,row){const existing=await request(table+'?id=eq.'+uuid(row.id)+'&select=*');if(existing.length){if(Object.entries(row).some(([key,value])=>JSON.stringify(existing[0][key])!==JSON.stringify(value)))throw Error('El registre ja es va crear amb un altre contingut. Conservem el text; exporta’l abans de recuperar la versió desada.');return existing[0];}const rows=await request(table,{method:'POST',body:row});return rows[0];}
@@ -90,6 +110,20 @@
     }});
     if(saved?.id!==id||saved.orientation_route!==route||!saved.orientation_task_id)throw Error('No hem pogut confirmar l’orientació. Recupera la darrera versió abans de tornar-ho a provar.');
     return saved;
+   },
+   async defense(project){
+    const row=await request('rpc/qc_defense_get',{method:'POST',body:{p_project_id:uuid(project)}});
+    return defenseRecord(project,row,true);
+   },
+   async saveDefense(project,revision,action,fields){
+    if(!Number.isInteger(revision)||revision<0||!['save','submit','return','validate'].includes(action))throw Error('Versió o acció de l’assaig no vàlida.');
+    const teacher=action==='return'||action==='validate';
+    const body={p_project_id:uuid(project),p_revision:revision,p_action:action,
+     p_outline:teacher?null:fields.outline,p_questions:teacher?null:fields.questions,
+     p_attachment:teacher?null:fields.attachment||null,p_talk_minutes:teacher?null:fields.talk_minutes,
+     p_question_minutes:teacher?null:fields.question_minutes,p_feedback:teacher?fields.feedback:null};
+    const row=await request('rpc/qc_defense_save',{method:'POST',body});
+    return defenseRecord(project,row);
    },
    tasks:id=>request('qc_tasks?project_id=eq.'+uuid(id)+'&select=*&order=id'),
    createTask:row=>insert('qc_tasks',row),saveTask:(id,revision,row)=>patch('qc_tasks',id,revision,row),

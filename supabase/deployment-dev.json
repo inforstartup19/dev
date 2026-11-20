@@ -97,5 +97,20 @@
       "provider_activation": "pending_secret_configuration_dashboard_sign_in_required",
       "site_tests": 136
     }
+  },
+  "defense_rehearsals": {
+    "applied_on": "2026-11-20",
+    "migration": {
+      "version": "20261120102646",
+      "name": "campus_defense_rehearsals",
+      "source": "supabase/schema/campus-defense-rehearsals.sql",
+      "sha256": "945994e921bb6e5b224db247955296d26e3066f8bc68c1db887a63c7ebe95bff"
+    },
+    "scope": "private formative rehearsal for the project owner and assigned tutor",
+    "validation": {
+      "dev_catalog": "RLS enabled on current records and event history; authenticated role has no direct SELECT or UPDATE; anonymous RPC execution is denied",
+      "sql_role_transitions": "local_postgres_synthetic_rollback_passed",
+      "student_teacher_session": "pending_authorized_participant_test"
+    }
   }
 }

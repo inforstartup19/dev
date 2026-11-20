@@ -104,3 +104,22 @@ test('a partial or mismatched RPC response cannot confirm a student upload',asyn
   await assert.rejects(api.confirmOrientation(id,'prototype','Prova dos casos',0),/confirmar/);
  }
 });
+test('rehearsal RPC uses the caller session and isolates student work and tutor feedback',async()=>{
+ const draft={project_id:id,revision:1,status:'draft'};
+ const result=setup([{status:200,body:null},{status:200,body:draft},{status:200,body:{...draft,revision:3,status:'rehearsed'}}]);
+ assert.equal(await result.api.defense(id),null);
+ await result.api.saveDefense(id,0,'save',{outline:'Proposta',questions:'',attachment:'',talk_minutes:15,question_minutes:10,feedback:'Injected feedback'});
+ const student=JSON.parse(result.calls[1].body);assert.equal(student.p_revision,0);assert.equal(student.p_outline,'Proposta');assert.equal(student.p_attachment,null);assert.equal(student.p_feedback,null);
+ await result.api.saveDefense(id,2,'validate',{outline:'Change student content',talk_minutes:200,feedback:'Retorn'});
+ const tutor=JSON.parse(result.calls[2].body);assert.equal(tutor.p_feedback,'Retorn');assert.equal(tutor.p_outline,null);assert.equal(tutor.p_talk_minutes,null);assert.match(result.calls[2].url,/rpc.qc_defense_save$/);
+ assert.equal(result.calls[2].headers.Authorization,'Bearer test-token');
+});
+test('a private rehearsal rejects mismatched replies, conflicting revisions and anonymous access',async()=>{
+ const wrong=setup([{status:200,body:{project_id:'other',revision:4,status:'submitted'}}]);
+ await assert.rejects(wrong.api.defense(id),/confirmar la versió/);
+ const denied=setup([{status:403,body:{code:'42501',message:'sensitive internal error'}}]);
+ await assert.rejects(denied.api.defense(id),error=>error.code==='denied'&&!error.message.includes('sensitive'));
+ const conflict=setup([{status:400,body:{code:'40001'}}]);
+ await assert.rejects(conflict.api.saveDefense(id,1,'return',{feedback:'Ajustos'}),error=>error.code==='conflict');
+ const anon=setup([],null);await assert.rejects(anon.api.defense(id),error=>error.code==='denied');assert.equal(anon.calls.length,0);
+});
