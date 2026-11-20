@@ -6,7 +6,7 @@ const base = {
   work: {id:'f17bfd49-a1a8-48f4-809a-6b9df820034d', kind:'TR'},
   role:'student', isOwner:true, documents:[]
 };
-const tutor = {...base,role:'teacher',isOwner:false};
+const tutor = {...base,role:'teacher',isOwner:false,canEvaluate:true};
 const doc = 'f17bfd49-a1a8-48f4-809a-6b9df820034d--assaig.pptx';
 const rec = {status:'submitted',outline:'La pregunta inicial',questions:'Quina dada falta?',attachment:doc,talk_minutes:20,question_minutes:12};
 

@@ -24,7 +24,7 @@ do $$begin
  begin
   update public.qc_tasks set status='done',review_comment='Self approval' where id=current_setting('test.task')::uuid;
   raise exception 'FAIL self approval allowed';
- exception when raise_exception then if SQLERRM<>'Teacher review required' then raise; end if; end;
+ exception when insufficient_privilege then null; end;
  begin
   insert into public.qc_members(project_id,user_id,role) values(current_setting('test.project')::uuid,current_setting('test.student')::uuid,'teacher');
   raise exception 'FAIL self promotion allowed';

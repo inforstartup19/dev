@@ -14,10 +14,16 @@ select set_config('test.ai_s',gen_random_uuid()::text,true),
 insert into auth.users(id,email,email_confirmed_at)
  select current_setting('test.ai_'||k)::uuid,current_setting('test.ai_'||k)||'@example.test',now()
  from unnest(array['s','t','o']) k;
-insert into qc_private.pilot_invites(email,role,supervise_all) values
- (current_setting('test.ai_s')||'@example.test','student',false),
- (current_setting('test.ai_t')||'@example.test','teacher',true),
- (current_setting('test.ai_o')||'@example.test','student',false);
+insert into qc_private.pilot_invites(email,role) values
+ (current_setting('test.ai_s')||'@example.test','student'),
+ (current_setting('test.ai_t')||'@example.test','teacher'),
+ (current_setting('test.ai_o')||'@example.test','student');
+-- Operator fixture: this teacher evaluates only the selected student.
+insert into qc_private.university_assignments(institution_id,teacher_id,student_id,mode)
+select t.institution_id,t.person_id,s.person_id,'evaluate'
+from qc_private.pilot_invites t join qc_private.pilot_invites s using(institution_id)
+where t.email=current_setting('test.ai_t')||'@example.test'
+  and s.email=current_setting('test.ai_s')||'@example.test';
 set local role authenticated;
 select set_config('request.jwt.claim.sub',current_setting('test.ai_s'),true);
 select public.qc_accept_pilot();

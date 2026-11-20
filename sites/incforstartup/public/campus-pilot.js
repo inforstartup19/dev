@@ -9,6 +9,80 @@
  let feedback=null;
  // A rehearsal is scoped to the authorized project and to this account's in-memory session.
  let defense=null;
+ let homeNeedsRefresh=false,homeRequest=null;
+ // The directory is scoped to the current visit and never cached across accounts.
+ let universityView=null,canEvaluate=false;
+ const academicMember=()=>['student','teacher'].includes(member?.role);
+ const universityPage=()=>isPilot()&&Boolean(member?.institution?.id)&&(location.hash==='#campus-universitat'||member.role==='manager');
+ const inUniversity=view=>view===universityView&&view.generation===loadGeneration&&universityPage();
+ function universityPanel(){
+  if(!globalThis.CampusUniversity)return '<p role="alert">No hem pogut carregar la vista del centre. Recarrega la pàgina.</p>';
+  return CampusUniversity.render({institution:member.institution,role:member.role,loading:!universityView,...universityView});
+ }
+ function checkRoster(value){
+  if(!value||value.institution?.id!==member.institution.id||!Number.isSafeInteger(value.revision)||value.revision<0||
+   ![value.teachers,value.students,value.assignments].every(Array.isArray))throw Error('No hem pogut confirmar la llista actual del centre. Torna-la a carregar.');
+  return value;
+ }
+ async function readUniversity(){
+  if(!universityPage()||universityView?.loading||universityView?.saving)return;
+  const view={generation:loadGeneration,loading:true,saving:false,stale:false,error:'',notice:'',
+   roster:null,assignments:[],selectedTeacherId:universityView?.selectedTeacherId||''};
+  universityView=view;redraw();
+  try{
+   if(member.institution.can_manage===true){
+    const roster=await api.universityRoster();
+    if(inUniversity(view))view.roster=checkRoster(roster);
+   }else{
+    const rows=await api.myAssignments();
+    if(inUniversity(view)){
+     if(!Array.isArray(rows))throw Error('No hem pogut confirmar les teves assignacions.');
+     view.assignments=rows;
+    }
+   }
+  }catch(err){if(inUniversity(view))view.error=err.message;}
+  finally{if(inUniversity(view)){view.loading=false;redraw();}}
+ }
+ async function writeUniversity(form){
+  const view=universityView;
+  if(!view||!inUniversity(view)||member.institution.can_manage!==true||!view.roster||view.loading||view.saving||view.stale)return;
+  const {uniTeacher:teacher,uniStudent:student}=form.dataset;
+  const roster=view.roster;
+  if(!roster.teachers.some(row=>row.id===teacher)||!roster.students.some(row=>row.id===student))return;
+  const mode=new FormData(form).get('mode');
+  const current=roster.assignments.find(row=>row.teacher_id===teacher&&row.student_id===student)?.mode||'none';
+  if(!['none','supervise','evaluate'].includes(mode)||mode===current)return;
+  view.error='';view.notice='';view.saving=true;redraw();
+  try{
+   const result=await api.assignUniversity(teacher,student,mode,roster.revision);
+   if(!inUniversity(view))return;
+   const confirmed=checkRoster(result);
+   const stored=confirmed.assignments.find(row=>row.teacher_id===teacher&&row.student_id===student)?.mode||'none';
+   if(stored!==mode)throw Error('L’assignació ha canviat. Actualitza les dades del centre.');
+   view.roster=confirmed;view.notice=mode==='none'?'S’ha retirat l’assignació.':'Assignació desada a Quelcom.';
+   if(academicMember()){projects=[];homeNeedsRefresh=true;}
+  }catch(err){
+   if(!inUniversity(view))return;
+   view.error=err.message;
+   if(err.code==='denied'){view.roster=null;view.assignments=[];}
+   view.stale=err.code!=='invalid';
+  }finally{if(inUniversity(view)){view.saving=false;redraw();}}
+ }
+ document.addEventListener('change',ev=>{
+  if(!universityView||!inUniversity(universityView)||universityView.loading||universityView.saving)return;
+  if(ev.target.name==='university_teacher'&&universityView.roster?.teachers.some(row=>row.id===ev.target.value)){
+   universityView.selectedTeacherId=ev.target.value;universityView.notice='';redraw();
+   document.querySelector?.('[name="university_teacher"]')?.focus();
+  }else if(ev.target.name==='mode'&&ev.target.closest?.('.cu-assignment'))CampusUniversity.updateMode(ev.target);
+ });
+ document.addEventListener('submit',ev=>{
+  if(!ev.target.matches?.('.cu-assignment'))return;
+  ev.preventDefault();writeUniversity(ev.target);
+ });
+ document.addEventListener('click',ev=>{
+  if(ev.target.closest?.('[data-uni-refresh]')&&universityPage())readUniversity();
+ });
+
  const pendingDefenses=new Map();
  function hasProjectAccess(){
   return !!api&&!!account&&!!member&&!!work&&work.id===selected()&&loaded===work.id&&
@@ -36,7 +110,7 @@
   const notice=room.notice?`<p class="cp-success" role="status">${e(room.notice)}</p>`:'';
   return `<button type="button" class="cp-back" data-defense-close>Torna a la fitxa del treball</button>`+
    notice+comparison+globalThis.CampusDefense.render({work,role:member.role,isOwner:work.owner_id===account.id,record,
-    draft:room.draft,documents,busy:room.saving,loading:room.loading,error:room.error,
+    draft:room.draft,documents,canEvaluate,busy:room.saving,loading:room.loading,error:room.error,
     unavailable:!room.ready&&!room.loading,stale:room.stale});
  }
  async function readDefense(room){
@@ -74,7 +148,7 @@
   if(!room||!ownsDefense(room)||!room.ready||room.loading||room.saving||room.stale)return;
   const status=room.record?.status||'draft',teacher=member.role==='teacher',fields=defenseDraft(form);
   if(teacher){
-   if(form.id!=='cp-defense-teacher'||status!=='submitted'||!['return','validate'].includes(action))return;
+   if(!canEvaluate||form.id!=='cp-defense-teacher'||status!=='submitted'||!['return','validate'].includes(action))return;
   }else if(form.id!=='cp-defense-student'||status==='submitted'||!['save','submit'].includes(action)||(status==='rehearsed'&&action!=='save'))return;
   room.draft=fields;room.notice='';room.error='';
   if(teacher&&(!fields.feedback.trim()||fields.feedback.length>3000)){
@@ -135,8 +209,8 @@
  const maxAIBytes=10*1024*1024;
  let editorScope='campus';const editorCache=new Map();
  const selected=()=>location.hash.startsWith('#campus-treball/')?location.hash.split('/')[1]:null;
- const isPilot=()=>['#campus','#inici','#campus-biblioteca'].includes(location.hash)||location.hash.startsWith('#campus-treball/');
- function reset(){leaveDefense();pendingDefenses.clear();feedback=null;orientations.clear();loadGeneration++;api=null;member=null;account=null;booted=false;booting=false;busy=false;projects=[];feed=[];work=null;tasks=[];historyRows=[];projectRows=[];proposals=[];loaded='';loadingWork='';editor=null;draft=null;newProject=false;newTask=false;newExcerpt=false;notice='';error='';documents=[];pendingFile=null;fileId=null;editorCache.clear();editorScope='campus';documentReviews=[];reviewError='';aiAvailability=null;aiStatusError='';aiDraft=null;uploadProgress=null;analysisDrafts.clear();}
+ const isPilot=()=>['#campus','#inici','#campus-biblioteca','#campus-universitat'].includes(location.hash)||location.hash.startsWith('#campus-treball/');
+ function reset(){universityView=null;canEvaluate=false;homeNeedsRefresh=false;homeRequest=null;clearProjectRoutes();leaveDefense();pendingDefenses.clear();feedback=null;orientations.clear();loadGeneration++;api=null;member=null;account=null;booted=false;booting=false;busy=false;projects=[];feed=[];work=null;tasks=[];historyRows=[];projectRows=[];proposals=[];loaded='';loadingWork='';editor=null;draft=null;newProject=false;newTask=false;newExcerpt=false;notice='';error='';documents=[];pendingFile=null;fileId=null;editorCache.clear();editorScope='campus';documentReviews=[];reviewError='';aiAvailability=null;aiStatusError='';aiDraft=null;uploadProgress=null;analysisDrafts.clear();}
  document.addEventListener('quelcom-account-change',reset);
  function redraw(){if(isPilot())render();}
  async function boot(){if(booting||booted)return;booting=true;const generation=loadGeneration;try{
@@ -144,20 +218,30 @@
   const service=CampusPilotAPI.create({config:QuelcomAuthConfig,token:()=>auth.accessToken(),storage:auth.storageClient(),userId:user.id});
   const membership=await service.enroll();if(generation!==loadGeneration)return;
   api=service;account=user;member=membership;
-  if(member){const [p,f]=await Promise.all([api.projects(),api.library()]);if(generation!==loadGeneration)return;projects=p;feed=f;registerProjects();}
-  booted=true;if(member)refreshAI();
+  if(academicMember()){const [p,f]=await Promise.all([api.projects(),api.library()]);if(generation!==loadGeneration)return;projects=p;feed=f;registerProjects();}
+  booted=true;if(academicMember())refreshAI();
  }catch(err){if(generation===loadGeneration){error=err.message;booted=true;}}finally{if(generation===loadGeneration){booting=false;redraw();}}}
- function registerProjects(){for(const p of projects)routes['campus-treball/'+p.id]=[p.title,page];}
+ function clearProjectRoutes(){for(const key of Object.keys(routes))if(key.startsWith('campus-treball/'))delete routes[key];}
+ function registerProjects(){clearProjectRoutes();for(const p of projects)routes['campus-treball/'+p.id]=[p.title,page];}
+ async function refreshHome(){
+  if(!homeNeedsRefresh||homeRequest||!academicMember()||selected()||universityPage())return;
+  const request={service:api,generation:loadGeneration};homeRequest=request;homeNeedsRefresh=false;
+  try{
+   const rows=await request.service.projects();
+   if(homeRequest===request&&request.generation===loadGeneration){projects=rows;registerProjects();}
+  }catch(err){if(homeRequest===request){projects=[];error=err.message;}}
+  finally{if(homeRequest===request){homeRequest=null;redraw();}}
+ }
  async function loadWork(id,force=false){if(loadingWork===id||(!force&&loaded===id))return;loadingWork=id;const generation=loadGeneration;try{
-  CampusPilotAPI.uuid(id);const [p,t,h,ph,l,d,reviews]=await Promise.all([api.project(id),api.tasks(id),api.history(id),api.projectHistory(id),api.proposals(id),api.documents(id),api.documentReviews(id).then(rows=>({rows})).catch(err=>({error:err.message}))]);
+  CampusPilotAPI.uuid(id);const [p,t,h,ph,l,d,reviews,evaluator]=await Promise.all([api.project(id),api.tasks(id),api.history(id),api.projectHistory(id),api.proposals(id),api.documents(id),api.documentReviews(id).then(rows=>({rows})).catch(err=>({error:err.message})),member.role==='teacher'?api.canEvaluate(id).catch(()=>false):false]);
   if(generation!==loadGeneration||selected()!==id)return;
-  if(!p)throw Error('Aquest treball no existeix o no hi tens accés.');work=p;tasks=t;historyRows=h;projectRows=ph;proposals=l;documents=d;documentReviews=reviews.rows||[];reviewError=reviews.error||'';loaded=id;error='';
- }catch(err){if(generation===loadGeneration&&selected()===id){work=null;tasks=[];proposals=[];documents=[];documentReviews=[];reviewError='';historyRows=[];projectRows=[];loaded=id;error=err.message;}}finally{if(generation===loadGeneration){loadingWork='';redraw();}}}
+  if(!p)throw Error('Aquest treball no existeix o no hi tens accés.');work=p;canEvaluate=evaluator===true;tasks=t;historyRows=h;projectRows=ph;proposals=l;documents=d;documentReviews=reviews.rows||[];reviewError=reviews.error||'';loaded=id;error='';
+ }catch(err){if(generation===loadGeneration&&selected()===id){work=null;canEvaluate=false;tasks=[];proposals=[];documents=[];documentReviews=[];reviewError='';historyRows=[];projectRows=[];loaded=id;error=err.message;}}finally{if(generation===loadGeneration){loadingWork='';redraw();}}}
  const requiredMark='<span class="required-mark" aria-hidden="true">*</span>';
  const fieldLabel=(label,required)=>`<span>${label}${required?' '+requiredMark:''}</span>`;
  const input=(key,label,values,max=180,type='text',required=false)=>`<label>${fieldLabel(label,required)}<input type="${type}" name="${key}" maxlength="${max}" ${required?'required':''} value="${e(values[key])}"></label>`;
  const area=(key,label,values,max=6000,required=false)=>`<label>${fieldLabel(label,required)}<textarea name="${key}" maxlength="${max}" rows="4" ${required?'required':''}>${e(values[key])}</textarea></label>`;
- function frame(content){return `<div id="cp-root" class="cp-shell"><nav class="cp-nav" aria-label="Campus"><a href="#campus" class="cp-brand">quelcom <span>CAMPUS</span></a><div><a href="#campus">Els treballs</a><a href="#campus-biblioteca">Biblioteca del pilot</a><a href="#login">El meu compte</a></div></nav><div class="cp-meta"><span>PILOT REAL · TFG / TFM / TR</span><span>${member?e(member.role==='teacher'?'Docent assignat':'Estudiant'):'Accés per invitació'}</span></div>${error?`<p class="cp-alert" role="alert">${e(error)}</p>`:''}${notice?`<p class="cp-success" role="status">${e(notice)}</p>`:''}${content}<footer class="cp-footer">${member?'Treball privat a Quelcom. Només l’autoria i els docents assignats el poden consultar.':'Identifica’t amb el correu autoritzat al pilot.'} Les fitxes de biblioteca es comparteixen separadament i no s’utilitzen automàticament per entrenar IA.</footer></div>`;}
+ function frame(content){return `<div id="cp-root" class="cp-shell"><nav class="cp-nav" aria-label="Campus"><a href="#campus" class="cp-brand">quelcom <span>CAMPUS</span></a><div>${member?.role==='manager'?'':'<a href="#campus">Els treballs</a><a href="#campus-biblioteca">Biblioteca del pilot</a>'}${member?.institution?.id?`<a href="#campus-universitat">${e(member.institution.name)}</a>`:''}<a href="#login">El meu compte</a></div></nav><div class="cp-meta"><span>PILOT REAL · TFG / TFM / TR</span><span>${member?e(({teacher:'Docent assignat',student:'Estudiant',manager:'Gestor d’universitat'})[member.role]||'Participant'):'Accés per invitació'}</span></div>${error?`<p class="cp-alert" role="alert">${e(error)}</p>`:''}${notice?`<p class="cp-success" role="status">${e(notice)}</p>`:''}${content}<footer class="cp-footer">${member?'Treball privat a Quelcom. Només l’autoria i els docents assignats el poden consultar.':'Identifica’t amb el correu autoritzat al pilot.'} Les fitxes de biblioteca es comparteixen separadament i no s’utilitzen automàticament per entrenar IA.</footer></div>`;}
  function orientationState(key,kind,project){
   if(!orientations.has(key)){
    orientations.set(key,{flow:guidance.start(kind,project?.orientation_route,firstTaskTitle(project)),
@@ -283,7 +367,7 @@
   document.querySelector?.('#cp-feedback textarea')?.focus();
  }
  function submitFeedback(form){
-  if(busy||!feedback||member?.role!=='teacher'||selected()!==feedback.projectId)return;
+  if(busy||!feedback||!canEvaluate||member?.role!=='teacher'||selected()!==feedback.projectId)return;
   feedback.comment=String(new FormData(form).get('comment')||'').trim();
   if(!feedback.comment){error='Escriu el comentari de revisió.';redraw();document.querySelector?.('#cp-feedback textarea')?.focus();return;}
   const entry=feedback,service=api,generation=loadGeneration;
@@ -299,18 +383,20 @@
    }
   });
  }
- function detail(){if(loaded!==selected())return '<p role="status">Recuperant el teu treball…</p>';if(!work)return '<p><a href="#campus">Torna als treballs</a></p>';if(defense&&ownsDefense(defense))return defensePanel();const owner=work.owner_id===account.id;return `<a href="#campus" class="cp-back">Tots els treballs</a><header class="cp-hero"><span>${e(work.kind)} · TREBALL PRIVAT</span><h1>${e(work.title)}</h1><p>${e(work.university)}${work.degree?' · '+e(work.degree):''}</p><small>Desat ${e(new Date(work.updated_at).toLocaleString('ca'))} · versió ${work.revision+1}</small></header><div class="cp-actions"><button data-cp="edit-project">Edita la fitxa</button>${hasProjectAccess()&&globalThis.CampusDefense?'<button type="button" data-defense-open>Espai de presentacions</button>':''}<button data-cp="new-task">Afegeix una tasca</button><button data-cp="reload">Recupera la darrera versió</button>${owner?'<button data-cp="new-excerpt">Proposa un aprenentatge</button>':''}</div>${academicGuide(work.kind)}${detailOrientation()}${editor==='project'?projectForm():`<section class="cp-card cp-brief"><h2>La idea i el proper pas</h2><h3>Objectiu</h3><p>${e(work.objective||'Encara per concretar')}</p><h3>Mètode</h3><p>${e(work.methodology||'Encara per concretar')}</p><h3>Propera acció</h3><p>${e(work.next_step||'Encara per concretar')}</p></section>`}${newTask||(editor&&editor!=='project')?taskForm():''}<h2>Les tasques del treball</h2><p>Afegeix les tasques que siguin útils per a aquest treball, al teu ritme.</p><div class="cp-task-grid">${[...tasks].sort((a,b)=>Number(b.id===work.orientation_task_id)-Number(a.id===work.orientation_task_id)).map(t=>`<article class="cp-card"><span class="cp-status">${labels[t.status]}</span><h3>${e(t.title)}</h3><p>${e(t.why)}</p><details><summary>Com ho treballarem</summary><p>${e(t.how)}</p><h4>Entrega</h4><p>${e(t.deliverable||'Per acordar')}</p><h4>Criteris</h4><p>${e(t.criteria||'Per acordar')}</p><p>${e(t.owner_label)} ${e(t.due||'')}</p></details>${t.blocker?`<p class="cp-alert">${e(t.blocker)}</p>`:''}${t.review_comment?`<p class="cp-feedback"><b>Retorn docent</b><br>${e(t.review_comment)}</p>`:''}<div class="cp-actions">${!['review','done'].includes(t.status)?`<button data-cp-edit="${t.id}">Edita</button>`:''}${({prepare:[['active','Comença']],active:[['review','Demana revisió']],revise:[['active','Reprèn']],review:member.role==='teacher'?[['revise','Demana ajustos'],['done','Marca revisada']]:[],done:member.role==='teacher'?[['revise','Reobre']]:[]})[t.status].map(([s,label])=>`<button data-cp-move="${t.id}" data-status="${s}">${label}</button>`).join('')}</div>${feedbackForm('task',t.id)}</article>`).join('')||'<p class="cp-empty">Encara no hi ha tasques. Pots començar per la fitxa i afegir-ne després.</p>'}</div>${documentPanel()}${newExcerpt?excerptForm():''}<section class="cp-section"><h2>Aprenentatges per a la biblioteca</h2>${proposals.map(l=>`<article class="cp-card"><span>${e(({pending:'Pendent de revisió',published:'Compartit amb el pilot',changes:'Cal ajustar',withdrawn:'Retirat'})[l.status])}</span><h3>${e(l.title)}</h3><p>${e(l.summary)}</p><p>${e(l.learning)}</p>${l.review_comment?`<p class="cp-feedback">${e(l.review_comment)}</p>`:''}<div class="cp-actions">${owner&&l.status!=='withdrawn'?`<button data-cp-withdraw="${l.id}">Retira l’extracte</button>`:''}${member.role==='teacher'&&l.status==='pending'?`<button data-cp-review="${l.id}" data-status="published">Aprova per a la biblioteca</button><button data-cp-review="${l.id}" data-status="changes">Demana ajustos</button>`:''}</div>${feedbackForm('excerpt',l.id)}</article>`).join('')||'<p>El treball és privat. Encara no se n’ha proposat cap extracte.</p>'}</section><details class="cp-section"><summary>Historial del treball i de les tasques</summary>${projectRows.map(r=>`<p>${e(new Date(r.happened_at).toLocaleString('ca'))} · ${r.actor_role==='teacher'?'Docent':'Estudiant'} · Fitxa v${r.snapshot.revision+1}: ${e(r.snapshot.title)}</p>`).join('')}${historyRows.map(r=>`<p>${e(new Date(r.happened_at).toLocaleString('ca'))} · ${r.actor_role==='teacher'?'Docent':'Estudiant'} · ${e(r.after_state.title)} · ${e(labels[r.after_state.status])}</p>`).join('')}</details>`;}
+ function detail(){if(loaded!==selected())return '<p role="status">Recuperant el teu treball…</p>';if(!work)return '<p><a href="#campus">Torna als treballs</a></p>';if(defense&&ownsDefense(defense))return defensePanel();const owner=work.owner_id===account.id;return `<a href="#campus" class="cp-back">Tots els treballs</a><header class="cp-hero"><span>${e(work.kind)} · TREBALL PRIVAT</span><h1>${e(work.title)}</h1><p>${e(work.university)}${work.degree?' · '+e(work.degree):''}</p><small>Desat ${e(new Date(work.updated_at).toLocaleString('ca'))} · versió ${work.revision+1}</small></header><div class="cp-actions"><button data-cp="edit-project">Edita la fitxa</button>${hasProjectAccess()&&globalThis.CampusDefense?'<button type="button" data-defense-open>Espai de presentacions</button>':''}<button data-cp="new-task">Afegeix una tasca</button><button data-cp="reload">Recupera la darrera versió</button>${owner?'<button data-cp="new-excerpt">Proposa un aprenentatge</button>':''}</div>${academicGuide(work.kind)}${detailOrientation()}${editor==='project'?projectForm():`<section class="cp-card cp-brief"><h2>La idea i el proper pas</h2><h3>Objectiu</h3><p>${e(work.objective||'Encara per concretar')}</p><h3>Mètode</h3><p>${e(work.methodology||'Encara per concretar')}</p><h3>Propera acció</h3><p>${e(work.next_step||'Encara per concretar')}</p></section>`}${newTask||(editor&&editor!=='project')?taskForm():''}<h2>Les tasques del treball</h2><p>Afegeix les tasques que siguin útils per a aquest treball, al teu ritme.</p><div class="cp-task-grid">${[...tasks].sort((a,b)=>Number(b.id===work.orientation_task_id)-Number(a.id===work.orientation_task_id)).map(t=>`<article class="cp-card"><span class="cp-status">${labels[t.status]}</span><h3>${e(t.title)}</h3><p>${e(t.why)}</p><details><summary>Com ho treballarem</summary><p>${e(t.how)}</p><h4>Entrega</h4><p>${e(t.deliverable||'Per acordar')}</p><h4>Criteris</h4><p>${e(t.criteria||'Per acordar')}</p><p>${e(t.owner_label)} ${e(t.due||'')}</p></details>${t.blocker?`<p class="cp-alert">${e(t.blocker)}</p>`:''}${t.review_comment?`<p class="cp-feedback"><b>Retorn docent</b><br>${e(t.review_comment)}</p>`:''}<div class="cp-actions">${!['review','done'].includes(t.status)?`<button data-cp-edit="${t.id}">Edita</button>`:''}${({prepare:[['active','Comença']],active:[['review','Demana revisió']],revise:[['active','Reprèn']],review:canEvaluate?[['revise','Demana ajustos'],['done','Marca revisada']]:[],done:canEvaluate?[['revise','Reobre']]:[]})[t.status].map(([s,label])=>`<button data-cp-move="${t.id}" data-status="${s}">${label}</button>`).join('')}</div>${feedbackForm('task',t.id)}</article>`).join('')||'<p class="cp-empty">Encara no hi ha tasques. Pots començar per la fitxa i afegir-ne després.</p>'}</div>${documentPanel()}${newExcerpt?excerptForm():''}<section class="cp-section"><h2>Aprenentatges per a la biblioteca</h2>${proposals.map(l=>`<article class="cp-card"><span>${e(({pending:'Pendent de revisió',published:'Compartit amb el pilot',changes:'Cal ajustar',withdrawn:'Retirat'})[l.status])}</span><h3>${e(l.title)}</h3><p>${e(l.summary)}</p><p>${e(l.learning)}</p>${l.review_comment?`<p class="cp-feedback">${e(l.review_comment)}</p>`:''}<div class="cp-actions">${owner&&l.status!=='withdrawn'?`<button data-cp-withdraw="${l.id}">Retira l’extracte</button>`:''}${canEvaluate&&l.status==='pending'?`<button data-cp-review="${l.id}" data-status="published">Aprova per a la biblioteca</button><button data-cp-review="${l.id}" data-status="changes">Demana ajustos</button>`:''}</div>${feedbackForm('excerpt',l.id)}</article>`).join('')||'<p>El treball és privat. Encara no se n’ha proposat cap extracte.</p>'}</section><details class="cp-section"><summary>Historial del treball i de les tasques</summary>${projectRows.map(r=>`<p>${e(new Date(r.happened_at).toLocaleString('ca'))} · ${r.actor_role==='teacher'?'Docent':'Estudiant'} · Fitxa v${r.snapshot.revision+1}: ${e(r.snapshot.title)}</p>`).join('')}${historyRows.map(r=>`<p>${e(new Date(r.happened_at).toLocaleString('ca'))} · ${r.actor_role==='teacher'?'Docent':'Estudiant'} · ${e(r.after_state.title)} · ${e(labels[r.after_state.status])}</p>`).join('')}</details>`;}
  function library(){return `<header class="cp-hero"><span>CONEIXEMENT COMPARTIT</span><h1>Biblioteca del pilot</h1><p>Extractes autoritzats per l’autoria i revisats pel docent. Els treballs complets continuen privats.</p></header><button data-cp="reload">Actualitza</button><div class="cp-projects">${feed.map(l=>`<article class="cp-card"><span>${e(l.kind)} · CAS REAL DEL PILOT</span><h2>${e(l.title)}</h2><p>${e(l.summary)}</p><h3>Què n’hem après</h3><p>${e(l.learning)}</p></article>`).join('')||'<section class="cp-empty"><h2>El primer aprenentatge està per arribar</h2><p>Des del treball, l’estudiant pot proposar un extracte. El docent el revisa abans de publicar-lo aquí.</p></section>'}</div>`;}
- function page(){if(!booted)return frame('<p role="status">Connectant amb el teu Campus…</p>');if(!member)return frame(`<header class="cp-hero"><h1>El teu accés al pilot</h1><p>${e(account?.email||'No hem pogut comprovar el compte.')}</p><p>${error?'Torna a comprovar la connexió.':'Aquest compte encara no té una invitació activa. Comunica aquest correu al coordinador perquè et doni d’alta com a estudiant o docent.'}</p></header><button data-cp="reload">Comprova l’accés</button> <a href="#login">Canvia de compte</a>`);return frame(location.hash==='#campus-biblioteca'?library():selected()?detail():home());}
- routes.campus=['Campus · Pilot real',page];routes.inici=routes.campus;routes['campus-biblioteca']=['Biblioteca del pilot',page];
+ function page(){if(!booted)return frame('<p role="status">Connectant amb el teu Campus…</p>');if(!member)return frame(`<header class="cp-hero"><h1>El teu accés al pilot</h1><p>${e(account?.email||'No hem pogut comprovar el compte.')}</p><p>${error?'Torna a comprovar la connexió.':'Aquest compte encara no té una invitació activa. Comunica aquest correu al coordinador perquè et doni d’alta com a estudiant o docent.'}</p></header><button data-cp="reload">Comprova l’accés</button> <a href="#login">Canvia de compte</a>`);if(universityPage())return frame(universityPanel());
+  if(!academicMember()||location.hash==='#campus-universitat')return frame('<p>El compte no té cap centre assignat.</p>');
+  return frame(location.hash==='#campus-biblioteca'?library():selected()?detail():home());}
+ routes['campus-universitat']=['La meva universitat',page];routes.campus=['Campus · Pilot real',page];routes.inici=routes.campus;routes['campus-biblioteca']=['Biblioteca del pilot',page];
  function capture(form){const f=new FormData(form);draft={form:form.id.replace('cp-',''),values:Object.fromEntries(f),id:draft?.id||crypto.randomUUID(),revision:draft?.revision??(form.id==='cp-project'?work?.revision:tasks.find(t=>t.id===editor)?.revision)};if(form.id==='cp-excerpt')draft.values.consent=f.has('consent');}
  const discard=()=>!draft||confirm('Hi ha text pendent de desar. Vols sortir sense desar-lo?');
  function closeEditors(){editorCache.delete(editorScope);editor=null;draft=null;newProject=false;newTask=false;newExcerpt=false;}
  document.addEventListener('input',ev=>{if(feedback&&ev.target.closest?.('#cp-feedback')){feedback.comment=ev.target.value;return;}const analysis=ev.target.closest?.('#cp-analysis');if(analysis){captureAnalysis(analysis);return;}const f=ev.target.closest?.('#cp-project,#cp-task,#cp-excerpt');if(f)capture(f);});
  document.addEventListener('change',ev=>{const analysis=ev.target.closest?.('#cp-analysis');if(analysis){captureAnalysis(analysis);return;}if(ev.target.id==='cp-file'){if(busy||!canAttach())return;uploadProgress=null;pendingFile=ev.target.files?.[0]||null;fileId=crypto.randomUUID();redraw();return;}const f=ev.target.closest?.('#cp-project,#cp-task,#cp-excerpt');if(f)capture(f);});
- document.addEventListener('click',ev=>{if(!isPilot())return;const link=ev.target.closest?.('a[href^="#"]');if(link&&(busy||defense?.saving)){ev.preventDefault();ev.stopImmediatePropagation();return;}if(link&&feedback?.comment&&!confirm('Vols sortir sense desar el comentari de revisió?')){ev.preventDefault();ev.stopImmediatePropagation();return;}if(link&&draft){if(!discard()){ev.preventDefault();ev.stopImmediatePropagation();}else closeEditors();}},true);
- window.addEventListener('beforeunload',ev=>{if(draft||feedback?.comment||defense?.draft||defense?.saving||pendingDefenses.size||aiDraft||pendingFile||busy||[...orientations.values()].some(s=>s.dirty)||analysisDrafts.size||[...editorCache.values()].some(v=>v.draft)){ev.preventDefault();ev.returnValue='';}});
- async function mutate(action,message='Canvis desats a Quelcom.'){if(busy||!api||!member)return;const generation=loadGeneration;busy=true;error='';notice='';try{const outcome=await action();if(outcome!==false&&generation===loadGeneration)notice=message;}catch(err){if(generation===loadGeneration)error=err.message;}finally{if(generation===loadGeneration){busy=false;redraw();}}}
+ document.addEventListener('click',ev=>{if(!isPilot())return;const link=ev.target.closest?.('a[href^="#"]');if(link&&(busy||defense?.saving||universityView?.saving)){ev.preventDefault();ev.stopImmediatePropagation();return;}if(link&&feedback?.comment&&!confirm('Vols sortir sense desar el comentari de revisió?')){ev.preventDefault();ev.stopImmediatePropagation();return;}if(link&&draft){if(!discard()){ev.preventDefault();ev.stopImmediatePropagation();}else closeEditors();}},true);
+ window.addEventListener('beforeunload',ev=>{if(draft||feedback?.comment||defense?.draft||defense?.saving||universityView?.saving||pendingDefenses.size||aiDraft||pendingFile||busy||[...orientations.values()].some(s=>s.dirty)||analysisDrafts.size||[...editorCache.values()].some(v=>v.draft)){ev.preventDefault();ev.returnValue='';}});
+ async function mutate(action,message='Canvis desats a Quelcom.'){if(busy||!api||!academicMember())return;const generation=loadGeneration;busy=true;error='';notice='';try{const outcome=await action();if(outcome!==false&&generation===loadGeneration)notice=message;}catch(err){if(generation===loadGeneration)error=err.message;}finally{if(generation===loadGeneration){busy=false;redraw();}}}
  document.addEventListener('submit',ev=>{if(ev.target.id==='cp-feedback'){ev.preventDefault();submitFeedback(ev.target);return;}if(ev.target.id==='cp-analysis'){ev.preventDefault();if(busy||!aiDraft||!work)return;if(tooLargeForAI(aiDraft.storageName)){error='La revisió assistida admet documents de fins a 10 MB. Adjunta un extracte o una versió reduïda.';redraw();return;}captureAnalysis(ev.target);const id=work.id,generation=loadGeneration,request={...aiDraft};mutate(async()=>{const review=await api.analyzeDocument(id,request.storageName,request.requestId,request.question,request.consent);if(generation!==loadGeneration)return;if(selected()===id){documentReviews=[review,...documentReviews.filter(r=>r.id!==review.id)];if(review.status==='completed'){aiDraft=null;analysisDrafts.delete(id);}if(review.status==='failed')throw Error('L’anàlisi no s’ha completat. Conservem la pregunta i el document per revisar-los.');}},'Petició confirmada. Consulta l’estat i les propostes a l’apartat de revisió.');redraw();return;}if(ev.target.id==='cp-upload'){ev.preventDefault();if(busy||!canAttach())return;if(!pendingFile){error='Selecciona un document per adjuntar-lo.';redraw();return;}const id=work.id,generation=loadGeneration,file=pendingFile,uploadId=fileId;const current=()=>generation===loadGeneration&&selected()===id&&pendingFile===file&&fileId===uploadId;uploadProgress={loaded:0,total:file?.size||0,percent:0,status:'preparing'};mutate(async()=>{try{await api.uploadDocument(id,file,uploadId,progress=>{if(!current())return;const total=Math.max(0,Number(progress.total)||file?.size||0),loaded=Math.max(0,Math.min(total,Number(progress.loaded)||0)),percent=Math.max(0,Math.min(100,Math.round(Number(progress.percent)||0)));const previous=uploadProgress?.percent;uploadProgress={loaded,total,percent,status:'uploading'};if(previous!==percent)paintUploadProgress();});}catch(err){if(!current())return false;uploadProgress={...uploadProgress,status:'interrupted'};throw err;}if(!current())return false;pendingFile=null;fileId=null;uploadProgress=null;await loadWork(id,true);},'Document privat desat a Quelcom.');redraw();return;}if(!['cp-project','cp-task','cp-excerpt'].includes(ev.target.id))return;ev.preventDefault();capture(ev.target);const f=draft,projectId=work?.id,projectKind=work?.kind,taskId=editor,creatingProject=newProject,creatingTask=newTask;mutate(async()=>{
   const v=f.values;
   const generation=loadGeneration,service=api;
@@ -384,12 +470,12 @@
   if(b.dataset.cpMove){
    const projectId=work.id,t=tasks.find(x=>x.id===b.dataset.cpMove);if(!t)return;
    const status=b.dataset.status;
-   if(['done','revise'].includes(status)){if(member.role==='teacher')openFeedback('task',t,status);return;}
+   if(['done','revise'].includes(status)){if(member.role==='teacher'&&canEvaluate)openFeedback('task',t,status);return;}
    mutate(async()=>{await api.saveTask(t.id,t.revision,{status});await loadWork(projectId,true);});
   }
   if(b.dataset.cpReview){
    const proposal=proposals.find(x=>x.id===b.dataset.cpReview);
-   if(proposal&&member.role==='teacher')openFeedback('excerpt',proposal,b.dataset.status);
+   if(proposal&&member.role==='teacher'&&canEvaluate)openFeedback('excerpt',proposal,b.dataset.status);
    return;
   }
   if(b.dataset.cpWithdraw){
@@ -401,15 +487,25 @@
  render=function(){
   let key=location.hash.slice(1);
   // This release exposes only Campus to the pilot, including manually entered old URLs.
-  if(key&&!['entrada','login','espai','campus','inici','campus-biblioteca'].includes(key)&&!/^campus-treball\/[0-9a-f-]{36}$/i.test(key)){history.replaceState(null,'','#campus');key='campus';}
+  if(key&&!['entrada','login','espai','campus','inici','campus-biblioteca','campus-universitat'].includes(key)&&!/^campus-treball\/[0-9a-f-]{36}$/i.test(key)){history.replaceState(null,'','#campus');key='campus';}
   if(key.startsWith('campus-treball/'))routes[key]=['Treball acadèmic',page];
-  const nextScope=selected()||key;if(nextScope!==editorScope){leaveDefense(true);feedback=null;pendingFile=null;fileId=null;uploadProgress=null;if(aiDraft)analysisDrafts.set(editorScope,aiDraft);else analysisDrafts.delete(editorScope);aiDraft=analysisDrafts.get(nextScope)||null;if(draft)editorCache.set(editorScope,{editor,draft,newProject,newTask,newExcerpt});({editor=null,draft=null,newProject=false,newTask=false,newExcerpt=false}=editorCache.get(nextScope)||{});editorScope=nextScope;}
+  const nextScope=selected()||key;if(nextScope!==editorScope){leaveDefense(true);
+   if(universityView&&!universityPage())universityView=null;
+   if(loaded&&loaded!==selected()){loaded='';work=null;canEvaluate=false;}
+   feedback=null;pendingFile=null;fileId=null;uploadProgress=null;if(aiDraft)analysisDrafts.set(editorScope,aiDraft);else analysisDrafts.delete(editorScope);aiDraft=analysisDrafts.get(nextScope)||null;if(draft)editorCache.set(editorScope,{editor,draft,newProject,newTask,newExcerpt});({editor=null,draft=null,newProject=false,newTask=false,newExcerpt=false}=editorCache.get(nextScope)||{});editorScope=nextScope;}
   previous();document.body.classList.toggle('cp-active',isPilot());
   if(defense)globalThis.CampusDefense?.syncTimer();
   if(['login','espai'].includes(key))document.querySelectorAll('.qu-space-switch').forEach(x=>x.remove());
-  if(isPilot()){document.querySelectorAll('.qu-space-switch,.dimension-guide').forEach(x=>x.remove());if(document.getElementById('cp-root')){boot();if(member&&selected()&&loaded!==selected())loadWork(selected());}}
+  if(isPilot()){document.querySelectorAll('.qu-space-switch,.dimension-guide').forEach(x=>x.remove());if(document.getElementById('cp-root')){boot();if(booted&&universityPage()){if(!universityView)readUniversity();}else if(academicMember()){if(selected()&&loaded!==selected())loadWork(selected());else refreshHome();}}}
  };
  // Visibility rechecks authorization without overwriting an unsaved form.
- document.addEventListener('visibilitychange',async()=>{if(document.hidden||!api||!member||busy)return;try{if(!await api.enroll()){reset();error='L’accés al pilot ha canviat. Torna a comprovar la invitació.';booted=true;redraw();}}catch{notice='No hem pogut comprovar la connexió. Conserva el text pendent abans de sortir.';}});
+ document.addEventListener('visibilitychange',async()=>{if(document.hidden||!api||!member||busy)return;try{const service=api,generation=loadGeneration,current=await service.enroll();
+   if(generation!==loadGeneration||api!==service)return;
+   if(!current||current.role!==member.role||current.institution?.id!==member.institution?.id||current.institution?.can_manage!==member.institution?.can_manage){reset();redraw();return;}
+   if(universityPage())await readUniversity();
+   else if(academicMember()&&member.role==='teacher'){
+    if(selected())await loadWork(selected(),true);
+    else{homeNeedsRefresh=true;await refreshHome();}
+   }}catch{notice='No hem pogut comprovar la connexió. Conserva el text pendent abans de sortir.';}});
  render();
 })();

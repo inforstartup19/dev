@@ -1,7 +1,13 @@
 begin;
 select set_config('test.s',gen_random_uuid()::text,true),set_config('test.t',gen_random_uuid()::text,true),set_config('test.o',gen_random_uuid()::text,true),set_config('test.n',gen_random_uuid()::text,true),set_config('test.p',gen_random_uuid()::text,true),set_config('test.task',gen_random_uuid()::text,true),set_config('test.l',gen_random_uuid()::text,true);
 insert into auth.users(id,email,email_confirmed_at) select current_setting('test.'||k)::uuid,current_setting('test.'||k)||'@example.test',now() from unnest(array['s','t','o','n']) k;
-insert into qc_private.pilot_invites(email,role,supervise_all) values(current_setting('test.s')||'@example.test','student',false),(current_setting('test.t')||'@example.test','teacher',true),(current_setting('test.o')||'@example.test','student',false);
+insert into qc_private.pilot_invites(email,role) values(current_setting('test.s')||'@example.test','student'),(current_setting('test.t')||'@example.test','teacher'),(current_setting('test.o')||'@example.test','student');
+-- Operator fixture: this teacher evaluates only the selected student.
+insert into qc_private.university_assignments(institution_id,teacher_id,student_id,mode)
+select t.institution_id,t.person_id,s.person_id,'evaluate'
+from qc_private.pilot_invites t join qc_private.pilot_invites s using(institution_id)
+where t.email=current_setting('test.t')||'@example.test'
+  and s.email=current_setting('test.s')||'@example.test';
 set local role authenticated;
 select set_config('request.jwt.claim.sub',current_setting('test.n'),true);
 do $$begin if public.qc_accept_pilot() is not null then raise exception 'FAIL uninvited enrollment';end if;end $$;
@@ -18,8 +24,8 @@ insert into public.qc_tasks(id,project_id,title,deliverable,criteria) values(cur
 update public.qc_tasks set status='active' where id=current_setting('test.task')::uuid;
 update public.qc_tasks set status='review' where id=current_setting('test.task')::uuid;
 do $$begin
- begin update public.qc_tasks set review_comment='Forged review' where id=current_setting('test.task')::uuid;raise exception 'FAIL forged review';exception when raise_exception then if SQLERRM<>'Teacher review required' then raise;end if;end;
- begin update public.qc_tasks set status='done',review_comment='Self approval' where id=current_setting('test.task')::uuid;raise exception 'FAIL self approval';exception when raise_exception then if SQLERRM<>'Teacher review required' then raise;end if;end;
+ begin update public.qc_tasks set review_comment='Forged review' where id=current_setting('test.task')::uuid;raise exception 'FAIL forged review';exception when insufficient_privilege then null;end;
+ begin update public.qc_tasks set status='done',review_comment='Self approval' where id=current_setting('test.task')::uuid;raise exception 'FAIL self approval';exception when insufficient_privilege then null;end;
 end $$;
 insert into public.qc_learning_proposals(id,project_id,owner_id,kind,title,summary,learning,consent) values(current_setting('test.l')::uuid,current_setting('test.p')::uuid,auth.uid(),'TR','Safe excerpt','Anonymized summary','Reusable learning',true);
 select set_config('request.jwt.claim.sub',current_setting('test.t'),true);

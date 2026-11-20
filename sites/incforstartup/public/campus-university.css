@@ -1,0 +1,48 @@
+#cp-root .cu-space { --cu-line: #30495e; --cu-muted: #b3c9d8; max-width: 62rem; margin: 1.5rem auto; color: #eff7fc; }
+#cp-root .cu-header { padding: clamp(1.35rem, 4vw, 2.8rem); display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; border: 1px solid #335668; border-radius: 1.3rem; background: radial-gradient(ellipse at top right,#214754,transparent 60%),linear-gradient(120deg,#152b3d,#101f2d); }
+#cp-root .cu-header h1 { font-size: clamp(1.85rem,4vw,3.1rem); line-height: 1.12; letter-spacing: -.035em; margin: .35rem 0 .75rem; overflow-wrap: anywhere; }
+#cp-root .cu-header p, #cp-root .cu-panel p { color: var(--cu-muted); line-height: 1.55; margin: .4rem 0; }
+#cp-root .cu-header .cu-role { color: #a2e2df; font-size: .875rem; font-weight: 650; }
+#cp-root .cu-header>div:first-child { max-width: 37rem; min-width: 0; }
+#cp-root .cu-columns { flex: none; display: flex; align-items: end; justify-content: center; gap: .48rem; width: 4.25rem; height: 3.5rem; padding-bottom: .5rem; border-bottom: 1px solid #6ba4b4; transform: skewY(-6deg); }
+#cp-root .cu-columns i { display: block; width: .7rem; height: 65%; background: linear-gradient(#d2f7ec,#477d91); border-radius: .15rem; }
+#cp-root .cu-columns i:nth-child(2) { height: 88%; }
+#cp-root .cu-columns i:last-child { height: 100%; }
+#cp-root .cu-panel { margin: 1rem 0; padding: clamp(1rem,3vw,2rem); border: 1px solid var(--cu-line); border-radius: 1.1rem; background: #102031; min-width: 0; }
+#cp-root .cu-panel h2 { margin: 0 0 1rem; font-size: clamp(1.35rem,3vw,1.7rem); letter-spacing: -.025em; }
+#cp-root .cu-panel .cu-teacher-label { display: block; font-weight: 600; margin: .75rem 0 .4rem; }
+#cp-root .cu-space select { appearance: none; box-sizing: border-box; color: #f1f8fc; background-color: #0c1a28; background-image: linear-gradient(45deg,transparent 50%,#9cc2ce 50%),linear-gradient(135deg,#9cc2ce 50%,transparent 50%); background-position: calc(100% - 1.05rem) 50%,calc(100% - .75rem) 50%; background-size: .3rem .3rem; background-repeat: no-repeat; border: 1px solid #4b677e; border-radius: .65rem; padding: .65rem 2rem .65rem .8rem; font: inherit; font-size: 1rem; min-height: 44px; width: 100%; min-width: 0; }
+#cp-root .cu-panel #cu-teacher { max-width: 34rem; }
+#cp-root .cu-panel .cu-count { margin-top: .65rem; color: #9be0d7; font-size: .94rem; font-variant-numeric: tabular-nums; }
+#cp-root .cu-list-heading { margin: 1.65rem 0 .8rem; }
+#cp-root .cu-list-heading h3 { font-size: 1.1rem; margin: 0; }
+#cp-root .cu-list { list-style: none; margin: 0; padding: 0; }
+#cp-root .cu-list>li { padding: .85rem 0; margin: 0; border-top: 1px solid var(--cu-line); }
+#cp-root .cu-assignment, #cp-root .cu-personal>li { display: grid; align-items: center; grid-template-columns: minmax(9rem,1fr) minmax(19rem,auto); gap: .45rem 1rem; }
+#cp-root .cu-controls { display: flex; align-items: center; gap: .5rem; min-width: 0; }
+#cp-root .cu-controls select { flex: 1 1 10rem; }
+#cp-root .cu-controls button { flex: none; min-height: 44px; font-size: .95rem; }
+#cp-root .cu-space button:disabled { cursor: default; transform: none; }
+#cp-root .cu-controls button:not(:disabled) { background: #b9e7e9; border-color: #b9e7e9; color: #0b262e; font-weight: 650; }
+#cp-root .cu-member { min-width: 0; display: grid; justify-items: start; gap: .2rem; }
+#cp-root .cu-list strong { font-size: 1rem; font-weight: 600; overflow-wrap: anywhere; }
+#cp-root .cu-invite { font-size: .84rem; color: #d9c9a1; }
+#cp-root .cu-panel .cu-effect { grid-column: 1/-1; margin: .2rem 0 0; font-size: .94rem; color: #c5e4eb; }
+#cp-root .cu-effect:empty { display: none; }
+#cp-root .cu-personal>li { grid-template-columns: minmax(0,1fr) auto; }
+#cp-root .cu-personal span { color: #aedcd9; font-size: .94rem; }
+#cp-root .cu-status { margin: 1rem 0; color: var(--cu-muted); }
+#cp-root .cu-foot { margin: .65rem 0; }
+#cp-root .cu-refresh { min-height: 44px; }
+#cp-root .cu-sr { position: absolute; height: 1px; width: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+#cp-root .cu-space :is(select,button):focus-visible { outline: 2px solid #a4f2ee; outline-offset: 3px; }
+@media (max-width: 680px) {
+  #cp-root .cu-assignment, #cp-root .cu-personal>li { grid-template-columns: minmax(0,1fr); }
+  #cp-root .cu-header { align-items: flex-start; gap: .5rem; }
+  #cp-root .cu-columns { width: 2rem; height: 2rem; gap: .22rem; margin-top: .3rem; }
+  #cp-root .cu-columns i { width: .35rem; }
+  #cp-root .cu-controls { flex-wrap: wrap; }
+  #cp-root .cu-controls select { flex: 1 1 min(100%,12rem); }
+  #cp-root .cu-panel .cu-controls button { min-width: 6.5rem; }
+  #cp-root .cu-row { overflow-wrap: anywhere; }
+}

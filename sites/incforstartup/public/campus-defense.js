@@ -182,9 +182,9 @@
       if (student && state === 'submitted') content += '<p class="cp-hint">La tutoria ja té aquesta versió. Pots continuar practicant mentre esperes el retorn.</p>';
       if (student && state === 'rehearsed') content += '<details class="cdf-revise"' + (Object.keys(ctx.draft || {}).length ? ' open' : '') +
         '><summary>Prepara una nova versió</summary>' + studentForm(ctx, vals, true) + '</details>';
-      if (teacher && state === 'submitted') content += teacherForm(ctx);
+      if (teacher && state === 'submitted') content += ctx.canEvaluate === true ? teacherForm(ctx) : '<p class="cp-hint">Tens permís de seguiment. La revisió correspon a un docent amb permís d’avaluació.</p>';
       else if (teacher && (state === 'draft' || state === 'changes_requested')) content += '<p class="cp-hint">Podràs revisar la versió quan l’estudiant te l’enviï.</p>';
-    } else content += '<p>Encara no has rebut cap assaig. Quan l’estudiant te l’enviï podràs comentar-lo i demanar ajustos o validar-lo.</p>';
+    } else content += '<p>Encara no has rebut cap assaig. Veuràs la versió que l’estudiant enviï a tutoria.</p>';
     return content + (student || record ? timer(vals, workId) : '') + rubric(ctx.work.kind) + '</section>';
   }
 

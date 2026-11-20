@@ -112,5 +112,27 @@
       "sql_role_transitions": "local_postgres_synthetic_rollback_passed",
       "student_teacher_session": "pending_authorized_participant_test"
     }
+  },
+  "university_management": {
+    "applied_on": "2026-11-20",
+    "migration": {
+      "version": "20261120104827",
+      "name": "campus_university_manager_assignments",
+      "source": "supabase/schema/campus-university.sql",
+      "sha256": "9ab554caa21cd636500d420ba5fe984fa94bb911433e1c005cbc8e36aaa4e162"
+    },
+    "scope": "University-scoped administration; operator-only centre provisioning and manager appointments.",
+    "site": {
+      "version": 70,
+      "commit_sha": "27d369595b6eed878b8e1f83eec8867b369d325d"
+    },
+    "validation": {
+      "initial_centre": "Universitat Quelcom",
+      "legacy_global_grants": 0,
+      "security_advisors": "No new findings compared with prior state.",
+      "sql": "Synthetic PostgreSQL upgrade and role regression checks.",
+      "browser": "Synthetic centre assignment with evaluation and save confirmation.",
+      "authorized_participant_check": "pending"
+    }
   }
 }

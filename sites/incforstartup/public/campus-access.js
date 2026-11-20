@@ -1,7 +1,7 @@
 /* UI gate only. Project data authorization belongs to Supabase RLS. */
 (function(root){
  'use strict';
- const names=new Set(['inici','campus','campus-demo','espai-demo','coworking','sala-materials','biblioteca','biblioteca-projecte','universitats','circuit-pilot','demo-tfg','demo-tfm','treball-tfg','treball-tfm','campus-biblioteca']);
+ const names=new Set(['inici','campus','campus-demo','espai-demo','coworking','sala-materials','biblioteca','biblioteca-projecte','universitats','circuit-pilot','demo-tfg','demo-tfm','treball-tfg','treball-tfm','campus-biblioteca','campus-universitat']);
  function protectedRoute(route,known){return names.has(route)||/^(campus-treball|uni-|recurs-|befirst-tfg|befirst-tfm)/.test(route)||(!!route&&!Object.hasOwn(known,route));}
  root.CampusAccess={protectedRoute};
  if(typeof module!=='undefined'){module.exports=root.CampusAccess;return;}
