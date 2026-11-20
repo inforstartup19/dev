@@ -73,6 +73,9 @@ class ProofOut(Output):
     confirmed_by_me: bool
     confirmed_by_counterpart: bool
     has_evidence: bool
+    can_add_evidence: bool
+    can_attest: bool
+    can_withdraw: bool
     created_at: datetime
 
 
@@ -143,6 +146,10 @@ def proof_view(db: DB, proof: ProofContribution, actor: Actor):
         confirmed_by_me=actor.id in confirmations,
         confirmed_by_counterpart=other in confirmations,
         has_evidence=evidence is not None,
+        can_add_evidence=proof.state == "active" and proof.declared_by == actor.id,
+        can_attest=proof.state == "active"
+        and not any(item.actor_id == actor.id for item in records),
+        can_withdraw=proof.state == "active" and proof.declared_by == actor.id,
         created_at=proof.created_at,
     )
 

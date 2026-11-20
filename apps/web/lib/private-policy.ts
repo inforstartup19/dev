@@ -68,6 +68,15 @@ export function privateRoute(
       new RegExp("^agreements/" + id + "/(?:revisions|confirmations|cancel)$").test(joined))
     return "json";
 
+  // #23: explicit private Proof resources; no generic proxy forwarding.
+  if (method === "GET" && (joined === "proofs" ||
+      new RegExp("^proofs/" + id + "(?:/evidence|/attestations)?$").test(joined)))
+    return "json";
+  if (method === "POST" && (
+      new RegExp("^agreements/" + id + "/proofs$").test(joined) ||
+      new RegExp("^proofs/" + id + "/(?:evidence|attestations|withdraw)$").test(joined)))
+    return "json";
+
   // #52: explicit allowlist, never arbitrary private proxy forwarding.
   if (
     method === "GET" &&

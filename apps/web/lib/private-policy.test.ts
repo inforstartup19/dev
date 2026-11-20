@@ -121,3 +121,16 @@ test("Connect and bilateral agreements expose only explicit private proxy routes
   assert.equal(privateRoute("DELETE", ["agreements", id]), null);
   assert.equal(privateRoute("POST", ["agreements", "bad-uuid", "cancel"]), null);
 });
+
+test("Proof proxy permits exact methods and rejects arbitrary or malformed paths", () => {
+  for (const path of [["proofs"], ["proofs", id], ["proofs", id, "evidence"], ["proofs", id, "attestations"]]) assert.equal(privateRoute("GET", path), "json");
+  for (const path of [["agreements", id, "proofs"], ["proofs", id, "evidence"], ["proofs", id, "attestations"], ["proofs", id, "withdraw"]]) assert.equal(privateRoute("POST", path), "json");
+  for (const path of [["proofs", "bad-id"], ["proofs", id, "members"], ["proofs", id, "evidence", id], ["proofs", id, ".."], ["proofs", id, "%2fwithdraw"]]) {
+    assert.equal(privateRoute("GET", path), null); assert.equal(privateRoute("POST", path), null);
+  }
+  assert.equal(privateRoute("POST", ["proofs"]), null);
+  assert.equal(privateRoute("POST", ["proofs", id]), null);
+  assert.equal(privateRoute("GET", ["proofs", id, "withdraw"]), null);
+  assert.equal(privateRoute("GET", ["agreements", id, "proofs"]), null);
+  assert.equal(privateRoute("DELETE", ["proofs", id]), null);
+});
