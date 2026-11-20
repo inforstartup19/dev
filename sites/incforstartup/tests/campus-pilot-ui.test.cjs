@@ -6,7 +6,7 @@ async function harness(options={}){
  const {
   reviews=[],reviewError=false,analysisError=false,available=true,analysisWait=null,
   uploadImpl=null,documentSize=1024,role='student',route='research_plan',confirmImpl=null,
-  startAt='#campus-treball/'+id, extraProjects=[], taskStatus='prepare', pilotProposals=[], feedbackImpl=null, defenseRead=async()=>null, defenseWrite=null
+  startAt='#campus-treball/'+id, enrollment=null, canEvaluate=true, personal=[], roster=null, saveAssignment=null, activity=[], extraProjects=[], taskStatus='prepare', pilotProposals=[], feedbackImpl=null, defenseRead=async()=>null, defenseWrite=null
  }=options;
  const project={id,owner_id:'student',title:'Treball privat',kind:'TFM',revision:0,updated_at:'2026-11-19T12:00:00Z',
   orientation_route:route,orientation_first_step:route?'Primera tasca de prova':null,orientation_task_id:route?firstTaskId:null};
@@ -17,7 +17,11 @@ async function harness(options={}){
  const handlers={},calls=[],createOptions=[];
  const originalFile={id,name,created_at:'2026-11-19T12:00:00Z',metadata:{size:documentSize}};
  const api={
-  enroll:async()=>({role:user,university:'Centre de prova'}),projects:async()=>[...stored.values()],library:async()=>[],
+  enroll:async()=>enrollment?enrollment(user):({role:user,university:'Centre de prova'}),
+  projects:async()=>{activity.push('projects');return [...stored.values()];},library:async()=>{activity.push('library');return [];},
+  universityRoster:async()=>{activity.push('roster');return typeof roster==='function'?roster():roster;},
+  myAssignments:async()=>{activity.push('personal');return personal;},assignUniversity:async(...args)=>{calls.push({method:'assignment',args});return saveAssignment(...args);},
+  canEvaluate:async()=>typeof canEvaluate==='function'?canEvaluate():canEvaluate,
   project:async key=>stored.has(key)?{...stored.get(key)}:null,
   tasks:async key=>(cards.get(key)||[]).map(x=>({...x})),history:async()=>[],projectHistory:async()=>[],proposals:async()=>pilotProposals,
   documents:async key=>key===id?[originalFile]:[],
@@ -70,7 +74,7 @@ async function harness(options={}){
   FormData:class extends Map{constructor(form){super(Object.entries(form.values));}},confirm:()=>true,prompt:()=>null,setTimeout,URL,Blob,
  };
  vm.createContext(c);
- for(const sd of ['campus-orientation.js','campus-defense.js','campus-academic-path.js','campus-pilot.js']){
+ for(const sd of ['campus-orientation.js','campus-defense.js','campus-academic-path.js','campus-university.js','campus-pilot.js']){
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../public',sd),'utf8'),c);
  }
  function fire(type,target={},submitter){
@@ -93,6 +97,7 @@ async function harness(options={}){
   html:()=>c.routes[c.location.hash.slice(1)]?.[1]()||'',
   click(dataset){fire('click',targetFor(dataset));},
   setWizard(dataset,value,kind='input'){fire(kind,targetFor(dataset,{value}));},
+  assign(teacher,student,mode){fire('submit',{id:'',dataset:{uniTeacher:teacher,uniStudent:student},values:{mode},matches:selector=>selector==='.cu-assignment'});},
   submit(formId,values,action){fire('submit',{id:formId,values},action?{value:action}:undefined);},
   input(formId,values){fire('input',{closest:selector=>selector.includes('#'+formId)?{id:formId,values}:null});}
  };
@@ -426,4 +431,52 @@ test('an academic phase template is prepared as an editable task without a write
  h.click({cp:'academic-task'});assert.match(h.html(),/id="cp-task"/);assert.equal(h.calls.length,0);
  const teacher=await harness({role:'teacher'});teacher.click({cp:'academic-task'});assert.match(teacher.html(),/id="cp-task"/);
  assert.equal(teacher.calls.length,0);
+});
+const uniId='822fc209-31f8-4891-b80f-45fb399cb63b';
+const teacherId='b6419583-57f5-4492-90fb-d6b74bac8307', studentId='dbed1bd7-ce9e-4447-991e-a59d37bab9cd';
+const uniMember=role=>({role,institution:{id:uniId,name:'Universitat Quelcom',can_manage:role==='manager'}});
+function uniRoster(assignments=[],revision=3){
+ return {institution:{id:uniId,name:'Universitat Quelcom'},teachers:[{id:teacherId,label:'Docent sintètic',status:'active'}],
+  students:[{id:studentId,label:'Estudiant sintètic',status:'invited'}],assignments,revision};
+}
+test('manager enters the institution without fetching the projects or the library and saves only the chosen pair',async()=>{
+ const activity=[];
+ const h=await harness({role:'manager',startAt:'#campus',enrollment:uniMember,roster:uniRoster(),
+  saveAssignment:async(t,s,m)=>uniRoster([{teacher_id:t,student_id:s,mode:m}],4),activity});
+ assert.deepEqual(activity,['roster']);assert.match(h.html(),/Universitat Quelcom/);assert.match(h.html(),/Estudiant sintètic/);
+ assert.doesNotMatch(h.html(),/Nou TFG|href="#campus-biblioteca"|data-cp-review/);
+ h.assign(teacherId,studentId,'evaluate');await flush();assert.equal(h.calls.length,1);
+ assert.deepEqual(h.calls[0].args,[teacherId,studentId,'evaluate',3]);assert.match(h.html(),/Assignació desada/);
+ h.assign(teacherId,studentId,'evaluate');assert.equal(h.calls.length,1);
+});
+test('personal university route loads only the participants of that student and blocks manager writes',async()=>{
+ const activity=[],people=[{id:teacherId,label:'Tutora assignada',role:'teacher',mode:'evaluate',status:'active'}];
+ const h=await harness({startAt:'#campus-universitat',role:'student',enrollment:uniMember,personal:people,activity});
+ assert.match(h.html(),/Tutora assignada/);assert.doesNotMatch(h.html(),/cu-assignment/);
+ assert.ok(activity.includes('personal'));assert.ok(!activity.includes('roster'));
+ h.assign(teacherId,studentId,'none');assert.equal(h.calls.length,0);
+});
+test('stale revisions block a second submission until the manager reads the updated roster',async()=>{
+ let revision=5;
+ const h=await harness({role:'manager',startAt:'#campus-universitat',enrollment:uniMember,roster:()=>uniRoster([],revision),
+  saveAssignment:async()=>{const e=Error('Actualitza les assignacions');e.code='conflict';throw e;}});
+ h.assign(teacherId,studentId,'evaluate');await flush();h.assign(teacherId,studentId,'evaluate');
+ assert.equal(h.calls.length,1);assert.match(h.html(),/Actualitza les assignacions/);
+ revision=6;h.click({uniRefresh:''});await flush();h.assign(teacherId,studentId,'supervise');await flush();
+ assert.equal(h.calls.length,2);assert.equal(h.calls[1].args.at(-1),6);
+});
+test('late directory result from previous manager account cannot reveal the roster to the new student',async()=>{
+ let finish;const pending=new Promise(resolve=>finish=resolve);
+ const h=await harness({role:'manager',startAt:'#campus-universitat',enrollment:uniMember,roster:()=>pending});
+ h.changeAccount('student');await h.go('#campus-universitat');
+ finish(uniRoster());await flush();
+ assert.doesNotMatch(h.html(),/Estudiant sintètic|Docent sintètic|cu-assignment/);assert.match(h.html(),/Els teus docents/);
+});
+test('supervision alone permits follow-up and viewing the submitted rehearsal, without academic evaluation controls',async()=>{
+ const h=await harness({role:'teacher',canEvaluate:false,taskStatus:'review',
+  pilotProposals:[{id,status:'pending',title:'Extracte'}],defenseRead:async()=>rehearsalRecord('submitted',2)});
+ assert.match(h.html(),/Edita la fitxa/);assert.doesNotMatch(h.html(),/data-cp-review|Marca revisada/);
+ h.click({cpMove:firstTaskId,status:'done'});assert.doesNotMatch(h.html(),/id="cp-feedback"/);
+ h.click({defenseOpen:''});await flush();assert.match(h.html(),/permís de seguiment/);assert.doesNotMatch(h.html(),/id="cp-defense-teacher"/);
+ h.submit('cp-defense-teacher',{feedback:'Comentari'},'validate');assert.ok(!h.calls.some(row=>row.method==='saveDefense'));
 });

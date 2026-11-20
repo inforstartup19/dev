@@ -10,6 +10,16 @@
    if(!access){const error=new Error('La sessió ha caducat. Torna a iniciar sessió.');error.code='denied';throw error;}
    let response;try{response=await fetcher(config.url+'/rest/v1/'+path,{method,headers:{apikey:config.publishableKey,Authorization:'Bearer '+access,'Content-Type':'application/json',Prefer:'return=representation'},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(15000)});}catch{throw Error('No hem pogut confirmar el desament. Conservem el text; comprova la connexió abans de reintentar.');}
    if(!response.ok){let detail={};try{detail=await response.json();}catch{}
+    if(path.startsWith('rpc/qc_university_')||path==='rpc/qc_can_evaluate'){
+     const denied=[401,403].includes(response.status)||detail.code==='42501';
+     const conflict=detail.code==='40001';
+     const error=new Error(denied?'Aquest compte no té permís per a aquesta operació del centre.':
+      conflict?'Les assignacions han canviat. Actualitza-les i revisa el canvi abans de desar.':
+      detail.code==='22023'?'Revisa el docent, l’estudiant i el permís seleccionats.':
+      'No hem pogut confirmar les dades del centre. Actualitza-les abans de continuar.');
+     error.code=denied?'denied':conflict?'conflict':detail.code==='22023'?'invalid':'unknown';
+     throw error;
+    }
     if(path==='rpc/qc_defense_get'||path==='rpc/qc_defense_save'){
      const denied=[401,403].includes(response.status)||detail.code==='42501';
      const conflict=detail.code==='40001';
@@ -99,6 +109,13 @@
     if(!data.review||!['processing','completed','failed'].includes(data.review.status))throw Error('No hem pogut confirmar el resultat. Actualitza l’historial abans de reintentar.');
     return data.review;
    },
+   universityRoster:()=>request('rpc/qc_university_roster',{method:'POST',body:{}}),
+   myAssignments:()=>request('rpc/qc_university_my_assignments',{method:'POST',body:{}}),
+   async assignUniversity(teacher,student,mode,revision){
+    if(!['none','supervise','evaluate'].includes(mode)||!Number.isSafeInteger(revision)||revision<0)throw Error('Permís o versió d’assignació no vàlids.');
+    return request('rpc/qc_university_set_assignment',{method:'POST',body:{p_teacher_id:uuid(teacher),p_student_id:uuid(student),p_mode:mode,p_expected_revision:revision}});
+   },
+   async canEvaluate(project){return (await request('rpc/qc_can_evaluate',{method:'POST',body:{p_project_id:uuid(project)}}))===true;},
    enroll:()=>request('rpc/qc_accept_pilot',{method:'POST',body:{}}),
    projects:()=>request('qc_projects?select=*&order=updated_at.desc&limit=100'),
    project:async id=>(await request('qc_projects?id=eq.'+uuid(id)+'&select=*'))[0],

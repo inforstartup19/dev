@@ -3,6 +3,7 @@ const {protectedRoute}=require('../public/campus-access.js');
 test('Campus aliases, academic subpages and fallback require authentication',()=>{
  const known={entrada:1,univers:1,login:1,startup:1,'nova-idea':1,projectes:1};
  for(const route of ['inici','campus','campus-demo','espai-demo','demo-tfg','demo-tfm','befirst-tfm-tauler','befirst-tfg-recorregut','uni-revisio','recurs-roles','coworking','biblioteca','universitats','unknown'])assert.equal(protectedRoute(route,known),true,route);
+ assert.equal(protectedRoute('campus-universitat',{'campus-universitat':true}),true);
  for(const route of Object.keys(known))assert.equal(protectedRoute(route,known),false,route);
 });
 function page(user){

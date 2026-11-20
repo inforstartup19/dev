@@ -123,3 +123,18 @@ test('a private rehearsal rejects mismatched replies, conflicting revisions and 
  await assert.rejects(conflict.api.saveDefense(id,1,'return',{feedback:'Ajustos'}),error=>error.code==='conflict');
  const anon=setup([],null);await assert.rejects(anon.api.defense(id),error=>error.code==='denied');assert.equal(anon.calls.length,0);
 });
+test('university endpoints derive the centre from the caller and validate the expected revision',async()=>{
+ const student='7a9bcb90-da5f-4807-b6e7-1eefe4a3ab46';
+ const s=setup([{status:200,body:[]},{status:200,body:{}},{status:200,body:{}},{status:200,body:true}]);
+ await s.api.myAssignments();await s.api.universityRoster();await s.api.assignUniversity(id,student,'evaluate',4);
+ assert.equal(await s.api.canEvaluate(id),true);
+ assert.deepEqual(s.calls.map(r=>r.url.split('/').pop()),['qc_university_my_assignments','qc_university_roster','qc_university_set_assignment','qc_can_evaluate']);
+ assert.deepEqual(JSON.parse(s.calls[2].body),{p_teacher_id:id,p_student_id:student,p_mode:'evaluate',p_expected_revision:4});
+ await assert.rejects(s.api.assignUniversity(id,student,'project_only',0));await assert.rejects(s.api.assignUniversity(id,student,'none',-1));
+ assert.equal(s.calls.length,4);
+});
+test('university revision conflicts and authorization errors do not disclose or imply persisted changes',async()=>{
+ const s=setup([{status:400,body:{code:'40001',message:'private'}},{status:403,body:{code:'42501',message:'private'}}]);
+ await assert.rejects(s.api.assignUniversity(id,id,'none',2),e=>e.code==='conflict'&&!e.message.includes('private'));
+ await assert.rejects(s.api.universityRoster(),e=>e.code==='denied'&&!e.message.includes('private'));
+});
