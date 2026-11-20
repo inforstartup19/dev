@@ -280,3 +280,64 @@ def test_inc_proof_direct_sql_cannot_read_unrelated_claims(protected_api):
         assert db.execute(text("SELECT id FROM proof_contributions")).all() == []
         assert db.execute(text("SELECT id FROM proof_evidence")).all() == []
         assert db.execute(text("SELECT id FROM proof_attestations")).all() == []
+
+
+def test_proof_ui_capabilities_follow_actor_version_and_withdrawal(api):
+    agreement_id, _ = confirmed_bf(api)
+    created = api.request(
+        "POST",
+        f"/agreements/{agreement_id}/proofs",
+        "bob",
+        json={"kind": "work", "summary": "Mostra BF per revisar"},
+    )
+    assert created.status_code == 201
+    root = f"/proofs/{created.json()['id']}"
+
+    def capabilities(actor):
+        result = api.request("GET", root, actor)
+        assert result.status_code == 200
+        item = result.json()
+        return tuple(item[key] for key in ("can_add_evidence", "can_attest", "can_withdraw"))
+
+    assert capabilities("bob") == (True, True, True)
+    assert capabilities("alice") == (False, True, False)
+    assert api.request("GET", root, "charlie").status_code == 404
+    attested = api.request(
+        "POST",
+        root + "/attestations",
+        "alice",
+        json={"expected_version": 1, "decision": "dispute", "note": "Cal revisar", "confirm": True},
+    )
+    assert attested.status_code == 200
+    assert capabilities("alice") == (False, False, False)
+    evidence = api.request(
+        "POST",
+        root + "/evidence",
+        "bob",
+        json={
+            "expected_version": 1,
+            "origin": "self",
+            "source_reference": "BF-QA",
+            "source_version": "R2",
+            "provenance": "Mostra sintètica",
+            "rights_note": "Privat",
+        },
+    )
+    assert evidence.status_code == 201
+    assert capabilities("alice") == (False, True, False)
+    denied = api.request(
+        "POST",
+        root + "/withdraw",
+        "alice",
+        json={"expected_version": 2, "reason": "No soc declarant", "confirm": True},
+    )
+    assert denied.status_code == 403
+    withdrawn = api.request(
+        "POST",
+        root + "/withdraw",
+        "bob",
+        json={"expected_version": 2, "reason": "Retiro la mostra", "confirm": True},
+    )
+    assert withdrawn.status_code == 200
+    assert capabilities("alice") == (False, False, False)
+    assert capabilities("bob") == (False, False, False)
