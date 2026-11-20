@@ -7,13 +7,136 @@
  let documents=[],pendingFile=null,fileId=null,documentReviews=[],reviewError='',aiAvailability=null,aiStatusError='',aiDraft=null,uploadProgress=null;
  const analysisDrafts=new Map();
  let feedback=null;
+ // A rehearsal is scoped to the authorized project and to this account's in-memory session.
+ let defense=null;
+ const pendingDefenses=new Map();
+ function hasProjectAccess(){
+  return !!api&&!!account&&!!member&&!!work&&work.id===selected()&&loaded===work.id&&
+   (member.role==='teacher'||(member.role==='student'&&work.owner_id===account.id));
+ }
+ function leaveDefense(keepDraft=false){
+  if(defense){
+   if(keepDraft&&defense.draft)pendingDefenses.set(defense.project,{draft:defense.draft,revision:defense.baseRevision});
+   else pendingDefenses.delete(defense.project);
+  }
+  defense=null;
+  globalThis.CampusDefense?.resetTimer();
+ }
+ function ownsDefense(room){return room===defense&&hasProjectAccess()&&room.project===work.id;}
+ function defensePanel(){
+  if(!defense)return '';
+  const room=defense,record=room.record;
+  const comparison=room.compare&&room.draft&&record&&member.role==='student'?
+   `<details class="cp-card"><summary>Compara amb la versió desada (v${e(record.revision)})</summary>
+   <p><b>Guió desat</b></p><p>${e(record.outline||'Sense guió')}</p><p><b>Preguntes desades</b></p><p>${e(record.questions||'Sense preguntes')}</p>
+   <p>Fitxer: ${e(record.attachment?documentTitle(record.attachment):'Cap')} · Exposició: ${e(record.talk_minutes)} min · Preguntes: ${e(record.question_minutes)} min</p>
+   ${record.status==='submitted'?`<p><b>Guió pendent en aquesta pestanya</b></p><p>${e(room.draft.outline)}</p><p>${e(room.draft.questions)}</p>`:''}</details>`:
+   room.compare&&room.draft?.feedback&&record?.status!=='submitted'?
+    `<details class="cp-card"><summary>El teu comentari pendent en aquesta pestanya</summary><p>${e(room.draft.feedback)}</p></details>`:'';
+  const notice=room.notice?`<p class="cp-success" role="status">${e(room.notice)}</p>`:'';
+  return `<button type="button" class="cp-back" data-defense-close>Torna a la fitxa del treball</button>`+
+   notice+comparison+globalThis.CampusDefense.render({work,role:member.role,isOwner:work.owner_id===account.id,record,
+    draft:room.draft,documents,busy:room.saving,loading:room.loading,error:room.error,
+    unavailable:!room.ready&&!room.loading,stale:room.stale});
+ }
+ async function readDefense(room){
+  if(!ownsDefense(room)||room.loading||room.saving)return;
+  room.loading=true;room.error='';room.notice='';redraw();
+  try{
+   const record=await api.defense(room.project);
+   if(!ownsDefense(room))return;
+   const prev=room.baseRevision;
+   room.record=record;room.ready=true;room.stale=false;room.baseRevision=record?.revision||0;
+   room.compare=!!room.draft&&prev!==room.baseRevision;
+   if(room.compare)room.notice='S’ha recuperat una versió més recent. Revisa-la abans de tornar a confirmar el text pendent.';
+  }catch(err){
+   if(!ownsDefense(room))return;
+   room.record=null;room.ready=false;room.error=err.code==='denied'?err.message:'No hem pogut recuperar l’assaig. Torna-ho a provar.';
+   if(err.code==='denied'){room.draft=null;pendingDefenses.delete(room.project);}
+  }finally{if(ownsDefense(room)){room.loading=false;redraw();}}
+ }
+ function openDefense(){
+  if(defense||!hasProjectAccess()||!globalThis.CampusDefense)return;
+  const pending=pendingDefenses.get(work.id);
+  defense={project:work.id,record:null,draft:pending?.draft||null,baseRevision:pending?.revision||0,
+   ready:false,stale:false,loading:false,saving:false,compare:false,error:'',notice:''};
+  const room=defense;
+  readDefense(room).then(()=>{if(ownsDefense(room))document.querySelector?.('#cdf-title')?.focus();});
+ }
+ function defenseDraft(form){
+  const values=Object.fromEntries(new FormData(form));
+  if(form.id==='cp-defense-teacher')return {feedback:String(values.feedback||'')};
+  return {outline:String(values.outline||''),questions:String(values.questions||''),attachment:String(values.attachment||''),
+   talk_minutes:values.talk_minutes??'',question_minutes:values.question_minutes??''};
+ }
+ async function writeDefense(form,action){
+  const room=defense;
+  if(!room||!ownsDefense(room)||!room.ready||room.loading||room.saving||room.stale)return;
+  const status=room.record?.status||'draft',teacher=member.role==='teacher',fields=defenseDraft(form);
+  if(teacher){
+   if(form.id!=='cp-defense-teacher'||status!=='submitted'||!['return','validate'].includes(action))return;
+  }else if(form.id!=='cp-defense-student'||status==='submitted'||!['save','submit'].includes(action)||(status==='rehearsed'&&action!=='save'))return;
+  room.draft=fields;room.notice='';room.error='';
+  if(teacher&&(!fields.feedback.trim()||fields.feedback.length>3000)){
+   room.error='Escriu un retorn de fins a 3.000 caràcters.';redraw();return;
+  }
+  if(!teacher){
+   if(action==='submit'&&!fields.outline.trim()){room.error='Escriu un guió abans d’enviar l’assaig a tutoria.';redraw();return;}
+   if(fields.outline.length>6000||fields.questions.length>3000){room.error='Revisa la longitud del guió i de les preguntes.';redraw();return;}
+   const talk=Number(fields.talk_minutes),questions=Number(fields.question_minutes);
+   if(fields.talk_minutes===''||fields.question_minutes===''||!Number.isInteger(talk)||talk<1||talk>120||
+    !Number.isInteger(questions)||questions<0||questions>120){
+    room.error='Indica entre 1 i 120 minuts d’exposició i entre 0 i 120 minuts de preguntes.';redraw();return;
+   }
+  }
+  room.saving=true;redraw();
+  try{
+   const data=teacher?fields:{...fields,talk_minutes:Number(fields.talk_minutes),question_minutes:Number(fields.question_minutes)};
+   const stored=await api.saveDefense(room.project,room.baseRevision,action,data);
+   if(!ownsDefense(room))return;
+   room.record=stored;room.baseRevision=stored.revision;room.draft=null;room.compare=false;
+   pendingDefenses.delete(room.project);
+   room.notice={save:'Esborrany desat a Quelcom.',submit:'Assaig enviat al tutor per revisar.',return:'Ajustos enviats a l’estudiant.',validate:'Retorn desat. L’assaig ha quedat revisat.'}[action];
+  }catch(err){
+   if(!ownsDefense(room))return;
+   if(err.code==='denied'){room.ready=false;room.record=null;room.draft=null;pendingDefenses.delete(room.project);}
+   else if(err.code!=='invalid')room.stale=true;
+   room.error=err.message;
+  }finally{if(ownsDefense(room)){room.saving=false;redraw();}}
+ }
+ function captureDefenseInput(ev){
+  const form=ev.target.closest?.('#cp-defense-student,#cp-defense-teacher');
+  if(form&&defense&&ownsDefense(defense)&&defense.ready&&!defense.saving)defense.draft=defenseDraft(form);
+ }
+ document.addEventListener('input',captureDefenseInput);
+ document.addEventListener('change',captureDefenseInput);
+ document.addEventListener('submit',ev=>{
+  if(!['cp-defense-student','cp-defense-teacher'].includes(ev.target.id))return;
+  ev.preventDefault();writeDefense(ev.target,ev.submitter?.value);
+ });
+ document.addEventListener('click',ev=>{
+  const b=ev.target.closest?.('[data-defense-open],[data-defense-close],[data-defense-refresh],[data-defense-documents]');
+  if(!b||busy)return;
+  if('defenseOpen' in b.dataset){openDefense();return;}
+  if(!defense||defense.saving||!ownsDefense(defense))return;
+  if('defenseRefresh' in b.dataset){readDefense(defense);return;}
+  leaveDefense(true);redraw();
+  if('defenseDocuments' in b.dataset){
+   const heading=document.querySelector?.('.cp-documents h2');
+   heading?.focus();heading?.scrollIntoView({block:'start',behavior:'auto'});
+  }else document.querySelector?.('[data-defense-open]')?.focus();
+ });
+ function academicGuide(kind,onboarding=false){
+  return globalThis.CampusAcademicPath?.render({kind,role:onboarding?'student':member.role,onboarding})||'';
+ }
+
  const guidance=window.QuelcomOrientation;
  const orientations=new Map();
  const maxAIBytes=10*1024*1024;
  let editorScope='campus';const editorCache=new Map();
  const selected=()=>location.hash.startsWith('#campus-treball/')?location.hash.split('/')[1]:null;
  const isPilot=()=>['#campus','#inici','#campus-biblioteca'].includes(location.hash)||location.hash.startsWith('#campus-treball/');
- function reset(){feedback=null;orientations.clear();loadGeneration++;api=null;member=null;account=null;booted=false;booting=false;busy=false;projects=[];feed=[];work=null;tasks=[];historyRows=[];projectRows=[];proposals=[];loaded='';loadingWork='';editor=null;draft=null;newProject=false;newTask=false;newExcerpt=false;notice='';error='';documents=[];pendingFile=null;fileId=null;editorCache.clear();editorScope='campus';documentReviews=[];reviewError='';aiAvailability=null;aiStatusError='';aiDraft=null;uploadProgress=null;analysisDrafts.clear();}
+ function reset(){leaveDefense();pendingDefenses.clear();feedback=null;orientations.clear();loadGeneration++;api=null;member=null;account=null;booted=false;booting=false;busy=false;projects=[];feed=[];work=null;tasks=[];historyRows=[];projectRows=[];proposals=[];loaded='';loadingWork='';editor=null;draft=null;newProject=false;newTask=false;newExcerpt=false;notice='';error='';documents=[];pendingFile=null;fileId=null;editorCache.clear();editorScope='campus';documentReviews=[];reviewError='';aiAvailability=null;aiStatusError='';aiDraft=null;uploadProgress=null;analysisDrafts.clear();}
  document.addEventListener('quelcom-account-change',reset);
  function redraw(){if(isPilot())render();}
  async function boot(){if(booting||booted)return;booting=true;const generation=loadGeneration;try{
@@ -61,12 +184,12 @@
   const state=orientationState('new','TFG');
   if(state.accepted){
    const choice=guidance.submission(state.flow);
-   return orientationSummary(choice.route,choice.firstStep,'edit-orientation')+projectForm();
+   return orientationSummary(choice.route,choice.firstStep,'edit-orientation')+projectForm()+academicGuide(state.flow.kind,true);
   }
   const typeSelect=`<label>${fieldLabel('Tipus de treball',true)}<select id="cp-orientation-kind" required>${['TFG','TFM','TR'].map(kind=>
    `<option ${kind===state.flow.kind?'selected':''}>${kind}</option>`).join('')}</select></label>`;
   return `<section class="cp-form">${typeSelect}${guidance.render(state.flow,{busy,confirmLabel:'Continua amb la fitxa'})}
-   <button type="button" data-cp="cancel">Cancel·la</button></section>`;
+   <button type="button" data-cp="cancel">Cancel·la</button></section>`+academicGuide(state.flow.kind,true);
  }
  function detailOrientation(){
   if(!orientationConfirmed(work)&&member.role==='teacher'){
@@ -143,7 +266,7 @@
 
  function analysisForm(){if(!aiDraft)return '';const v=aiDraft;return `<form id="cp-analysis" class="cp-form cp-ai-form"><span class="cp-ai-label">REVISIÓ ASSISTIDA PRIVADA</span><h3>${e(documentTitle(v.storageName))}</h3><p>Analitzarem aquesta versió per resumir el contingut, detectar millores i explorar idees. Revisa les propostes amb el docent abans d’aplicar-les.</p>${area('question','Què vols que revisem? (opcional)',v,2000)}<label class="cp-consent"><input type="checkbox" name="consent" required ${v.consent?'checked':''}> <span>Autoritzo Quelcom a enviar aquest document i la pregunta al proveïdor extern d’intel·ligència artificial per fer aquesta anàlisi privada. ${requiredMark}</span></label><p class="cp-hint"><a href="https://openai.com/enterprise-privacy/" target="_blank" rel="noopener noreferrer">Consulta com tracta les dades el proveïdor de l’anàlisi</a></p><p class="cp-hint">Els resultats es desen dins del treball. No es publiquen a la biblioteca ni modifiquen les tasques automàticament.</p><div class="cp-actions"><button class="cp-primary" ${busy||aiAvailability?.available===false||tooLargeForAI(v.storageName)?'disabled':''}>${busy?'Analitzant el document…':'Analitza el document'}</button><button type="button" data-cp="cancel-analysis">Tanca</button></div></form>`;}
  function analysisResults(){return documentReviews.map(r=>{const result=r.result||{},complete=r.status==='completed';return `<article class="cp-card cp-ai-result"><div class="cp-document-heading"><span class="cp-ai-label">REVISIÓ ASSISTIDA · ${e(({processing:'EN CURS',completed:'PER REVISAR',failed:'NO COMPLETADA'})[r.status]||r.status)}</span><span class="cp-date">${e(new Date(r.created_at).toLocaleString('ca'))}</span></div><h3>${e(documentTitle(r.storage_name))}</h3>${r.question?`<p><b>La pregunta:</b> ${e(r.question)}</p>`:''}${complete?`<p>${e(result.summary)}</p>${['improvements','newIdeas'].map(kind=>`<h4>${kind==='improvements'?'Millores proposades':'Idees per explorar'}</h4>${(Array.isArray(result[kind])?result[kind]:[]).map((item,index)=>`<div class="cp-ai-suggestion"><h4>${e(item.title)}</h4><p>${e(item.detail)}</p><button data-cp-ai-task="${e(r.id)}" data-kind="${kind}" data-index="${index}">Prepara una tasca</button></div>`).join('')||'<p>No s’han proposat accions en aquest apartat.</p>'}`).join('')}${Array.isArray(result.questions)&&result.questions.length?`<h4>Preguntes per avançar</h4><ul>${result.questions.map(q=>`<li>${e(q)}</li>`).join('')}</ul>`:''}<details><summary>Font i límits de l’anàlisi</summary><p>Font: ${e(result.source?.name||documentTitle(r.storage_name))} · versió ${e(r.storage_name.slice(0,8))}</p><p>El document és la font de la revisió. Les afirmacions i les ubicacions suggerides per la IA s’han de contrastar amb l’original.</p>${result.source?.sha256?`<p class="cp-fingerprint">Empremta SHA-256: ${e(result.source.sha256)}</p>`:''}<ul>${(Array.isArray(result.limitations)?result.limitations:[]).map(x=>`<li>${e(x)}</li>`).join('')}</ul></details><button data-cp-download="${e(r.storage_name)}">Consulta el document original</button>`:r.status==='processing'?'<p role="status">La petició està en curs. Actualitza els resultats per comprovar si ha acabat. Si s’ha interromput, podràs iniciar una nova anàlisi més endavant.</p>':`<p>No s’ha pogut completar aquesta anàlisi. El document continua desat.</p><button data-cp-ai-retry="${e(r.id)}">Prepara un nou intent</button>`}</article>`;}).join('');}
- function documentPanel(){return `<section class="cp-section cp-documents"><div class="cp-document-heading"><div><span class="cp-ai-label">CONTINGUT DEL TREBALL</span><h2>Documents privats</h2></div><span class="cp-document-limit">50 MB per fitxer</span></div>${canAttach()?`<p>Adjunta un document de text, un full de càlcul, una presentació o un PDF. Cada càrrega conserva una versió nova, accessible només per als membres del treball.</p><form id="cp-upload" class="cp-upload"><label for="cp-file">${pendingFile?'Canvia el document seleccionat':'Selecciona el document '+requiredMark}</label><input type="file" id="cp-file" ${pendingFile?'':'required'} aria-describedby="cp-formats" ${busy?'disabled':''} accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"><p id="cp-formats" class="cp-hint">Formats PDF, DOC, DOCX, XLS, XLSX, PPT i PPTX. Sense fitxers protegits amb contrasenya.</p><button class="cp-primary" ${busy?'disabled':''}>${uploadProgress?.status==='interrupted'?'Reintenta la càrrega':uploadProgress&&busy?'Carregant el document…':'Desa el document privat'}</button>${uploadProgressPanel()}</form>`:'<p class="cp-hint">Confirma l’orientació d’aquest treball per poder-hi adjuntar un fitxer.</p><button type="button" data-cp="go-orientation">Ves a l’orientador</button>'}${pendingFile?`<p>Selecció pendent: ${e(pendingFile.name)}</p>`:''}<div class="cp-document-list">${documents.map(documentCard).join('')||'<p class="cp-empty">Encara no hi ha documents. Pots començar amb l’esborrany, les dades o la presentació.</p>'}</div><div class="cp-ai-intro"><span class="cp-ai-label">REVISIÓ ASSISTIDA</span><h2>Del document al proper pas</h2><p class="cp-ai-size-note">Anàlisi IA: fins a 10 MB per document</p><p>Resum, millores concretes i noves idees. Tu decideixes quines propostes converteixes en tasques.</p>${aiAvailability?.available===false?'<p class="cp-alert" role="status">L’anàlisi de documents està pendent de configuració. Els documents desats continuen disponibles.</p>':aiAvailability?.available?'<p class="cp-hint">L’anàlisi està disponible. S’inicia quan autoritzes l’enviament del document al proveïdor extern.</p>':`<p class="cp-hint">${e(aiStatusError||'Comprovant la disponibilitat de l’anàlisi…')}</p>`}<details><summary>Què pot llegir aquesta revisió?</summary><p>En un PDF podem revisar el text i les pàgines. Dels documents de text i les presentacions en llegim el text. Per incloure imatges o gràfics, exporta el document a PDF. Dels fulls de càlcul en llegim fins a les primeres 1.000 files de cada full.</p></details><button data-cp="refresh-analysis" ${busy?'disabled':''}>Actualitza els resultats</button></div>${analysisForm()}${reviewError?`<p class="cp-alert" role="alert">No hem pogut recuperar les anàlisis: ${e(reviewError)}</p>`:''}${analysisResults()}</section>`;}
+ function documentPanel(){return `<section class="cp-section cp-documents"><div class="cp-document-heading"><div><span class="cp-ai-label">CONTINGUT DEL TREBALL</span><h2 tabindex="-1">Documents privats</h2></div><span class="cp-document-limit">50 MB per fitxer</span></div>${canAttach()?`<p>Adjunta un document de text, un full de càlcul, una presentació o un PDF. Cada càrrega conserva una versió nova, accessible només per als membres del treball.</p><form id="cp-upload" class="cp-upload"><label for="cp-file">${pendingFile?'Canvia el document seleccionat':'Selecciona el document '+requiredMark}</label><input type="file" id="cp-file" ${pendingFile?'':'required'} aria-describedby="cp-formats" ${busy?'disabled':''} accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"><p id="cp-formats" class="cp-hint">Formats PDF, DOC, DOCX, XLS, XLSX, PPT i PPTX. Sense fitxers protegits amb contrasenya.</p><button class="cp-primary" ${busy?'disabled':''}>${uploadProgress?.status==='interrupted'?'Reintenta la càrrega':uploadProgress&&busy?'Carregant el document…':'Desa el document privat'}</button>${uploadProgressPanel()}</form>`:'<p class="cp-hint">Confirma l’orientació d’aquest treball per poder-hi adjuntar un fitxer.</p><button type="button" data-cp="go-orientation">Ves a l’orientador</button>'}${pendingFile?`<p>Selecció pendent: ${e(pendingFile.name)}</p>`:''}<div class="cp-document-list">${documents.map(documentCard).join('')||'<p class="cp-empty">Encara no hi ha documents. Pots començar amb l’esborrany, les dades o la presentació.</p>'}</div><div class="cp-ai-intro"><span class="cp-ai-label">REVISIÓ ASSISTIDA</span><h2>Del document al proper pas</h2><p class="cp-ai-size-note">Anàlisi IA: fins a 10 MB per document</p><p>Resum, millores concretes i noves idees. Tu decideixes quines propostes converteixes en tasques.</p>${aiAvailability?.available===false?'<p class="cp-alert" role="status">L’anàlisi de documents està pendent de configuració. Els documents desats continuen disponibles.</p>':aiAvailability?.available?'<p class="cp-hint">L’anàlisi està disponible. S’inicia quan autoritzes l’enviament del document al proveïdor extern.</p>':`<p class="cp-hint">${e(aiStatusError||'Comprovant la disponibilitat de l’anàlisi…')}</p>`}<details><summary>Què pot llegir aquesta revisió?</summary><p>En un PDF podem revisar el text i les pàgines. Dels documents de text i les presentacions en llegim el text. Per incloure imatges o gràfics, exporta el document a PDF. Dels fulls de càlcul en llegim fins a les primeres 1.000 files de cada full.</p></details><button data-cp="refresh-analysis" ${busy?'disabled':''}>Actualitza els resultats</button></div>${analysisForm()}${reviewError?`<p class="cp-alert" role="alert">No hem pogut recuperar les anàlisis: ${e(reviewError)}</p>`:''}${analysisResults()}</section>`;}
  function captureAnalysis(form){if(!aiDraft)return;const f=new FormData(form),question=String(f.get('question')||''),consent=f.has('consent');if(question!==aiDraft.question)aiDraft.requestId=crypto.randomUUID();aiDraft.question=question;aiDraft.consent=consent;}
  function feedbackForm(kind,id){
   if(!feedback||feedback.kind!==kind||feedback.id!==id)return '';
@@ -176,7 +299,7 @@
    }
   });
  }
- function detail(){if(loaded!==selected())return '<p role="status">Recuperant el teu treball…</p>';if(!work)return '<p><a href="#campus">Torna als treballs</a></p>';const owner=work.owner_id===account.id;return `<a href="#campus" class="cp-back">Tots els treballs</a><header class="cp-hero"><span>${e(work.kind)} · TREBALL PRIVAT</span><h1>${e(work.title)}</h1><p>${e(work.university)}${work.degree?' · '+e(work.degree):''}</p><small>Desat ${e(new Date(work.updated_at).toLocaleString('ca'))} · versió ${work.revision+1}</small></header><div class="cp-actions"><button data-cp="edit-project">Edita la fitxa</button><button data-cp="new-task">Afegeix una tasca</button><button data-cp="reload">Recupera la darrera versió</button>${owner?'<button data-cp="new-excerpt">Proposa un aprenentatge</button>':''}</div>${detailOrientation()}${editor==='project'?projectForm():`<section class="cp-card cp-brief"><h2>La idea i el proper pas</h2><h3>Objectiu</h3><p>${e(work.objective||'Encara per concretar')}</p><h3>Mètode</h3><p>${e(work.methodology||'Encara per concretar')}</p><h3>Propera acció</h3><p>${e(work.next_step||'Encara per concretar')}</p></section>`}${newTask||(editor&&editor!=='project')?taskForm():''}<h2>Les tasques del treball</h2><p>Afegeix les tasques que siguin útils per a aquest treball, al teu ritme.</p><div class="cp-task-grid">${[...tasks].sort((a,b)=>Number(b.id===work.orientation_task_id)-Number(a.id===work.orientation_task_id)).map(t=>`<article class="cp-card"><span class="cp-status">${labels[t.status]}</span><h3>${e(t.title)}</h3><p>${e(t.why)}</p><details><summary>Com ho treballarem</summary><p>${e(t.how)}</p><h4>Entrega</h4><p>${e(t.deliverable||'Per acordar')}</p><h4>Criteris</h4><p>${e(t.criteria||'Per acordar')}</p><p>${e(t.owner_label)} ${e(t.due||'')}</p></details>${t.blocker?`<p class="cp-alert">${e(t.blocker)}</p>`:''}${t.review_comment?`<p class="cp-feedback"><b>Retorn docent</b><br>${e(t.review_comment)}</p>`:''}<div class="cp-actions">${!['review','done'].includes(t.status)?`<button data-cp-edit="${t.id}">Edita</button>`:''}${({prepare:[['active','Comença']],active:[['review','Demana revisió']],revise:[['active','Reprèn']],review:member.role==='teacher'?[['revise','Demana ajustos'],['done','Marca revisada']]:[],done:member.role==='teacher'?[['revise','Reobre']]:[]})[t.status].map(([s,label])=>`<button data-cp-move="${t.id}" data-status="${s}">${label}</button>`).join('')}</div>${feedbackForm('task',t.id)}</article>`).join('')||'<p class="cp-empty">Encara no hi ha tasques. Pots començar per la fitxa i afegir-ne després.</p>'}</div>${documentPanel()}${newExcerpt?excerptForm():''}<section class="cp-section"><h2>Aprenentatges per a la biblioteca</h2>${proposals.map(l=>`<article class="cp-card"><span>${e(({pending:'Pendent de revisió',published:'Compartit amb el pilot',changes:'Cal ajustar',withdrawn:'Retirat'})[l.status])}</span><h3>${e(l.title)}</h3><p>${e(l.summary)}</p><p>${e(l.learning)}</p>${l.review_comment?`<p class="cp-feedback">${e(l.review_comment)}</p>`:''}<div class="cp-actions">${owner&&l.status!=='withdrawn'?`<button data-cp-withdraw="${l.id}">Retira l’extracte</button>`:''}${member.role==='teacher'&&l.status==='pending'?`<button data-cp-review="${l.id}" data-status="published">Aprova per a la biblioteca</button><button data-cp-review="${l.id}" data-status="changes">Demana ajustos</button>`:''}</div>${feedbackForm('excerpt',l.id)}</article>`).join('')||'<p>El treball és privat. Encara no se n’ha proposat cap extracte.</p>'}</section><details class="cp-section"><summary>Historial del treball i de les tasques</summary>${projectRows.map(r=>`<p>${e(new Date(r.happened_at).toLocaleString('ca'))} · ${r.actor_role==='teacher'?'Docent':'Estudiant'} · Fitxa v${r.snapshot.revision+1}: ${e(r.snapshot.title)}</p>`).join('')}${historyRows.map(r=>`<p>${e(new Date(r.happened_at).toLocaleString('ca'))} · ${r.actor_role==='teacher'?'Docent':'Estudiant'} · ${e(r.after_state.title)} · ${e(labels[r.after_state.status])}</p>`).join('')}</details>`;}
+ function detail(){if(loaded!==selected())return '<p role="status">Recuperant el teu treball…</p>';if(!work)return '<p><a href="#campus">Torna als treballs</a></p>';if(defense&&ownsDefense(defense))return defensePanel();const owner=work.owner_id===account.id;return `<a href="#campus" class="cp-back">Tots els treballs</a><header class="cp-hero"><span>${e(work.kind)} · TREBALL PRIVAT</span><h1>${e(work.title)}</h1><p>${e(work.university)}${work.degree?' · '+e(work.degree):''}</p><small>Desat ${e(new Date(work.updated_at).toLocaleString('ca'))} · versió ${work.revision+1}</small></header><div class="cp-actions"><button data-cp="edit-project">Edita la fitxa</button>${hasProjectAccess()&&globalThis.CampusDefense?'<button type="button" data-defense-open>Espai de presentacions</button>':''}<button data-cp="new-task">Afegeix una tasca</button><button data-cp="reload">Recupera la darrera versió</button>${owner?'<button data-cp="new-excerpt">Proposa un aprenentatge</button>':''}</div>${academicGuide(work.kind)}${detailOrientation()}${editor==='project'?projectForm():`<section class="cp-card cp-brief"><h2>La idea i el proper pas</h2><h3>Objectiu</h3><p>${e(work.objective||'Encara per concretar')}</p><h3>Mètode</h3><p>${e(work.methodology||'Encara per concretar')}</p><h3>Propera acció</h3><p>${e(work.next_step||'Encara per concretar')}</p></section>`}${newTask||(editor&&editor!=='project')?taskForm():''}<h2>Les tasques del treball</h2><p>Afegeix les tasques que siguin útils per a aquest treball, al teu ritme.</p><div class="cp-task-grid">${[...tasks].sort((a,b)=>Number(b.id===work.orientation_task_id)-Number(a.id===work.orientation_task_id)).map(t=>`<article class="cp-card"><span class="cp-status">${labels[t.status]}</span><h3>${e(t.title)}</h3><p>${e(t.why)}</p><details><summary>Com ho treballarem</summary><p>${e(t.how)}</p><h4>Entrega</h4><p>${e(t.deliverable||'Per acordar')}</p><h4>Criteris</h4><p>${e(t.criteria||'Per acordar')}</p><p>${e(t.owner_label)} ${e(t.due||'')}</p></details>${t.blocker?`<p class="cp-alert">${e(t.blocker)}</p>`:''}${t.review_comment?`<p class="cp-feedback"><b>Retorn docent</b><br>${e(t.review_comment)}</p>`:''}<div class="cp-actions">${!['review','done'].includes(t.status)?`<button data-cp-edit="${t.id}">Edita</button>`:''}${({prepare:[['active','Comença']],active:[['review','Demana revisió']],revise:[['active','Reprèn']],review:member.role==='teacher'?[['revise','Demana ajustos'],['done','Marca revisada']]:[],done:member.role==='teacher'?[['revise','Reobre']]:[]})[t.status].map(([s,label])=>`<button data-cp-move="${t.id}" data-status="${s}">${label}</button>`).join('')}</div>${feedbackForm('task',t.id)}</article>`).join('')||'<p class="cp-empty">Encara no hi ha tasques. Pots començar per la fitxa i afegir-ne després.</p>'}</div>${documentPanel()}${newExcerpt?excerptForm():''}<section class="cp-section"><h2>Aprenentatges per a la biblioteca</h2>${proposals.map(l=>`<article class="cp-card"><span>${e(({pending:'Pendent de revisió',published:'Compartit amb el pilot',changes:'Cal ajustar',withdrawn:'Retirat'})[l.status])}</span><h3>${e(l.title)}</h3><p>${e(l.summary)}</p><p>${e(l.learning)}</p>${l.review_comment?`<p class="cp-feedback">${e(l.review_comment)}</p>`:''}<div class="cp-actions">${owner&&l.status!=='withdrawn'?`<button data-cp-withdraw="${l.id}">Retira l’extracte</button>`:''}${member.role==='teacher'&&l.status==='pending'?`<button data-cp-review="${l.id}" data-status="published">Aprova per a la biblioteca</button><button data-cp-review="${l.id}" data-status="changes">Demana ajustos</button>`:''}</div>${feedbackForm('excerpt',l.id)}</article>`).join('')||'<p>El treball és privat. Encara no se n’ha proposat cap extracte.</p>'}</section><details class="cp-section"><summary>Historial del treball i de les tasques</summary>${projectRows.map(r=>`<p>${e(new Date(r.happened_at).toLocaleString('ca'))} · ${r.actor_role==='teacher'?'Docent':'Estudiant'} · Fitxa v${r.snapshot.revision+1}: ${e(r.snapshot.title)}</p>`).join('')}${historyRows.map(r=>`<p>${e(new Date(r.happened_at).toLocaleString('ca'))} · ${r.actor_role==='teacher'?'Docent':'Estudiant'} · ${e(r.after_state.title)} · ${e(labels[r.after_state.status])}</p>`).join('')}</details>`;}
  function library(){return `<header class="cp-hero"><span>CONEIXEMENT COMPARTIT</span><h1>Biblioteca del pilot</h1><p>Extractes autoritzats per l’autoria i revisats pel docent. Els treballs complets continuen privats.</p></header><button data-cp="reload">Actualitza</button><div class="cp-projects">${feed.map(l=>`<article class="cp-card"><span>${e(l.kind)} · CAS REAL DEL PILOT</span><h2>${e(l.title)}</h2><p>${e(l.summary)}</p><h3>Què n’hem après</h3><p>${e(l.learning)}</p></article>`).join('')||'<section class="cp-empty"><h2>El primer aprenentatge està per arribar</h2><p>Des del treball, l’estudiant pot proposar un extracte. El docent el revisa abans de publicar-lo aquí.</p></section>'}</div>`;}
  function page(){if(!booted)return frame('<p role="status">Connectant amb el teu Campus…</p>');if(!member)return frame(`<header class="cp-hero"><h1>El teu accés al pilot</h1><p>${e(account?.email||'No hem pogut comprovar el compte.')}</p><p>${error?'Torna a comprovar la connexió.':'Aquest compte encara no té una invitació activa. Comunica aquest correu al coordinador perquè et doni d’alta com a estudiant o docent.'}</p></header><button data-cp="reload">Comprova l’accés</button> <a href="#login">Canvia de compte</a>`);return frame(location.hash==='#campus-biblioteca'?library():selected()?detail():home());}
  routes.campus=['Campus · Pilot real',page];routes.inici=routes.campus;routes['campus-biblioteca']=['Biblioteca del pilot',page];
@@ -185,8 +308,8 @@
  function closeEditors(){editorCache.delete(editorScope);editor=null;draft=null;newProject=false;newTask=false;newExcerpt=false;}
  document.addEventListener('input',ev=>{if(feedback&&ev.target.closest?.('#cp-feedback')){feedback.comment=ev.target.value;return;}const analysis=ev.target.closest?.('#cp-analysis');if(analysis){captureAnalysis(analysis);return;}const f=ev.target.closest?.('#cp-project,#cp-task,#cp-excerpt');if(f)capture(f);});
  document.addEventListener('change',ev=>{const analysis=ev.target.closest?.('#cp-analysis');if(analysis){captureAnalysis(analysis);return;}if(ev.target.id==='cp-file'){if(busy||!canAttach())return;uploadProgress=null;pendingFile=ev.target.files?.[0]||null;fileId=crypto.randomUUID();redraw();return;}const f=ev.target.closest?.('#cp-project,#cp-task,#cp-excerpt');if(f)capture(f);});
- document.addEventListener('click',ev=>{if(!isPilot())return;const link=ev.target.closest?.('a[href^="#"]');if(link&&busy){ev.preventDefault();ev.stopImmediatePropagation();return;}if(link&&feedback?.comment&&!confirm('Vols sortir sense desar el comentari de revisió?')){ev.preventDefault();ev.stopImmediatePropagation();return;}if(link&&draft){if(!discard()){ev.preventDefault();ev.stopImmediatePropagation();}else closeEditors();}},true);
- window.addEventListener('beforeunload',ev=>{if(draft||feedback?.comment||aiDraft||pendingFile||busy||[...orientations.values()].some(s=>s.dirty)||analysisDrafts.size||[...editorCache.values()].some(v=>v.draft)){ev.preventDefault();ev.returnValue='';}});
+ document.addEventListener('click',ev=>{if(!isPilot())return;const link=ev.target.closest?.('a[href^="#"]');if(link&&(busy||defense?.saving)){ev.preventDefault();ev.stopImmediatePropagation();return;}if(link&&feedback?.comment&&!confirm('Vols sortir sense desar el comentari de revisió?')){ev.preventDefault();ev.stopImmediatePropagation();return;}if(link&&draft){if(!discard()){ev.preventDefault();ev.stopImmediatePropagation();}else closeEditors();}},true);
+ window.addEventListener('beforeunload',ev=>{if(draft||feedback?.comment||defense?.draft||defense?.saving||pendingDefenses.size||aiDraft||pendingFile||busy||[...orientations.values()].some(s=>s.dirty)||analysisDrafts.size||[...editorCache.values()].some(v=>v.draft)){ev.preventDefault();ev.returnValue='';}});
  async function mutate(action,message='Canvis desats a Quelcom.'){if(busy||!api||!member)return;const generation=loadGeneration;busy=true;error='';notice='';try{const outcome=await action();if(outcome!==false&&generation===loadGeneration)notice=message;}catch(err){if(generation===loadGeneration)error=err.message;}finally{if(generation===loadGeneration){busy=false;redraw();}}}
  document.addEventListener('submit',ev=>{if(ev.target.id==='cp-feedback'){ev.preventDefault();submitFeedback(ev.target);return;}if(ev.target.id==='cp-analysis'){ev.preventDefault();if(busy||!aiDraft||!work)return;if(tooLargeForAI(aiDraft.storageName)){error='La revisió assistida admet documents de fins a 10 MB. Adjunta un extracte o una versió reduïda.';redraw();return;}captureAnalysis(ev.target);const id=work.id,generation=loadGeneration,request={...aiDraft};mutate(async()=>{const review=await api.analyzeDocument(id,request.storageName,request.requestId,request.question,request.consent);if(generation!==loadGeneration)return;if(selected()===id){documentReviews=[review,...documentReviews.filter(r=>r.id!==review.id)];if(review.status==='completed'){aiDraft=null;analysisDrafts.delete(id);}if(review.status==='failed')throw Error('L’anàlisi no s’ha completat. Conservem la pregunta i el document per revisar-los.');}},'Petició confirmada. Consulta l’estat i les propostes a l’apartat de revisió.');redraw();return;}if(ev.target.id==='cp-upload'){ev.preventDefault();if(busy||!canAttach())return;if(!pendingFile){error='Selecciona un document per adjuntar-lo.';redraw();return;}const id=work.id,generation=loadGeneration,file=pendingFile,uploadId=fileId;const current=()=>generation===loadGeneration&&selected()===id&&pendingFile===file&&fileId===uploadId;uploadProgress={loaded:0,total:file?.size||0,percent:0,status:'preparing'};mutate(async()=>{try{await api.uploadDocument(id,file,uploadId,progress=>{if(!current())return;const total=Math.max(0,Number(progress.total)||file?.size||0),loaded=Math.max(0,Math.min(total,Number(progress.loaded)||0)),percent=Math.max(0,Math.min(100,Math.round(Number(progress.percent)||0)));const previous=uploadProgress?.percent;uploadProgress={loaded,total,percent,status:'uploading'};if(previous!==percent)paintUploadProgress();});}catch(err){if(!current())return false;uploadProgress={...uploadProgress,status:'interrupted'};throw err;}if(!current())return false;pendingFile=null;fileId=null;uploadProgress=null;await loadWork(id,true);},'Document privat desat a Quelcom.');redraw();return;}if(!['cp-project','cp-task','cp-excerpt'].includes(ev.target.id))return;ev.preventDefault();capture(ev.target);const f=draft,projectId=work?.id,projectKind=work?.kind,taskId=editor,creatingProject=newProject,creatingTask=newTask;mutate(async()=>{
   const v=f.values;
@@ -225,6 +348,14 @@
  });});
  document.addEventListener('click',ev=>{const b=ev.target.closest?.('[data-cp],[data-cp-edit],[data-cp-move],[data-cp-review],[data-cp-withdraw],[data-cp-download],[data-cp-analyze],[data-cp-ai-task],[data-cp-ai-retry]');if(!b||busy)return;
   if(b.dataset.cp==='cancel-feedback'){feedback=null;error='';redraw();return;}
+  if(b.dataset.cp==='academic-task'){
+   if(!hasProjectAccess()||!discard())return;
+   const values=globalThis.CampusAcademicPath?.taskTemplate({kind:work.kind,role:member.role});
+   if(!values)return;
+   closeEditors();newTask=true;draft={form:'task',id:crypto.randomUUID(),values};
+   notice='Revisa la proposta de tasca i desa-la quan estigui a punt.';error='';redraw();
+   document.querySelector?.('#cp-task [name="title"]')?.focus();return;
+  }
   if(b.dataset.cp==='go-orientation'){focusOrientation();return;}
   if(b.dataset.cp==='edit-orientation'){
    if(!selected()&&newProject){const state=orientations.get('new');if(state)state.accepted=false;}
@@ -237,7 +368,16 @@
   if(b.dataset.cp==='cancel-analysis'){if(aiDraft?.question&&!confirm('Vols tancar i descartar la pregunta pendent?'))return;aiDraft=null;analysisDrafts.delete(selected());redraw();return;}
   if(b.dataset.cp==='refresh-analysis'){const projectId=work?.id,generation=loadGeneration;if(!projectId)return;mutate(async()=>{const rows=await api.documentReviews(projectId);if(generation!==loadGeneration)return;if(selected()===projectId){documentReviews=rows;reviewError='';}await refreshAI();},'Estat de les anàlisis actualitzat.');return;}
   if(b.dataset.cpAiTask){const r=documentReviews.find(x=>x.id===b.dataset.cpAiTask),kind=b.dataset.kind,index=Number(b.dataset.index);if(!r||r.status!=='completed'||!['improvements','newIdeas'].includes(kind)||!Number.isInteger(index)||index<0)return;const item=r.result?.[kind]?.[index];if(!item||!discard())return;closeEditors();newTask=true;draft={form:'task',id:crypto.randomUUID(),values:{title:String(item.title||'').slice(0,180),why:String(item.detail||'').slice(0,3000),how:'Proposta de l’assistent per contrastar amb '+documentTitle(r.storage_name)+' (versió '+r.storage_name.slice(0,8)+').',deliverable:'',criteria:'',blocker:'',owner_label:'',due:''}};notice='Proposta preparada com a esborrany. Revisa-la i desa-la quan estigui a punt.';redraw();document.getElementById('cp-task')?.scrollIntoView({block:'start',behavior:'auto'});return;}
-  if(b.dataset.cpDownload){mutate(async()=>{const blob=await api.downloadDocument(work.id,b.dataset.cpDownload),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=b.dataset.cpDownload.split('--').slice(1).join('--');a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);},'Document privat descarregat.');return;}
+  if(b.dataset.cpDownload){
+   if(!hasProjectAccess())return;
+   const name=b.dataset.cpDownload,projectId=work.id,generation=loadGeneration,service=api;
+   mutate(async()=>{
+    const blob=await service.downloadDocument(projectId,name);
+    if(generation!==loadGeneration||selected()!==projectId||work?.id!==projectId)return false;
+    const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=documentTitle(name);
+    a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+   },'Document privat descarregat.');return;
+  }
   if(b.dataset.cp==='export'){const blob=new Blob([JSON.stringify(draft||{},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='quelcom-text-pendent.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;}
   if(b.dataset.cp==='reload'){if(!discard())return;closeEditors();error='';notice='';if(member){mutate(async()=>{const current=await api.enroll();if(!current){reset();boot();return;}if(selected()){const id=selected();await loadWork(id,true);const state=orientations.get(id);if(state&&work?.id===id){state.revision=work.revision;}}else{projects=await api.projects();feed=await api.library();registerProjects();}},'Dades actualitzades.');}else{booted=false;boot();}return;}
   if(['new-project','edit-project','new-task','new-excerpt','cancel'].includes(b.dataset.cp)||b.dataset.cpEdit){if(!discard())return;closeEditors();if(b.dataset.cp==='new-project'){orientations.delete('new');newProject=true;}if(b.dataset.cp==='cancel'&&!selected())orientations.delete('new');if(b.dataset.cp==='edit-project')editor='project';if(b.dataset.cp==='new-task')newTask=true;if(b.dataset.cp==='new-excerpt')newExcerpt=true;if(b.dataset.cpEdit)editor=b.dataset.cpEdit;error='';notice='';redraw();return;}
@@ -263,8 +403,9 @@
   // This release exposes only Campus to the pilot, including manually entered old URLs.
   if(key&&!['entrada','login','espai','campus','inici','campus-biblioteca'].includes(key)&&!/^campus-treball\/[0-9a-f-]{36}$/i.test(key)){history.replaceState(null,'','#campus');key='campus';}
   if(key.startsWith('campus-treball/'))routes[key]=['Treball acadèmic',page];
-  const nextScope=selected()||key;if(nextScope!==editorScope){feedback=null;pendingFile=null;fileId=null;uploadProgress=null;if(aiDraft)analysisDrafts.set(editorScope,aiDraft);else analysisDrafts.delete(editorScope);aiDraft=analysisDrafts.get(nextScope)||null;if(draft)editorCache.set(editorScope,{editor,draft,newProject,newTask,newExcerpt});({editor=null,draft=null,newProject=false,newTask=false,newExcerpt=false}=editorCache.get(nextScope)||{});editorScope=nextScope;}
+  const nextScope=selected()||key;if(nextScope!==editorScope){leaveDefense(true);feedback=null;pendingFile=null;fileId=null;uploadProgress=null;if(aiDraft)analysisDrafts.set(editorScope,aiDraft);else analysisDrafts.delete(editorScope);aiDraft=analysisDrafts.get(nextScope)||null;if(draft)editorCache.set(editorScope,{editor,draft,newProject,newTask,newExcerpt});({editor=null,draft=null,newProject=false,newTask=false,newExcerpt=false}=editorCache.get(nextScope)||{});editorScope=nextScope;}
   previous();document.body.classList.toggle('cp-active',isPilot());
+  if(defense)globalThis.CampusDefense?.syncTimer();
   if(['login','espai'].includes(key))document.querySelectorAll('.qu-space-switch').forEach(x=>x.remove());
   if(isPilot()){document.querySelectorAll('.qu-space-switch,.dimension-guide').forEach(x=>x.remove());if(document.getElementById('cp-root')){boot();if(member&&selected()&&loaded!==selected())loadWork(selected());}}
  };

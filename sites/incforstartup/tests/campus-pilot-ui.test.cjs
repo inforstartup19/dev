@@ -6,7 +6,7 @@ async function harness(options={}){
  const {
   reviews=[],reviewError=false,analysisError=false,available=true,analysisWait=null,
   uploadImpl=null,documentSize=1024,role='student',route='research_plan',confirmImpl=null,
-  startAt='#campus-treball/'+id, extraProjects=[], taskStatus='prepare', pilotProposals=[], feedbackImpl=null
+  startAt='#campus-treball/'+id, extraProjects=[], taskStatus='prepare', pilotProposals=[], feedbackImpl=null, defenseRead=async()=>null, defenseWrite=null
  }=options;
  const project={id,owner_id:'student',title:'Treball privat',kind:'TFM',revision:0,updated_at:'2026-11-19T12:00:00Z',
   orientation_route:route,orientation_first_step:route?'Primera tasca de prova':null,orientation_task_id:route?firstTaskId:null};
@@ -21,6 +21,8 @@ async function harness(options={}){
   project:async key=>stored.has(key)?{...stored.get(key)}:null,
   tasks:async key=>(cards.get(key)||[]).map(x=>({...x})),history:async()=>[],projectHistory:async()=>[],proposals:async()=>pilotProposals,
   documents:async key=>key===id?[originalFile]:[],
+  defense:async projectId=>{calls.push({method:'defense',args:[projectId]});return defenseRead(projectId);},
+  saveDefense:async(...args)=>{calls.push({method:'saveDefense',args});return defenseWrite(...args);},
   createProject:async row=>{
    calls.push({method:'createProject',args:[row]});
    if(!stored.has(row.id))stored.set(row.id,{...row,revision:0,updated_at:'2026-11-19T12:00:00Z',orientation_route:null,orientation_task_id:null});
@@ -68,11 +70,11 @@ async function harness(options={}){
   FormData:class extends Map{constructor(form){super(Object.entries(form.values));}},confirm:()=>true,prompt:()=>null,setTimeout,URL,Blob,
  };
  vm.createContext(c);
- for(const sd of ['campus-orientation.js','campus-pilot.js']){
+ for(const sd of ['campus-orientation.js','campus-defense.js','campus-academic-path.js','campus-pilot.js']){
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../public',sd),'utf8'),c);
  }
- function fire(type,target={}){
-  const event={target,preventDefault(){},stopImmediatePropagation(){}};
+ function fire(type,target={},submitter){
+  const event={target,submitter,preventDefault(){},stopImmediatePropagation(){}};
   for(const fn of handlers[type]||[])fn(event);
  }
  function targetFor(dataset={},extra={}){
@@ -91,7 +93,7 @@ async function harness(options={}){
   html:()=>c.routes[c.location.hash.slice(1)]?.[1]()||'',
   click(dataset){fire('click',targetFor(dataset));},
   setWizard(dataset,value,kind='input'){fire(kind,targetFor(dataset,{value}));},
-  submit(formId,values){fire('submit',{id:formId,values});},
+  submit(formId,values,action){fire('submit',{id:formId,values},action?{value:action}:undefined);},
   input(formId,values){fire('input',{closest:selector=>selector.includes('#'+formId)?{id:formId,values}:null});}
  };
 }
@@ -362,4 +364,66 @@ test('starting a task does not ask the student for a teacher review comment',asy
  assert.equal(student.calls[0].args[2].status,'active');
  assert.equal(Object.hasOwn(student.calls[0].args[2],'review_comment'),false);
  assert.doesNotMatch(student.html(),/id="cp-feedback"/);
+});
+
+const rehearsalValues={outline:'Guió sintètic',questions:'Mètode i límits',attachment:'',talk_minutes:'15',question_minutes:'10'};
+function rehearsalRecord(state='draft',revision=1,params={}){
+ return {project_id:id,...rehearsalValues,talk_minutes:15,question_minutes:10,feedback:null,status:state,revision,...params};
+}
+test('a private project opens the rehearsal on demand and requires an explicit save or submission',async()=>{
+ const h=await harness({defenseWrite:async()=>rehearsalRecord('submitted')});
+ assert.match(h.html(),/Espai de presentacions/);assert.equal(h.calls.length,0);
+ h.click({defenseOpen:''});await flush();assert.match(h.html(),/id="cp-defense-student"/);
+ assert.deepEqual(h.calls.map(c=>c.method),['defense']);
+ h.submit('cp-defense-student',{...rehearsalValues,outline:'  '},'submit');
+ assert.equal(h.calls.length,1);assert.match(h.html(),/Escriu un guió/);
+ h.submit('cp-defense-teacher',{feedback:'cap'},'validate');assert.equal(h.calls.length,1);
+ h.submit('cp-defense-student',rehearsalValues,'submit');await flush();
+ const write=h.calls[1];assert.deepEqual(write.args.slice(0,3),[id,0,'submit']);assert.equal(write.args[3].talk_minutes,15);
+ assert.match(h.html(),/Assaig enviat/);assert.doesNotMatch(h.html(),/id="cp-defense-student"/);
+ h.click({defenseClose:''});assert.match(h.html(),/data-defense-open/);
+});
+test('tutors only review a submitted rehearsal and send feedback separately',async()=>{
+ const h=await harness({role:'teacher',defenseRead:async()=>rehearsalRecord('submitted',3),
+  defenseWrite:async()=>rehearsalRecord('changes_requested',4,{feedback:'Justifica el mètode.'})});
+ h.click({defenseOpen:''});await flush();assert.match(h.html(),/id="cp-defense-teacher"/);
+ h.submit('cp-defense-teacher',{feedback:'  '},'return');assert.equal(h.calls.length,1);
+ h.submit('cp-defense-student',rehearsalValues,'save');assert.equal(h.calls.length,1);
+ h.submit('cp-defense-teacher',{feedback:'Justifica el mètode.'},'return');await flush();
+ const write=h.calls[1];assert.equal(write.args[1],3);assert.equal(write.args[2],'return');assert.deepEqual(Object.keys(write.args[3]),['feedback']);
+ assert.match(h.html(),/Justifica el mètode/);assert.doesNotMatch(h.html(),/id="cp-defense-teacher"/);
+});
+test('a failed read cannot create or submit a rehearsal; retry recovers read access',async()=>{
+ let reads=0;const h=await harness({defenseRead:async()=>{if(!reads++)throw Error('Servei indisponible');return null;}});
+ h.click({defenseOpen:''});await flush();assert.match(h.html(),/Reintenta la consulta/);
+ assert.doesNotMatch(h.html(),/id="cp-defense-student"/);
+ h.submit('cp-defense-student',rehearsalValues,'save');assert.equal(h.calls.length,1);
+ h.click({defenseRefresh:''});await flush();assert.match(h.html(),/id="cp-defense-student"/);
+});
+test('a stale rehearsal keeps the draft and disables additional writes until explicitly reloaded',async()=>{
+ let version=1;
+ const h=await harness({defenseRead:async()=>rehearsalRecord('draft',version,{outline:'Guió desat '+version}),
+  defenseWrite:async()=>{version=2;throw Object.assign(Error('Versió més recent'),{code:'conflict'});}});
+ h.click({defenseOpen:''});await flush();h.submit('cp-defense-student',rehearsalValues,'save');await flush();
+ assert.match(h.html(),/Guió sintètic/);assert.match(h.html(),/data-defense-refresh/);
+ h.submit('cp-defense-student',rehearsalValues,'save');assert.equal(h.calls.filter(x=>x.method==='saveDefense').length,1);
+ h.click({defenseRefresh:''});await flush();assert.match(h.html(),/Guió desat 2/);assert.match(h.html(),/Guió sintètic/);
+});
+test('closing, switching project or signing out never reveals a late rehearsal response',async()=>{
+ let finish;const second='87345678-1234-4234-8234-123456789abc';
+ const h=await harness({extraProjects:[{id:second,kind:'TR',owner_id:'student',revision:0,title:'Altre treball'}],defenseRead:async projectId=>
+  projectId===id?new Promise(resolve=>{finish=resolve;}):null});
+ h.click({defenseOpen:''});await h.go('#campus-treball/'+second);h.click({defenseOpen:''});await flush();
+ finish(rehearsalRecord('draft',1,{outline:'Private in first room'}));await flush();
+ assert.doesNotMatch(h.html(),/Private in first room/);assert.match(h.html(),/id="cp-defense-student"/);
+ h.input('cp-defense-student',{...rehearsalValues,outline:'Private in second room'});
+ h.click({defenseClose:''});h.click({defenseOpen:''});await flush();assert.match(h.html(),/Private in second room/);
+ h.changeAccount('teacher');await h.go('#campus-treball/'+second);h.click({defenseOpen:''});await flush();
+ assert.doesNotMatch(h.html(),/Private in second room|id="cp-defense-student"/);
+});
+test('an academic phase template is prepared as an editable task without a write',async()=>{
+ const h=await harness();assert.match(h.html(),/data-cp="academic-task"/);
+ h.click({cp:'academic-task'});assert.match(h.html(),/id="cp-task"/);assert.equal(h.calls.length,0);
+ const teacher=await harness({role:'teacher'});teacher.click({cp:'academic-task'});assert.match(teacher.html(),/id="cp-task"/);
+ assert.equal(teacher.calls.length,0);
 });
