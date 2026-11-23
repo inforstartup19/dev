@@ -138,3 +138,32 @@ test('university revision conflicts and authorization errors do not disclose or 
  await assert.rejects(s.api.assignUniversity(id,id,'none',2),e=>e.code==='conflict'&&!e.message.includes('private'));
  await assert.rejects(s.api.universityRoster(),e=>e.code==='denied'&&!e.message.includes('private'));
 });
+
+test('teacher delivery creation sends assigned person ids and explicit criteria with a stable request id',async()=>{
+ const s=setup([{status:200,body:id},{status:200,body:{spaces:[],students:[]}}]);
+ const end='2027-02-01T14:30:00.000Z';
+ assert.equal(await s.api.createDropbox({title:'Memòria',subject:'Enginyeria',kind:'TFG',instructions:'Versió final',opens_at:null,due_at:end,allow_revisions:false,student_ids:[id]},id),id);
+ assert.deepEqual(JSON.parse(s.calls[0].body),{p_id:id,p_title:'Memòria',p_subject:'Enginyeria',p_kind:'TFG',p_instructions:'Versió final',p_opens_at:null,p_due_at:end,p_allow_revisions:false,p_student_ids:[id]});
+ assert.match(s.calls[0].url,/rpc\/qc_drop_create$/);
+ assert.deepEqual(await s.api.dropboxes(),{spaces:[],students:[]});
+});
+test('a document-only upload is acknowledged only by an exact private receipt',async()=>{
+ const file=new File(['%PDF-1.7 demo'],'Resultats.pdf',{type:'application/pdf'});
+ const object=id+'/'+id+'--Resultats.pdf',receipt={project_id:id,storage_name:object,submitted_at:'2026-11-24T10:02:00Z'};
+ const writes=[],rpc=[];
+ let result=receipt;
+ const api=create({config:{},token:async()=>'token',storage:{from:()=>({upload:async(path)=>{writes.push(path);return{};}})},fetcher:async(path,opts)=>{rpc.push(JSON.parse(opts.body));return {ok:true,json:async()=>result};}});
+ const actual=await api.uploadDropbox(id,file,id,{projectId:id,isCurrent:()=>true});
+ assert.deepEqual(actual,receipt);assert.deepEqual(writes,[object]);assert.deepEqual(rpc,[{p_space_id:id,p_storage_name:object}]);
+ result={...receipt,submitted_at:null};await assert.rejects(api.confirmDropbox(id,object,id),/justificant/);
+ await assert.rejects(api.confirmDropbox(id,'wrong-prefix/'+id+'--Resultats.pdf',id),/no correspon/);
+});
+test('changing account or leaving the page aborts a document-only upload before receipt or further requests',async()=>{
+ let current=false;let wrote=0,rpc=0;
+ const api=create({config:{},token:async()=>'token',storage:{from:()=>({upload:async()=>{wrote++;current=false;return{};}})},fetcher:async()=>{rpc++;throw Error('unexpected')}});
+ const file=new File(['%PDF-1.7 demo'],'Resultats.pdf');
+ await assert.rejects(api.uploadDropbox(id,file,id,{projectId:id,isCurrent:()=>current}),/canviat/);
+ assert.equal(wrote,0);current=true;
+ await assert.rejects(api.uploadDropbox(id,file,id,{projectId:id,isCurrent:()=>current}),/canviat/);
+ assert.equal(wrote,1);assert.equal(rpc,0);
+});

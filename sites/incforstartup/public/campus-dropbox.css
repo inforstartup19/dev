@@ -1,0 +1,60 @@
+#cp-root .cd-space {
+  --cd-border: #344c60; --cd-muted: #b5cad9; --cd-accent: #afe8e7;
+  max-width: 64rem; margin: 1.5rem auto; color: #edf4fa;
+}
+#cp-root .cd-header, #cp-root .cd-meta, #cp-root .cd-actions, #cp-root .cd-receipt {
+  display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap;
+}
+#cp-root .cd-header {
+  padding: clamp(1.2rem, 4vw, 2.3rem); border: 1px solid #345968; border-radius: 1.25rem;
+  background: radial-gradient(ellipse at top right,#1d414e,transparent 68%),#122334;
+}
+#cp-root .cd-header h1 { margin: 0; font-size: clamp(1.85rem,4vw,2.8rem); line-height: 1.12; }
+#cp-root .cd-header p { margin: .6rem 0 0; color: var(--cd-muted); max-width: 35rem; }
+#cp-root .cd-space :is(button,select,input:not([type="checkbox"])), #cp-root .cd-space summary { min-height: 44px; }
+#cp-root .cd-space button { white-space: normal; }
+#cp-root .cd-cards { display: grid; gap: 1rem; margin: 1rem 0; }
+#cp-root .cd-form, #cp-root .cd-card, #cp-root .cd-empty {
+  margin: 1rem 0; padding: clamp(1.1rem,3vw,1.8rem); min-width: 0; border-radius: 1.1rem;
+  border: 1px solid var(--cd-border); background: #101f30;
+}
+#cp-root .cd-card { margin: 0; overflow-wrap: anywhere; }
+#cp-root .cd-meta { font-size: .88rem; color: var(--cd-accent); }
+#cp-root .cd-badge { padding: .22rem .65rem; border-radius: 99rem; border: 1px solid #49646f; }
+#cp-root .cd-card h2 { margin: .65rem 0 .3rem; font-size: clamp(1.3rem,3vw,1.65rem); }
+#cp-root .cd-card h3 { font-size: 1.06rem; margin: 1.25rem 0 .4rem; }
+#cp-root .cd-dates, #cp-root .cd-hint, #cp-root .cd-card small, #cp-root .cd-note { color: var(--cd-muted); font-size: .925rem; }
+#cp-root .cd-instructions { white-space: pre-line; }
+#cp-root .cd-space details { margin: .75rem 0; }
+#cp-root .cd-space summary { align-content: center; cursor: pointer; color: var(--cd-accent); }
+#cp-root .cd-files, #cp-root .cd-roster { padding: 0; margin: 0; list-style: none; }
+#cp-root .cd-receipt, #cp-root .cd-person { padding: .75rem 0; border-top: 1px solid var(--cd-border); }
+#cp-root .cd-person>small, #cp-root .cd-receipt small { display: block; margin-top: .2rem; }
+#cp-root .cd-receipt button { margin: 0; }
+#cp-root .cd-form fieldset { border: 0; min-width: 0; padding: 0; margin: 0; }
+#cp-root .cd-form>fieldset { display: grid; gap: 1rem; }
+#cp-root .cd-form legend { padding: 0; margin: 0 0 1rem; font-size: 1.3rem; font-weight: 650; }
+#cp-root .cd-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1rem; }
+#cp-root .cd-form label { min-width: 0; margin: 0; display: grid; gap: .4rem; }
+#cp-root .cd-form :is(input:not([type="checkbox"]),select,textarea) { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; font-size: 1rem; }
+#cp-root .cd-form label.cd-check { display: flex; align-items: center; gap: .6rem; min-height: 44px; cursor: pointer; overflow-wrap: anywhere; }
+#cp-root .cd-form .cd-check input { flex: none; width: 1.125rem; height: 1.125rem; margin: 0; accent-color: var(--cd-accent); }
+#cp-root .cd-form .cd-audience { padding: .25rem .9rem .5rem; border: 1px solid var(--cd-border); border-radius: .85rem; }
+#cp-root .cd-audience legend { margin: 0; padding: 0 .3rem; font-size: 1rem; }
+#cp-root .cd-actions { justify-content: flex-start; }
+#cp-root .cd-hint { margin: -.5rem 0 0; }
+#cp-root .cd-pick { margin-top: 1rem; padding: 1rem; border-radius: .85rem; background: #142b38; border: 1px dashed #5a8492; }
+#cp-root .cd-pick p { color: var(--cd-muted); margin: .5rem 0 0; font-size: .9rem; }
+#cp-root .cd-pick .cd-policy { margin: 0 0 .7rem; color: #e3f4f6; }
+#cp-root .cd-pick label { position: relative; display: inline-flex; align-items: center; font-weight: 650; color: #102731; background: var(--cd-accent); padding: .7rem 1rem; border-radius: .6rem; min-height: 44px; box-sizing: border-box; cursor: pointer; }
+#cp-root .cd-pick input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+#cp-root .cd-pick label:focus-within, #cp-root .cd-space :is(button,summary,textarea,select,input):focus-visible { outline: 2px solid #b2f4f1; outline-offset: 3px; }
+#cp-root .cd-space progress { width: 100%; accent-color: var(--cd-accent); }
+#cp-root .cd-recovery { color: #ffe2b7; }
+@media (max-width: 640px) {
+  #cp-root .cd-grid { grid-template-columns: minmax(0,1fr); }
+  #cp-root .cd-header { align-items: flex-start; }
+  #cp-root .cd-meta { align-items: baseline; }
+  #cp-root .cd-actions { align-items: stretch; }
+  #cp-root .cd-header .cp-primary { width: 100%; }
+}

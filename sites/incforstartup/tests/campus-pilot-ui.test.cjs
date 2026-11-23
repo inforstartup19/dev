@@ -4,11 +4,11 @@ const firstTaskId='4af62297-b545-4786-b08d-6ce8e924adc5';
 const flush=()=>new Promise(setImmediate);
 async function harness(options={}){
  const {
-  reviews=[],reviewError=false,analysisError=false,available=true,analysisWait=null,
+  dropList=async()=>({students:[],spaces:[]}), dropSpaceId=null, reviews=[],reviewError=false,analysisError=false,available=true,analysisWait=null,
   uploadImpl=null,documentSize=1024,role='student',route='research_plan',confirmImpl=null,
   startAt='#campus-treball/'+id, enrollment=null, canEvaluate=true, personal=[], roster=null, saveAssignment=null, activity=[], extraProjects=[], taskStatus='prepare', pilotProposals=[], feedbackImpl=null, defenseRead=async()=>null, defenseWrite=null
  }=options;
- const project={id,owner_id:'student',title:'Treball privat',kind:'TFM',revision:0,updated_at:'2026-11-19T12:00:00Z',
+ const project={id,drop_space_id:dropSpaceId,owner_id:'student',title:'Treball privat',kind:'TFM',revision:0,updated_at:'2026-11-19T12:00:00Z',
   orientation_route:route,orientation_first_step:route?'Primera tasca de prova':null,orientation_task_id:route?firstTaskId:null};
  const stored=new Map([project,...extraProjects].map(p=>[p.id,p]));
  const cards=new Map();
@@ -19,6 +19,7 @@ async function harness(options={}){
  const api={
   enroll:async()=>enrollment?enrollment(user):({role:user,university:'Centre de prova'}),
   projects:async()=>{activity.push('projects');return [...stored.values()];},library:async()=>{activity.push('library');return [];},
+  dropboxes:async()=>{activity.push('dropboxes');return dropList(user);},
   universityRoster:async()=>{activity.push('roster');return typeof roster==='function'?roster():roster;},
   myAssignments:async()=>{activity.push('personal');return personal;},assignUniversity:async(...args)=>{calls.push({method:'assignment',args});return saveAssignment(...args);},
   canEvaluate:async()=>typeof canEvaluate==='function'?canEvaluate():canEvaluate,
@@ -74,7 +75,7 @@ async function harness(options={}){
   FormData:class extends Map{constructor(form){super(Object.entries(form.values));}},confirm:()=>true,prompt:()=>null,setTimeout,URL,Blob,
  };
  vm.createContext(c);
- for(const sd of ['campus-orientation.js','campus-defense.js','campus-academic-path.js','campus-university.js','campus-pilot.js']){
+ for(const sd of ['campus-orientation.js','campus-defense.js','campus-academic-path.js','campus-university.js','campus-document-formats.js','campus-dropbox.js','campus-pilot.js']){
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../public',sd),'utf8'),c);
  }
  function fire(type,target={},submitter){
@@ -479,4 +480,42 @@ test('supervision alone permits follow-up and viewing the submitted rehearsal, w
  h.click({cpMove:firstTaskId,status:'done'});assert.doesNotMatch(h.html(),/id="cp-feedback"/);
  h.click({defenseOpen:''});await flush();assert.match(h.html(),/permís de seguiment/);assert.doesNotMatch(h.html(),/id="cp-defense-teacher"/);
  h.submit('cp-defense-teacher',{feedback:'Comentari'},'validate');assert.ok(!h.calls.some(row=>row.method==='saveDefense'));
+});
+
+test('campus home prioritizes the teacher-prepared upload path for students',async()=>{
+ const h=await harness({startAt:'#campus'});
+ assert.match(h.html(),/href="#campus-lliuraments">Obre els meus lliuraments/);
+ assert.doesNotMatch(h.html(),/Tria un enfocament abans d.adjuntar/);
+ await h.go('#campus-lliuraments');
+ assert.match(h.html(),/Encara no tens cap lliurament assignat/);
+ assert.doesNotMatch(h.html(),/Confirma l.orientació|id="cp-project"/);
+});
+test('teacher can reach the delivery route while a manager-only session cannot load its roster',async()=>{
+ const h=await harness({startAt:'#campus',role:'teacher'});assert.match(h.html(),/Gestiona els lliuraments/);
+ const activity=[];
+ const m=await harness({startAt:'#campus-lliuraments',role:'manager',enrollment:uniMember,roster:()=>uniRoster([],0),activity});
+ assert.ok(!activity.includes('dropboxes'));
+ assert.doesNotMatch(m.html(),/href="#campus-lliuraments"/);
+});
+test('account switches discard stale incoming delivery lists',async()=>{
+ let done;const slow=new Promise(r=>{done=r;});
+ const h=await harness({startAt:'#campus-lliuraments',role:'teacher',dropList:user=>user==='teacher'?slow:{spaces:[],students:[]}});
+ h.changeAccount('student');await h.go('#campus-lliuraments');
+ done({students:[{id:'other',label:'Other institution'}],spaces:[{id:'old',title:'Private old assignment',recipients:[]}]});
+ await flush();assert.doesNotMatch(h.html(),/Other institution|Private old assignment/);
+ assert.match(h.html(),/Encara no tens cap lliurament assignat/);
+});
+test('a generated project directs uploads to its dropbox and shows the already received documents',async()=>{
+ const h=await harness({dropSpaceId:id,route:null});
+ assert.match(h.html(),/Ves a l’espai de lliurament/);
+ assert.doesNotMatch(h.html(),/Confirma l’orientació d’aquest treball|id="cp-upload"/);
+ assert.match(h.html(),/research.docx/);
+});
+
+test('a direct submission link loads the inbox before any project or library data',async()=>{
+ const activity=[];const h=await harness({startAt:'#campus-lliuraments',activity});
+ assert.deepEqual(activity,['dropboxes']);
+ await h.go('#campus-biblioteca');await flush();
+ assert.ok(activity.includes('projects'));assert.ok(activity.includes('library'));
+ assert.match(h.html(),/El primer aprenentatge/);
 });
