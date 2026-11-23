@@ -41,7 +41,8 @@
    if(response.headers.get('Upload-Length')!==String(file.size))throw error('INVALID_LENGTH','La càrrega pendent no correspon a aquest document.');
    return offsetOf(response,file.size);
   }
-  async function upload({file,path,mime,onProgress=()=>{}}){
+  async function upload({file,path,mime,onProgress=()=>{},isCurrent=()=>true}){
+   const checkScope=()=>{if(!isCurrent())throw error('SESSION_CHANGED','La sessió o l’espai ha canviat. Torna a obrir el lliurament.');};
    if(!file||!Number.isSafeInteger(file.size)||file.size<1||file.size>maxFileSize||typeof file.slice!=='function')throw error('FILE_SIZE','Selecciona un document de com a màxim 50 MB.');
    if(!/^[0-9a-f-]{36}\/[0-9a-f-]{36}--[A-Za-z0-9_.-]+\.(pdf|docx?|xlsx?|pptx?)$/.test(path))throw error('PATH','Document no vàlid.');
    let state=states.get(file);
@@ -50,15 +51,18 @@
    if(!state){state={path,url:null,busy:false};states.set(file,state);}state.busy=true;
    const progress=loaded=>{try{onProgress({loaded,total:file.size,percent:Math.floor(loaded/file.size*100)});}catch{/* UI callback cannot interrupt the protocol. */}};
    try{
+    checkScope();
     if(!state.url){
      const response=await request(endpoint,'POST',{'Upload-Length':String(file.size),'Upload-Metadata':Object.entries({bucketName:'qc-campus-documents',objectName:path,contentType:mime,cacheControl:'3600'}).map(([key,value])=>key+' '+metadata(value)).join(',')});
      if(response.status!==201)throw error('CREATE_FAILED','No hem pogut iniciar la càrrega. Conserva la selecció i torna-ho a provar.',response.status);
      state.url=uploadUrl(response.headers.get('Location'));
     }
+    checkScope();
     let offset=await inspect(state,file);progress(offset);
     while(offset<file.size){
      const end=Math.min(offset+chunkSize,file.size);let attempts=0;
      for(;;){
+      checkScope();
       let response,problem;
       try{response=await request(state.url,'PATCH',{'Content-Type':'application/offset+octet-stream','Upload-Offset':String(offset)},file.slice(offset,end));}
       catch(err){if(err.code!=='NETWORK')throw err;problem=err;}
@@ -68,6 +72,7 @@
       await wait(attempts*500);
       // A timed-out PATCH may already be committed. HEAD is mandatory before
       // retrying, so acknowledged chunks are not duplicated or overwritten.
+      checkScope();
       const confirmed=await inspect(state,file);
       if(confirmed<offset||confirmed>end)throw error('INVALID_OFFSET','El progrés ha canviat de manera inesperada. No hem continuat la càrrega.');
       if(confirmed>offset){offset=confirmed;progress(offset);break;}

@@ -8,8 +8,14 @@
   async function request(path,{method='GET',body}={}){
    const access=await token();
    if(!access){const error=new Error('La sessió ha caducat. Torna a iniciar sessió.');error.code='denied';throw error;}
-   let response;try{response=await fetcher(config.url+'/rest/v1/'+path,{method,headers:{apikey:config.publishableKey,Authorization:'Bearer '+access,'Content-Type':'application/json',Prefer:'return=representation'},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(15000)});}catch{throw Error('No hem pogut confirmar el desament. Conservem el text; comprova la connexió abans de reintentar.');}
+   let response;try{response=await fetcher(config.url+'/rest/v1/'+path,{method,headers:{apikey:config.publishableKey,Authorization:'Bearer '+access,'Content-Type':'application/json',Prefer:'return=representation'},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(15000)});}catch{if(path.startsWith('rpc/qc_drop_'))throw Error('No hem pogut confirmar la resposta del Campus. Comprova la connexió i els justificants abans de reintentar.');throw Error('No hem pogut confirmar el desament. Conservem el text; comprova la connexió abans de reintentar.');}
    if(!response.ok){let detail={};try{detail=await response.json();}catch{}
+    if(path.startsWith('rpc/qc_drop_')){
+     if ([401,403].includes(response.status)||detail.code==='42501') throw Object.assign(Error('La sessió o l’assignació ha canviat. Comprova l’accés al lliurament.'),{code:'denied'});
+     if (detail.code==='22023') throw Error('Revisa les dades del lliurament, el termini i el document seleccionat.');
+     if (['23505','40001','55000'].includes(detail.code)) throw Error('El lliurament ha canviat. Actualitza’l per comprovar-ne el termini i els fitxers rebuts.');
+     throw Error('No hem pogut confirmar el lliurament. Actualitza’l i comprova el justificant abans de reintentar.');
+    }
     if(path.startsWith('rpc/qc_university_')||path==='rpc/qc_can_evaluate'){
      const denied=[401,403].includes(response.status)||detail.code==='42501';
      const conflict=detail.code==='40001';
@@ -52,6 +58,44 @@
   async function insert(table,row){const existing=await request(table+'?id=eq.'+uuid(row.id)+'&select=*');if(existing.length){if(Object.entries(row).some(([key,value])=>JSON.stringify(existing[0][key])!==JSON.stringify(value)))throw Error('El registre ja es va crear amb un altre contingut. Conservem el text; exporta’l abans de recuperar la versió desada.');return existing[0];}const rows=await request(table,{method:'POST',body:row});return rows[0];}
   const bucket=()=>storage.from('qc-campus-documents');
   const filePath=(project,name)=>{uuid(project);if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}--[A-Za-z0-9_.-]+\.(pdf|doc|docx|xls|xlsx|ppt|pptx)$/.test(name))throw Error('Document no vàlid.');return project+'/'+name;};
+  function ensureCurrent(isCurrent) {
+   if (!isCurrent()) throw Error('La sessió o l’espai ha canviat. Torna a obrir el lliurament.');
+  }
+  async function confirmDropbox(spaceId,storageName,projectId) {
+   const parts = typeof storageName==='string' ? storageName.split('/') : [];
+   if (parts.length!==2 || parts[0]!==projectId || filePath(projectId,parts[1])!==storageName)
+    throw Error('El document no correspon a aquest lliurament.');
+   const row = await request('rpc/qc_drop_confirm',{method:'POST',body:{p_space_id:uuid(spaceId),p_storage_name:storageName}});
+   if (row?.project_id!==projectId || row.storage_name!==storageName || !Number.isFinite(Date.parse(row.submitted_at)))
+    throw Error('No hem rebut el justificant. Actualitza els lliuraments per comprovar la recepció del fitxer.');
+   return row;
+  }
+  async function uploadDocument(project,file,id,onProgress=()=>{},isCurrent=()=>true){
+    if(!formats)throw Error('No hem pogut carregar el validador de documents. Recarrega la pàgina.');
+    const {filename,mime}=await formats.validate(file);
+    ensureCurrent(isCurrent);
+    const path=filePath(project,uuid(id)+'--'+filename);
+    let error;
+    if(file.size>6*1024*1024){
+     if(!resumable)throw Error('No hem pogut carregar el servei de càrrega recuperable. Recarrega la pàgina.');
+     resumableClient??=resumable.create({config,token,userId,fetcher});
+     try{await resumableClient.upload({file,path,mime,onProgress,isCurrent});}catch(err){error=err;}
+    }else{
+     onProgress({loaded:0,total:file.size,percent:0});
+     ({error}=await bucket().upload(path,file,{contentType:mime,upsert:false}));
+    }
+    ensureCurrent(isCurrent);
+    if(error){
+     if(!['400','409'].includes(String(error.statusCode))){
+      if(resumable?.isUploadError?.(error))throw error;
+      throw Error('No hem pogut confirmar la càrrega. Conserva el fitxer i reintenta amb la mateixa selecció.');
+     }
+     const {data,error:readError}=await bucket().list(uuid(project),{search:uuid(id)+'--',limit:10});
+     if(readError||!data?.some(x=>x.name===path.split('/')[1]&&Number(x.metadata?.size)===file.size&&x.metadata?.mimetype===mime))throw Error('No hem pogut confirmar la versió del document. Conserva la selecció i comprova els documents desats.');
+    }
+    onProgress({loaded:file.size,total:file.size,percent:100});
+    return path;
+   }
   async function aiRequest(body){
    const access=await token();if(!access)throw Error('La sessió ha caducat. Torna a iniciar sessió.');
    let response;try{response=await fetcher(config.url+'/functions/v1/campus-document-review',{method:body?'POST':'GET',headers:{apikey:config.publishableKey,Authorization:'Bearer '+access,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(body?115000:15000)});}catch{throw Error('No hem pogut confirmar l’anàlisi. Conservem la pregunta. Actualitza els resultats abans de reintentar.');}
@@ -74,30 +118,7 @@
   }
   return {
    async documents(project){const {data,error}=await bucket().list(uuid(project),{limit:100,sortBy:{column:'created_at',order:'desc'}});if(error)throw Error('No hem pogut recuperar els documents.');return data.filter(x=>x.id);},
-   async uploadDocument(project,file,id,onProgress=()=>{}){
-    if(!formats)throw Error('No hem pogut carregar el validador de documents. Recarrega la pàgina.');
-    const {filename,mime}=await formats.validate(file);
-    const path=filePath(project,uuid(id)+'--'+filename);
-    let error;
-    if(file.size>6*1024*1024){
-     if(!resumable)throw Error('No hem pogut carregar el servei de càrrega recuperable. Recarrega la pàgina.');
-     resumableClient??=resumable.create({config,token,userId,fetcher});
-     try{await resumableClient.upload({file,path,mime,onProgress});}catch(err){error=err;}
-    }else{
-     onProgress({loaded:0,total:file.size,percent:0});
-     ({error}=await bucket().upload(path,file,{contentType:mime,upsert:false}));
-    }
-    if(error){
-     if(!['400','409'].includes(String(error.statusCode))){
-      if(resumable?.isUploadError?.(error))throw error;
-      throw Error('No hem pogut confirmar la càrrega. Conserva el fitxer i reintenta amb la mateixa selecció.');
-     }
-     const {data,error:readError}=await bucket().list(uuid(project),{search:uuid(id)+'--',limit:10});
-     if(readError||!data?.some(x=>x.name===path.split('/')[1]&&Number(x.metadata?.size)===file.size&&x.metadata?.mimetype===mime))throw Error('No hem pogut confirmar la versió del document. Conserva la selecció i comprova els documents desats.');
-    }
-    onProgress({loaded:file.size,total:file.size,percent:100});
-    return path;
-   },
+   uploadDocument,
    async downloadDocument(project,name){const {data,error}=await bucket().download(filePath(project,name));if(error)throw Error('No tens accés al document o la sessió ha caducat.');return data;},
    aiAvailability:()=>aiRequest(),
    documentReviews:project=>request('qc_document_reviews?project_id=eq.'+uuid(project)+'&select=*&order=created_at.desc&limit=30'),
@@ -108,6 +129,28 @@
     const data=await aiRequest({projectId:project,storageName,requestId,question,consent:true});
     if(!data.review||!['processing','completed','failed'].includes(data.review.status))throw Error('No hem pogut confirmar el resultat. Actualitza l’historial abans de reintentar.');
     return data.review;
+   },
+   async dropboxes() {
+    const result = await request('rpc/qc_drop_list',{method:'POST',body:{}});
+    if (!Array.isArray(result?.spaces) || !Array.isArray(result.students))
+     throw Error('No hem pogut carregar els espais de lliurament.');
+    return result;
+   },
+   async createDropbox(payload,requestId) {
+    const {title,subject,kind,instructions,opens_at,due_at,allow_revisions,student_ids}=payload;
+    const body={p_id:uuid(requestId),p_title:title,p_subject:subject,p_kind:kind,
+     p_instructions:instructions||'',p_opens_at:opens_at||null,p_due_at:due_at,
+     p_allow_revisions:allow_revisions,p_student_ids:student_ids.map(uuid)};
+    const created=await request('rpc/qc_drop_create',{method:'POST',body});
+    if(created!==requestId)throw Error('No hem pogut confirmar la creació de l’espai. Actualitza els lliuraments.');
+    return created;
+   },
+   confirmDropbox,
+   async uploadDropbox(spaceId,file,requestId,{projectId,isCurrent=()=>true,onProgress=()=>{}}) {
+    uuid(spaceId);uuid(projectId);uuid(requestId);ensureCurrent(isCurrent);
+    const path=await uploadDocument(projectId,file,requestId,onProgress,isCurrent);
+    ensureCurrent(isCurrent);
+    return confirmDropbox(spaceId,path,projectId);
    },
    universityRoster:()=>request('rpc/qc_university_roster',{method:'POST',body:{}}),
    myAssignments:()=>request('rpc/qc_university_my_assignments',{method:'POST',body:{}}),

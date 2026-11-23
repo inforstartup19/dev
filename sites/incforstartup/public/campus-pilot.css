@@ -70,3 +70,10 @@ body.cp-active #view{padding:0!important;max-width:none!important;margin:0!impor
 #cp-root .cp-ai-intro .cp-ai-size-note{font-size:14px;color:#a7e2e7;font-weight:600}
 #cp-root .cp-document .cp-ai-limit{padding-top:10px;border-top:1px solid #294359;margin-top:18px}
 #cp-root .cp-document button:disabled{cursor:not-allowed}
+
+#cp-root .cp-actions a.cp-drop-action {
+ display: inline-flex; align-items: center; justify-content: center; min-height: 44px;
+ padding: .65rem 1rem; border-radius: .75rem; color: #09222c; background: #bcebf0;
+ font-weight: 700; text-decoration: none; box-sizing: border-box;
+}
+#cp-root .cp-actions a.cp-drop-action:is(:hover,:focus-visible) { background:#d8fbff; color:#09222c; }

@@ -134,5 +134,24 @@
       "browser": "Synthetic centre assignment with evaluation and save confirmation.",
       "authorized_participant_check": "pending"
     }
+  },
+  "teacher_dropboxes": {
+    "applied_on": "2026-11-23",
+    "migration": {
+      "version": "20261123150337",
+      "name": "campus_teacher_dropboxes",
+      "source": "supabase/schema/campus-dropboxes.sql",
+      "sha256": "757d9f9cdca40cb0d9f188160ec2296b88171760404690c8e1aaeb43f8547141"
+    },
+    "site": {
+      "version": 71,
+      "commit_sha": "e176e842fdc80f06e60213f99b54a9afec11a029"
+    },
+    "validation": {
+      "node_tests": 238,
+      "sql": "Local PostgreSQL permissions, student submission and legacy regressions passed with synthetic data.",
+      "dev_catalog": "Private tables and RPC grants verified; no new security advisor findings.",
+      "authorized_participant_check": "pending"
+    }
   }
 }
