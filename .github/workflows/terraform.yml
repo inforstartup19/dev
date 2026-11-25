@@ -2,9 +2,9 @@ name: Terraform
 
 on:
   push:
-    paths: ['infra/terraform/**', '.github/workflows/terraform.yml']
+    paths: ['infra/terraform/**', 'scripts/dev_foundation_check.sh', 'scripts/validate_tf_state_topology.py', 'Makefile', '**/*.tfstate', '**/*.tfstate.*', '**/*.tfplan', '.github/workflows/terraform.yml']
   pull_request:
-    paths: ['infra/terraform/**', '.github/workflows/terraform.yml']
+    paths: ['infra/terraform/**', 'scripts/dev_foundation_check.sh', 'scripts/validate_tf_state_topology.py', 'Makefile', '**/*.tfstate', '**/*.tfstate.*', '**/*.tfplan', '.github/workflows/terraform.yml']
   workflow_dispatch:
 
 permissions:
@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        directory: [infra/terraform/bootstrap, infra/terraform/environments/dev, infra/terraform/github-identity, infra/terraform/modules/private-documents, infra/terraform/modules/campus-avd]
+        directory: [infra/terraform/bootstrap, infra/terraform/github-identity, infra/terraform/modules/private-documents, infra/terraform/modules/campus-avd]
     defaults:
       run:
         working-directory: ${{ matrix.directory }}
@@ -32,12 +32,16 @@ jobs:
       - run: terraform validate
       - name: Test configuration without Azure credentials
         run: terraform test
-  state-topology:
+  dev-scenario:
+    name: DEV foundation scenario
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Validate zero-deploy Terraform state ownership
-        run: python3 scripts/validate_tf_state_topology.py
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.13.5'
+          terraform_wrapper: false
+      - run: make dev-scenario
