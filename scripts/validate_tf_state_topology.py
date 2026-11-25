@@ -4,6 +4,7 @@ No Azure connection, state movement or Terraform initialization is performed.
 """
 
 import json
+import re
 from pathlib import Path
 
 
@@ -26,6 +27,15 @@ def validate(payload: dict) -> None:
     assert all(row["deployment_authorized"] is False for row in scopes)
     current = next(row for row in scopes if row["name"] == "platform-dev")
     assert current["state_key"] == "dev/terraform.tfstate"
+    assert current["owner"] == "platform", "DEV foundation belongs to the platform team"
+    backend = PATH.parent / "environments/dev/backend.hcl.example"
+    backend_settings = re.findall(
+        r'^\s*(key|container_name)\s*=\s*"([^"]+)"[ \t]*(?:(?:#|//).*)?$',
+        backend.read_text(encoding="utf-8"),
+        re.MULTILINE,
+    )
+    expected = [("container_name", "tfstate-dev"), ("key", current["state_key"])]
+    assert sorted(backend_settings) == expected, "DEV backend container and state key must match the approved scope"
     assert current["configured_in_code"] is True
     assert all(
         row["configured_in_code"] is False

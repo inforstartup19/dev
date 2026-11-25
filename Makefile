@@ -16,3 +16,8 @@ terraform-check:
 	terraform -chdir=infra/terraform/github-identity init -backend=false -input=false -lockfile=readonly
 	terraform -chdir=infra/terraform/github-identity validate
 	terraform -chdir=infra/terraform/github-identity test
+
+.PHONY: dev-scenario
+
+dev-scenario:
+	bash scripts/dev_foundation_check.sh
